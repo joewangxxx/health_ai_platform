@@ -1,0 +1,184 @@
+# ===========================================
+# Health AI Platform 2.0 - .gitignore
+# Task 117: Production-Grade Git Ignore Rules
+# ===========================================
+
+# ==========================
+# 1. 敏感信息 (CRITICAL - 绝对禁止上传)
+# ==========================
+.env
+.env.*
+.env.local
+.env.production
+*.key
+*.pem
+*.crt
+secrets/
+credentials/
+
+# API Keys and Tokens (防止硬编码泄露)
+*_secret*
+*_token*
+*.secret
+
+# ==========================
+# 2. Python 环境与依赖
+# ==========================
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+.python-version
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Distribution / Packaging
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# ==========================
+# 3. 前端 (Vue/Node.js)
+# ==========================
+frontend/node_modules/
+frontend/dist/
+frontend/.output/
+frontend/.nuxt/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# ==========================
+# 4. 数据仓库 (本地保留，不传云端)
+# ==========================
+# 原始数据 (NHANES, 食物数据等)
+data_warehouse/raw_data/
+data_warehouse/raw/
+
+# 处理后数据 (CSV, 中间文件)
+data_warehouse/processed_data/
+data_warehouse/processed/
+
+# 向量数据库 (ChromaDB, FAISS)
+backend/rag/vector_store/
+backend/rag/chroma_db/
+*.index
+*.faiss
+
+# 忽略临时上传文件
+temp_uploads/
+backend/temp_uploads/
+uploads/
+backend/uploads/
+
+# ==========================
+# 5. 模型文件 (GitHub 限制 100MB)
+# ==========================
+# Machine Learning Models
+*.pkl
+*.pickle
+*.pth
+*.pt
+*.bin
+*.h5
+*.hdf5
+*.onnx
+*.safetensors
+
+# Model directories
+models/
+ai_core/models/
+backend/data/models/
+
+# PaddleOCR Models (Auto-downloaded)
+~/.paddleocr/
+
+# ==========================
+# 6. 数据库文件
+# ==========================
+*.db
+*.sqlite
+*.sqlite3
+health_ai.db
+
+# ==========================
+# 7. 日志与缓存
+# ==========================
+*.log
+logs/
+*.cache
+.cache/
+*.tmp
+*.temp
+
+# Pytest
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# Jupyter Notebooks Checkpoints
+.ipynb_checkpoints/
+
+# ==========================
+# 8. IDE 与编辑器配置
+# ==========================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ==========================
+# 9. 系统文件
+# ==========================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Desktop.ini
+
+# ==========================
+# 10. 其他项目特定
+# ==========================
+# Brain artifacts (Gemini Agent)
+.gemini/
+
+# PDF reports (generated)
+*.pdf
+
+# Backup files
+*.bak
+*.backup
+
+# Test outputs
+test_output/

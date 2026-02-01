@@ -1,0 +1,44 @@
+fastapi
+uvicorn
+pandas
+numpy
+scikit-learn
+xgboost
+lightgbm
+torch
+torchvision
+pillow
+python-multipart
+requests
+scipy
+
+# OCR Module (Task 43: Migration to Baidu)
+baidu-aip==4.16.13
+opencv-python-headless
+pymupdf
+filetype
+
+# RAG Module (Task 22)
+langchain>=0.1.0
+langchain-community>=0.0.10
+langchain-openai>=0.0.5
+langchain-huggingface>=0.0.3
+sentence-transformers>=2.2.0
+chromadb>=0.4.22
+langchain-chroma>=0.1.0
+pypdf>=4.0.0
+gpt4all
+
+# Code Quality & Security (Task 32)
+ruff>=0.1.0
+bandit>=1.7.0
+
+# Database Migrations (Task 76)
+alembic>=1.13.0
+sqlmodel>=0.0.18
+
+# PDF Export (Task 101)
+reportlab>=4.0.0
+
+# Redis Caching (Task 108)
+redis>=4.5.0
