@@ -1,0 +1,96 @@
+# ============================================
+# HealthAI Platform - Docker Compose
+# Task 123: Production Orchestration
+# ============================================
+
+version: '3.8'
+
+services:
+  # ===================
+  # Backend API Service
+  # ===================
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: healthai-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=sqlite:///./data/health_ai.db
+    volumes:
+      # Persist database and uploads
+      - ./data:/app/data
+      - ./uploads:/app/uploads
+      # Mount RAG knowledge base (read-only)
+      - ./backend/rag/guidelines:/app/backend/rag/guidelines:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - healthai-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # ===================
+  # Frontend SPA Service
+  # ===================
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: healthai-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - healthai-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ===================
+  # Redis Cache Service
+  # ===================
+  redis:
+    image: redis:7-alpine
+    container_name: healthai-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    networks:
+      - healthai-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+# ===================
+# Volumes
+# ===================
+volumes:
+  redis-data:
+    driver: local
+
+# ===================
+# Networks
+# ===================
+networks:
+  healthai-network:
+    driver: bridge

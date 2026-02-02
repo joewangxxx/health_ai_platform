@@ -157,6 +157,48 @@ HealthAI Platform 是一个基于**多模态数据融合**的智能医疗平台�
 - Python 3.11+
 - Node.js 18+
 - Redis (可选，用于缓存)
+- Docker (可选，推荐)
+
+---
+
+### 🐳 Docker 一键部署 (推荐)
+
+如果你本地安装了 Docker，无需配置 Python 和 Node 环境，只需一行命令即可启动整个平台：
+
+```bash
+# 1. 克隆项目
+git clone https://github.com/your-username/health-ai-platform.git
+cd health-ai-platform
+
+# 2. 配置环境变量
+cp .env.example .env
+# 编辑 .env 填入 API Keys
+
+# 3. 启动服务 (后端 + 前端 + Redis)
+docker-compose up --build -d
+
+# 4. 访问平台
+# 🌐 浏览器打开 http://localhost (无需端口号)
+# 📖 API 文档: http://localhost:8000/docs
+```
+
+**常用命令**：
+```bash
+# 查看日志
+docker-compose logs -f
+
+# 停止服务
+docker-compose down
+
+# 重建并启动
+docker-compose up --build -d
+```
+
+---
+
+### 📦 手动部署
+
+如果你不使用 Docker，可以按以下步骤手动配置：
 
 ### 1. 克隆项目
 ```bash
