@@ -60,7 +60,7 @@ class UserProfile(SQLModel, table=True):
     # ================= 基因组 & 历史数据 (JSON) =================
     # Task 134: 敏感数据加密存储
     # genomic_data 使用加密存储，通过 property 透明处理
-    _encrypted_genomic_data: Optional[str] = Field(default=None, alias="genomic_data")
+    encrypted_genomic_data: Optional[str] = Field(default=None, description="加密后的基因数据")
     risk_history: Optional[str] = None   # JSON: 上次计算的风险报告
     
     # Task 73: Store non-structured extra findings
@@ -78,23 +78,23 @@ class UserProfile(SQLModel, table=True):
     @property
     def genomic_data(self) -> Optional[str]:
         """解密读取基因组数据"""
-        if not self._encrypted_genomic_data:
+        if not self.encrypted_genomic_data:
             return None
         try:
             from backend.core.security import decrypt_value
-            return decrypt_value(self._encrypted_genomic_data)
+            return decrypt_value(self.encrypted_genomic_data)
         except Exception:
             # 兼容旧数据 (未加密的)
-            return self._encrypted_genomic_data
+            return self.encrypted_genomic_data
     
     @genomic_data.setter
     def genomic_data(self, value: Optional[str]):
         """加密存储基因组数据"""
         if value is None:
-            self._encrypted_genomic_data = None
+            self.encrypted_genomic_data = None
         else:
             from backend.core.security import encrypt_value
-            self._encrypted_genomic_data = encrypt_value(value)
+            self.encrypted_genomic_data = encrypt_value(value)
 
 class HealthRecord(SQLModel, table=True):
     """
@@ -164,6 +164,7 @@ class FamilyLink(SQLModel, table=True):
     class Config:
         # 确保唯一性: 一个管理者不能重复关联同一个家人
         # 通过业务逻辑校验，而非数据库约束
+        pass
 
 
 class FamilyInvite(SQLModel, table=True):
