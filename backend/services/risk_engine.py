@@ -1,3 +1,20 @@
+"""
+Disease Risk Engine (疾病风险评估引擎)
+======================================
+
+基于 LightGBM 模型集群的全科疾病风险评估引擎。
+
+功能:
+- 30+ 种慢性病的风险概率评估 (assess_health)
+- AHA 2023 CKM 综合征分期评估 (assess_ckm_stage)
+- 糖尿病泌尿系统并发症评估 (assess_diabetic_urology)
+
+依赖:
+- 预训练的 LightGBM 模型 (models/risk_models.joblib)
+- 特征映射表 (features_map)
+
+Author: Health AI Platform Team
+"""
 import joblib
 import pandas as pd
 import numpy as np
@@ -17,7 +34,26 @@ from backend.core.constants import (
 # if present in features_map (determined by model training configuration).
 # To enable V10 features: retrain models in ai_core/train_risk_models.py with new features.
 
+
 class DiseaseRiskEngine:
+    """
+    全科疾病风险评估引擎
+    
+    基于机器学习模型的多疾病风险评估系统，支持：
+    - 加载和热重载预训练模型
+    - 多疾病并行预测
+    - 中文风险因子归因分析 (Task 94)
+    - CKM 综合征分期 (Task 95)
+    
+    Attributes:
+        models (dict): 疾病名 -> LightGBM 模型的映射
+        features_map (dict): 疾病名 -> 所需特征列表的映射
+        
+    Example:
+        >>> engine = DiseaseRiskEngine()
+        >>> result = engine.assess_health({"BMI": 28, "Age": 45, "SBP": 140})
+        >>> print(result["T2D"]["probability"])  # 糖尿病风险概率
+    """
     def __init__(self):
         print("🏥 初始化全科疾病风险引擎 (LightGBM Cluster)...")
         if os.path.exists(RISK_MODEL_PATH):

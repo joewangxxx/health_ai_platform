@@ -1,10 +1,31 @@
+"""
+Health Analysis API Endpoints
+=============================
+
+提供健康分析相关的 API 端点，包括：
+- 未来风险模拟 (simulate_future)
+- 干预措施模拟 (simulate_intervention)
+- 异常指标检测 (detect_anomalies)
+- PDF 健康报告导出 (export_pdf)
+
+Author: Health AI Platform Team
+"""
+from datetime import datetime
+from typing import Dict, Any
+import io
+
 from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi.responses import StreamingResponse
 from sqlmodel import Session
+
 from backend.database import get_session
 from backend.models import User
 from backend.auth import get_current_user
 from backend.services.projection_service import projection_service
-from typing import Dict, Any
+from backend.services.analysis_service import anomaly_service
+from backend.services.pdf_service import pdf_service, PDFGenerationError
+from backend.services.risk_engine import disease_risk_engine
+from backend.services.lifestyle_service import hydration_advisor
 
 router = APIRouter()
 
@@ -40,7 +61,7 @@ async def simulate_intervention(
 
 
 # ================= Task 88: Anomaly Detection =================
-from backend.services.analysis_service import anomaly_service
+
 
 @router.post("/detect_anomalies")
 async def detect_anomalies(
@@ -94,11 +115,7 @@ async def detect_anomalies_from_profile(
 
 
 # ================= Task 101: PDF Export =================
-from fastapi.responses import StreamingResponse
-from backend.services.pdf_service import pdf_service, PDFGenerationError
-from backend.services.risk_engine import disease_risk_engine
-from backend.services.lifestyle_service import hydration_advisor
-import io
+
 
 @router.post("/export/pdf")
 async def export_health_report_pdf(
@@ -248,6 +265,3 @@ def _generate_diet_advice(risk_data: dict, ckm_data: dict) -> list:
         advice.append("🥗 保持均衡饮食，多摄入蔬果")
     
     return advice
-
-
-from datetime import datetime

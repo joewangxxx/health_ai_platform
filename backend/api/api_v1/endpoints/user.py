@@ -1,4 +1,13 @@
-# User Data Endpoints (Task 57)
+"""
+User Data Endpoints
+===================
+
+提供用户数据管理相关的 API 端点，包括：
+- 体检文档管理 (Task 57, 69)
+- 亲情账户关联体系 (Task 132)
+
+Author: Health AI Platform Team
+"""
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select, col
 from backend.database import get_session
@@ -30,7 +39,8 @@ async def get_user_documents(
         if doc.ocr_summary:
             try:
                 ocr_data = json.loads(doc.ocr_summary)
-            except:
+            except (json.JSONDecodeError, TypeError) as e:
+                print(f"⚠️ OCR 数据解析失败 (doc_id={doc.id}): {e}")
                 ocr_data = None
         
         result.append({

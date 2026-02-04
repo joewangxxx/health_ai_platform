@@ -128,6 +128,10 @@ import { useHealthStore } from '../stores/healthStore'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
 
+// 导入提取的常量和工具函数
+import { DISEASE_NAME_MAP, getDiseaseName } from '../constants/diseaseNames'
+import { createRadarOption, getRiskLevelClass, getModifierTagType } from '../utils/chartConfig'
+
 const store = useHealthStore()
 const { userProfile, geneData, iotData } = storeToRefs(store)
 const loading = ref(false)
@@ -163,22 +167,15 @@ const refreshAnalysis = async () => {
 }
 
 // --- Data Mapping & Computed ---
-const nameMap = {
-    'T2D': '糖尿病', 'PreDiabetes': '糖尿病前期', 'Obesity': '肥胖症', 'AbdominalObesity': '腹型肥胖',
-    'Gout': '痛风', 'Hyperuricemia': '高尿酸血症', 'Hypertension': '高血压', 'HighLipid': '高血脂',
-    'MetabolicSyndrome': '代谢综合征', 'InsulinResist': '胰岛素抵抗', 'HeartFailure': '心力衰竭',
-    'CoronaryHeart': '冠心病', 'HeartAttack': '心脏病发作', 'Stroke': '中风', 'CVD': '综合心血管病',
-    'CKD': '慢性肾病', 'KidneyStones': '肾结石', 'LiverDisease': '肝损伤风险', 'FattyLiver': '脂肪肝', 'Anemia': '贫血',
-    'Inflammation': '慢性炎症', 'Osteoporosis': '骨质疏松', 'Arthritis': '关节炎', 'Asthma': '哮喘',
-    'Psoriasis': '银屑病', 'GumDisease': '牙龈病', 'Depression': '抑郁风险', 'IronDef': '缺铁风险',
-    'IronOverload': '铁过载风险', 'HighLead': '重金属铅风险', 'HighCadmium': '重金属镉风险'
-}
+// 使用从 constants/diseaseNames.js 导入的 DISEASE_NAME_MAP
 
 const topRisks = computed(() => {
     if (!store.riskReport) return []
     const arr = Object.entries(store.riskReport).map(([k, v]) => ({
-        name: nameMap[k] || k, prob: v.final_risk, level: v.level,
-        level_class: v.level.includes('Very High') ? 'bg-linear-to-br from-red-600 to-rose-700' : (v.level.includes('High') ? 'bg-linear-to-br from-orange-400 to-red-500' : 'bg-linear-to-br from-emerald-400 to-teal-500')
+        name: getDiseaseName(k),
+        prob: v.final_risk,
+        level: v.level,
+        level_class: getRiskLevelClass(v.level)
     }))
     return arr.sort((a, b) => b.prob - a.prob).slice(0, 4)
 })
@@ -196,7 +193,7 @@ const attributionData = computed(() => {
         let rawBase = src.clinical || src.clinical_base || src.base_clinical || 0
         let baseVal = typeof rawBase === 'number' ? rawBase : parseFloat(String(rawBase).replace('%', ''))
         return {
-            disease: nameMap[k] || k,
+            disease: getDiseaseName(k),
             base: baseVal || 0,
             gene: formatMod(src.gene_modifier || src.gene_mod),
             life: formatMod(src.lifestyle_modifier || src.life_mod)
@@ -204,12 +201,8 @@ const attributionData = computed(() => {
     }).slice(0, 10)
 })
 
-const getModType = (valStr) => {
-    const val = parseFloat(String(valStr).replace('x', ''))
-    if (val > 1.1) return 'danger'
-    if (val < 0.9) return 'success'
-    return 'info'
-}
+// 使用从工具函数导入的 getModifierTagType
+const getModType = getModifierTagType
 
 // --- Charts ---
 let radarChart = null
