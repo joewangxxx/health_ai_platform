@@ -11,7 +11,9 @@
                         <div class="flex items-center gap-4">
                             <span>请录入最新的体检报告数据</span>
                             <GlassButton size="sm" type="danger" @click="handleClearAll">
-                                <el-icon class="mr-1"><Delete /></el-icon> 清空数据
+                                <el-icon class="mr-1">
+                                    <Delete />
+                                </el-icon> 清空数据
                             </GlassButton>
                         </div>
                         <el-upload class="upload-demo inline-block" action="#" :auto-upload="false"
@@ -26,8 +28,7 @@
                 </template>
 
                 <!-- Task 89: Anomaly Alert Summary -->
-                <div v-if="anomalySummary && anomalySummary.count > 0" 
-                    class="mb-4 p-4 rounded-xl border-2"
+                <div v-if="anomalySummary && anomalySummary.count > 0" class="mb-4 p-4 rounded-xl border-2"
                     :class="anomalySummary.status === 'alert' ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700'">
                     <div class="flex items-start gap-3">
                         <span class="text-2xl">{{ anomalySummary.status === 'alert' ? '🚨' : '⚠️' }}</span>
@@ -35,13 +36,14 @@
                             <h4 class="font-bold text-slate-800 dark:text-white">健康警报摘要</h4>
                             <p class="text-sm text-slate-600 dark:text-slate-300 mt-1">{{ anomalySummary.message }}</p>
                             <div class="flex flex-wrap gap-2 mt-2">
-                                <el-tag v-for="item in anomalySummary.items" :key="item" 
-                                    :type="getAnomalyTagType(item)" size="small" round>
+                                <el-tag v-for="item in anomalySummary.items" :key="item" :type="getAnomalyTagType(item)"
+                                    size="small" round>
                                     {{ getAnomalyLabel(item) }}
                                 </el-tag>
                             </div>
                         </div>
-                        <el-button size="small" type="primary" plain @click="runAnomalyDetection" :loading="anomalyLoading">
+                        <el-button size="small" type="primary" plain @click="runAnomalyDetection"
+                            :loading="anomalyLoading">
                             重新检测
                         </el-button>
                     </div>
@@ -90,7 +92,8 @@
                             </el-form-item>
                         </div>
                         <div class="mt-4">
-                            <el-form-item label="血压 (BP)" :class="{ 'ocr-updated': isOcrUpdated('SBP') || isOcrUpdated('DBP') }">
+                            <el-form-item label="血压 (BP)"
+                                :class="{ 'ocr-updated': isOcrUpdated('SBP') || isOcrUpdated('DBP') }">
                                 <div class="flex gap-2 w-full">
                                     <el-input-number v-model="profile.SBP" :min="50" :max="300" placeholder="收缩压"
                                         controls-position="right" class="flex-1" />
@@ -107,37 +110,49 @@
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">生化指标 (Bio-Markers)
                         </h3>
                         <div class="grid grid-cols-2 gap-6">
-                            <el-form-item label="空腹血糖" :class="{ 'ocr-updated': isOcrUpdated('Glucose_Fasting'), 'ocr-not-found': isOcrNotFound('Glucose_Fasting') }">
+                            <el-form-item label="空腹血糖"
+                                :class="{ 'ocr-updated': isOcrUpdated('Glucose_Fasting'), 'ocr-not-found': isOcrNotFound('Glucose_Fasting') }">
                                 <el-input-number v-model="profile.Glucose_Fasting" :min="1" :max="50" :precision="1"
-                                    controls-position="right" class="w-full" :placeholder="getPlaceholder('Glucose_Fasting', 'mmol/L')" />
+                                    controls-position="right" class="w-full"
+                                    :placeholder="getPlaceholder('Glucose_Fasting', 'mmol/L')" />
                             </el-form-item>
-                            <el-form-item label="糖化血红蛋白" :class="{ 'ocr-updated': isOcrUpdated('HbA1c'), 'ocr-not-found': isOcrNotFound('HbA1c') }">
+                            <el-form-item label="糖化血红蛋白"
+                                :class="{ 'ocr-updated': isOcrUpdated('HbA1c'), 'ocr-not-found': isOcrNotFound('HbA1c') }">
                                 <el-input-number v-model="profile.HbA1c" :min="4" :max="15" :precision="1" :step="0.1"
-                                    controls-position="right" class="w-full" :placeholder="getPlaceholder('HbA1c', '%')" />
+                                    controls-position="right" class="w-full"
+                                    :placeholder="getPlaceholder('HbA1c', '%')" />
                             </el-form-item>
-                            <el-form-item label="总胆固醇" :class="{ 'ocr-updated': isOcrUpdated('Cholesterol_Total'), 'ocr-not-found': isOcrNotFound('Cholesterol_Total') }">
+                            <el-form-item label="总胆固醇"
+                                :class="{ 'ocr-updated': isOcrUpdated('Cholesterol_Total'), 'ocr-not-found': isOcrNotFound('Cholesterol_Total') }">
                                 <el-input-number v-model="profile.Cholesterol_Total" :min="0" :max="20" :precision="2"
-                                    controls-position="right" class="w-full" :placeholder="getPlaceholder('Cholesterol_Total', 'mmol/L')" />
+                                    controls-position="right" class="w-full"
+                                    :placeholder="getPlaceholder('Cholesterol_Total', 'mmol/L')" />
                             </el-form-item>
-                            <el-form-item label="甘油三酯" :class="{ 'ocr-updated': isOcrUpdated('Triglycerides'), 'ocr-not-found': isOcrNotFound('Triglycerides') }">
+                            <el-form-item label="甘油三酯"
+                                :class="{ 'ocr-updated': isOcrUpdated('Triglycerides'), 'ocr-not-found': isOcrNotFound('Triglycerides') }">
                                 <el-input-number v-model="profile.Triglycerides" :min="0" :max="30" :precision="2"
-                                    controls-position="right" class="w-full" :placeholder="getPlaceholder('Triglycerides', 'mmol/L')" />
+                                    controls-position="right" class="w-full"
+                                    :placeholder="getPlaceholder('Triglycerides', 'mmol/L')" />
                             </el-form-item>
-                            <el-form-item label="高密度脂蛋白" :class="{ 'ocr-updated': isOcrUpdated('Cholesterol_HDL'), 'ocr-not-found': isOcrNotFound('Cholesterol_HDL') }">
+                            <el-form-item label="高密度脂蛋白"
+                                :class="{ 'ocr-updated': isOcrUpdated('Cholesterol_HDL'), 'ocr-not-found': isOcrNotFound('Cholesterol_HDL') }">
                                 <el-input-number v-model="profile.Cholesterol_HDL" :min="0" :max="5" :precision="2"
-                                    controls-position="right" class="w-full" :placeholder="getPlaceholder('Cholesterol_HDL', 'mmol/L')" />
+                                    controls-position="right" class="w-full"
+                                    :placeholder="getPlaceholder('Cholesterol_HDL', 'mmol/L')" />
                             </el-form-item>
                             <el-form-item label="睡眠时长(h)">
                                 <el-input-number v-model="profile.Sleep_Hours" :min="0" :max="24" :step="0.5"
                                     controls-position="right" class="w-full" />
                             </el-form-item>
-                            <el-form-item label="eGFR (肾)" :class="{ 'ocr-updated': isOcrUpdated('eGFR'), 'ocr-not-found': isOcrNotFound('eGFR') }">
+                            <el-form-item label="eGFR (肾)"
+                                :class="{ 'ocr-updated': isOcrUpdated('eGFR'), 'ocr-not-found': isOcrNotFound('eGFR') }">
                                 <el-input-number v-model="profile.eGFR" :min="0" controls-position="right"
                                     class="w-full" :placeholder="getPlaceholder('eGFR', 'mL/min')" />
                             </el-form-item>
-                            <el-form-item label="ALT (肝)" :class="{ 'ocr-updated': isOcrUpdated('ALT'), 'ocr-not-found': isOcrNotFound('ALT') }">
-                                <el-input-number v-model="profile.ALT" :min="0" controls-position="right"
-                                    class="w-full" :placeholder="getPlaceholder('ALT', 'U/L')" />
+                            <el-form-item label="ALT (肝)"
+                                :class="{ 'ocr-updated': isOcrUpdated('ALT'), 'ocr-not-found': isOcrNotFound('ALT') }">
+                                <el-input-number v-model="profile.ALT" :min="0" controls-position="right" class="w-full"
+                                    :placeholder="getPlaceholder('ALT', 'U/L')" />
                             </el-form-item>
                         </div>
 
@@ -155,42 +170,50 @@
                                 <el-input-number v-model="profile.GGT" :min="0" controls-position="right" class="w-full"
                                     placeholder="U/L" />
                             </el-form-item>
-                            <el-form-item label="ALP (肝/骨)" :class="{ 'ocr-updated': isOcrUpdated('ALP'), 'ocr-not-found': isOcrNotFound('ALP') }">
+                            <el-form-item label="ALP (肝/骨)"
+                                :class="{ 'ocr-updated': isOcrUpdated('ALP'), 'ocr-not-found': isOcrNotFound('ALP') }">
                                 <el-input-number v-model="profile.ALP" :min="0" controls-position="right" class="w-full"
                                     :placeholder="getPlaceholder('ALP', 'U/L')" />
                             </el-form-item>
-                            <!-- Task 128: 肜酯输入 (用于 eGFR 自动计算) -->
-                            <el-form-item label="肜酯 (Cr)" :class="{ 'ocr-updated': isOcrUpdated('Creatinine'), 'ocr-not-found': isOcrNotFound('Creatinine') }">
-                                <el-input-number v-model="profile.Creatinine" :min="0" :max="2000" controls-position="right" class="w-full"
+                            <!-- Task 128: 肌酐输入 (用于 eGFR 自动计算) -->
+                            <el-form-item label="肌酐 (Cr)"
+                                :class="{ 'ocr-updated': isOcrUpdated('Creatinine'), 'ocr-not-found': isOcrNotFound('Creatinine') }">
+                                <el-input-number v-model="profile.Creatinine" :min="0" :max="2000"
+                                    controls-position="right" class="w-full"
                                     :placeholder="getPlaceholder('Creatinine', 'umol/L')" />
                             </el-form-item>
                         </div>
                     </div>
 
                     <!-- Task 74: Extra Data (Unstructured) -->
-                    <el-collapse v-if="profile.extra_data" class="rounded-xl border border-gray-100 dark:border-white/5 overflow-hidden">
+                    <el-collapse v-if="profile.extra_data"
+                        class="rounded-xl border border-gray-100 dark:border-white/5 overflow-hidden">
                         <el-collapse-item name="1">
                             <template #title>
                                 <div class="px-4 font-bold text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                                    📋 其他检测项 (Extra Findings) 
-                                    <el-tag v-if="Object.keys(profile.extra_data).length" size="small" type="info" round>
+                                    📋 其他检测项 (Extra Findings)
+                                    <el-tag v-if="Object.keys(profile.extra_data).length" size="small" type="info"
+                                        round>
                                         {{ Object.keys(profile.extra_data).length }}
                                     </el-tag>
                                 </div>
                             </template>
                             <div class="p-4 bg-white/30 dark:bg-black/20">
-                                <div v-if="!Object.keys(profile.extra_data).length" class="text-sm text-center text-slate-400 py-4">
+                                <div v-if="!Object.keys(profile.extra_data).length"
+                                    class="text-sm text-center text-slate-400 py-4">
                                     暂无额外检测数据
                                 </div>
                                 <div v-else class="grid grid-cols-2 gap-4">
-                                    <div v-for="(val, key) in profile.extra_data" :key="key" 
+                                    <div v-for="(val, key) in profile.extra_data" :key="key"
                                         class="flex items-center justify-between p-2 bg-white/50 dark:bg-black/30 rounded border border-slate-100 dark:border-white/5">
                                         <div class="text-sm">
                                             <div class="text-slate-500 dark:text-slate-400 text-xs">{{ key }}</div>
                                             <div class="font-medium text-slate-700 dark:text-white">{{ val }}</div>
                                         </div>
                                         <el-button link type="danger" size="small" @click="removeExtraItem(key)">
-                                            <el-icon><Delete /></el-icon>
+                                            <el-icon>
+                                                <Delete />
+                                            </el-icon>
                                         </el-button>
                                     </div>
                                 </div>
@@ -277,7 +300,7 @@ const isOcrNotFound = (fieldName) => {
 
 /**
  * CKD-EPI 2021 公式计算 eGFR (无种族校正版)
- * @param {number} creatinine - 血清肜酯 (umol/L)
+ * @param {number} creatinine - 血清肌酐 (umol/L)
  * @param {number} age - 年龄 (岁)
  * @param {number} gender - 性别 (1=男, 2=女)
  * @returns {number|null} eGFR (mL/min/1.73m²) 或 null 若输入无效
@@ -286,28 +309,28 @@ const calculateCKDEPI2021 = (creatinine, age, gender) => {
     // 参数验证
     if (!creatinine || !age || !gender) return null
     if (creatinine <= 0 || age <= 0) return null
-    
+
     // 将 umol/L 转换为 mg/dL (公式要求)
     const Scr = creatinine / 88.4
-    
+
     // 性别参数
     const isFemale = gender === 2
     const kappa = isFemale ? 0.7 : 0.9
     const alpha = isFemale ? -0.241 : -0.302
     const sexMultiplier = isFemale ? 1.012 : 1.0
-    
+
     // CKD-EPI 2021 公式
     const ratio = Scr / kappa
     const minRatio = Math.min(ratio, 1)
     const maxRatio = Math.max(ratio, 1)
-    
+
     const eGFR = 142 * Math.pow(minRatio, alpha) * Math.pow(maxRatio, -1.200) * Math.pow(0.9938, age) * sexMultiplier
-    
+
     return parseFloat(eGFR.toFixed(1))
 }
 
 /**
- * Task 128: 智能计算 eGFR - 仅当 eGFR 为空且有肜酯时自动计算
+ * Task 128: 智能计算 eGFR - 仅当 eGFR 为空且有肌酐时自动计算
  * OCR 优先: 如果 OCR 已填入 eGFR，不覆盖
  */
 const tryAutoCalculateEGFR = () => {
@@ -317,16 +340,16 @@ const tryAutoCalculateEGFR = () => {
         console.log('⏭️ eGFR 已有值，跳过自动计算')
         return
     }
-    
+
     // 检查必要参数
     const age = profile.value.Age
     const gender = profile.value.Gender
     const creatinine = profile.value.Creatinine
-    
+
     if (!age || !gender || !creatinine) {
         return // 参数不全，无法计算
     }
-    
+
     // 执行计算
     const calculatedEGFR = calculateCKDEPI2021(creatinine, age, gender)
     if (calculatedEGFR !== null) {
@@ -335,7 +358,7 @@ const tryAutoCalculateEGFR = () => {
     }
 }
 
-// Task 128: 监听年龄、性别、肜酯变化，自动触发 eGFR 计算
+// Task 128: 监听年龄、性别、肌酐变化，自动触发 eGFR 计算
 watch(
     [() => profile.value.Age, () => profile.value.Gender, () => profile.value.Creatinine],
     () => {
@@ -385,12 +408,12 @@ const runAnomalyDetection = async () => {
         if (response.data.status === 'success') {
             anomalies.value = response.data.anomalies || []
             anomalySummary.value = response.data.summary
-            
+
             // Build lookup map
             const map = {}
             anomalies.value.forEach(a => { map[a.item] = a })
             anomalyMap.value = map
-            
+
             if (anomalySummary.value?.count > 0) {
                 ElNotification.warning({
                     title: '健康检测完成',
@@ -461,7 +484,7 @@ const applyOcrDataToProfile = (data) => {
         'GGT': 'GGT',
         'ALP': 'ALP',
         'eGFR': 'eGFR',
-        'Creatinine': 'Creatinine',  // Task 128: 肜酯映射
+        'Creatinine': 'Creatinine',  // Task 128: 肌酐映射
         'Cr': 'Creatinine',           // 常见缩写
         'CREA': 'Creatinine',         // 体检单缩写
         // Blood
@@ -486,18 +509,18 @@ const applyOcrDataToProfile = (data) => {
 
     let filledCount = 0
     let skippedCount = 0
-    
+
     for (const [key, val] of Object.entries(data)) {
         // Task 125: Smart Merge - 如果 OCR 没读到这个数据，直接跳过，保留表单里原本可能存在的手填数据
         if (!isValidValue(val)) {
             skippedCount++
             continue
         }
-        
+
         const profileKey = mapping[key] || (profile.value.hasOwnProperty(key) ? key : null)
         if (profileKey && profile.value.hasOwnProperty(profileKey)) {
             console.log(`✅ Updating ${profileKey}: ${profile.value[profileKey]} -> ${val}`)
-            
+
             // Handle Gender specially (might come as string "男"/"女" or int 1/2)
             if (profileKey === 'Gender') {
                 if (val === '男' || val === 'Male' || val === 1) {
@@ -513,16 +536,16 @@ const applyOcrDataToProfile = (data) => {
                 }
             }
             filledCount++
-            
+
             // Task 126: Track this field for highlight animation
             ocrUpdatedFields.value.add(profileKey)
         }
     }
-    
+
     if (skippedCount > 0) {
         console.log(`⏭️ Smart Merge: Skipped ${skippedCount} empty/null fields (preserved existing data)`)
     }
-    
+
     // Task 126: Clear highlights after animation duration (2.5s)
     if (ocrUpdatedFields.value.size > 0) {
         console.log(`✨ Highlighting ${ocrUpdatedFields.value.size} OCR-updated fields`)
@@ -530,7 +553,7 @@ const applyOcrDataToProfile = (data) => {
             ocrUpdatedFields.value.clear()
         }, 2500)
     }
-    
+
     return filledCount
 }
 
@@ -543,17 +566,17 @@ const handleUndoOcr = async () => {
         showToast('没有可撤销的操作', 'warning')
         return
     }
-    
+
     try {
         // 恢复快照数据到当前 profile
         Object.keys(lastProfileSnapshot.value).forEach(key => {
             profile.value[key] = lastProfileSnapshot.value[key]
         })
-        
+
         // 更新 store 并保存到云端
         store.updateProfile(profile.value)
         const saveSuccess = await store.saveProfileToCloud()
-        
+
         if (saveSuccess) {
             ElNotification({
                 title: '↩️ 已撤销 OCR 更改',
@@ -564,14 +587,14 @@ const handleUndoOcr = async () => {
         } else {
             showToast('撤销成功但同步失败，请手动保存', 'warning')
         }
-        
+
         // 清空快照
         lastProfileSnapshot.value = null
-        
+
         // 清除 OCR 相关状态
         ocrCompleted.value = false
         ocrUpdatedFields.value.clear()
-        
+
     } catch (e) {
         console.error('Undo failed:', e)
         showToast('撤销失败: ' + e.message, 'error')
@@ -595,16 +618,16 @@ const handleOcrUpload = async (uploadFile) => {
         const res = response.data
         if (res.status === 'success' && res.data) {
             const data = res.data
-            
+
             // Task 131: 在修改前保存快照 (用于撤销)
             lastProfileSnapshot.value = JSON.parse(JSON.stringify(profile.value))
-            
+
             // 🔥 Refactored to use shared function (Task 68/71)
             const filledCount = applyOcrDataToProfile(res.data)
-            
+
             // Task 127: 标记 OCR 已完成
             ocrCompleted.value = true
-            
+
             // Task 130: 等待 Vue 响应式更新 (让 eGFR watcher 生效)
             await nextTick()
 
@@ -613,7 +636,7 @@ const handleOcrUpload = async (uploadFile) => {
                 try {
                     store.updateProfile(profile.value)
                     const saveSuccess = await store.saveProfileToCloud()
-                    
+
                     if (saveSuccess) {
                         // Task 131: 自动保存成功 - 显示带撤销按钮的通知
                         ElNotification({
@@ -668,12 +691,12 @@ const handleClearAll = async () => {
             '清空确认',
             { confirmButtonText: '清空', cancelButtonText: '取消', type: 'warning' }
         )
-        
+
         // Reset all fields to null
         Object.keys(profile.value).forEach(key => {
             profile.value[key] = null
         })
-        
+
         showToast('表单已清空', 'success')
     } catch (e) {
         // Cancelled
@@ -741,14 +764,17 @@ const saveToCloud = async () => {
 /* Task 126: OCR 数据填入时的"高亮呼吸"特效 */
 @keyframes flash-green {
     0% {
-        background-color: rgba(16, 185, 129, 0.25); /* Emerald-500 with opacity */
+        background-color: rgba(16, 185, 129, 0.25);
+        /* Emerald-500 with opacity */
         box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
         border-color: rgba(16, 185, 129, 0.6);
     }
+
     50% {
         background-color: rgba(16, 185, 129, 0.15);
         box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
     }
+
     100% {
         background-color: transparent;
         box-shadow: none;
@@ -770,7 +796,8 @@ const saveToCloud = async () => {
 .ocr-not-found :deep(.el-input-number__decrease),
 .ocr-not-found :deep(.el-input-number__increase),
 .ocr-not-found :deep(.el-select__wrapper) {
-    background-color: rgba(148, 163, 184, 0.08); /* Slate-400 with low opacity */
+    background-color: rgba(148, 163, 184, 0.08);
+    /* Slate-400 with low opacity */
     border: 1.5px dashed rgba(148, 163, 184, 0.4);
     transition: all 0.3s ease;
 }
@@ -787,7 +814,8 @@ const saveToCloud = async () => {
 .ocr-not-found:hover :deep(.el-input-number__increase) {
     background-color: rgba(255, 255, 255, 0.5);
     border-style: solid;
-    border-color: rgba(59, 130, 246, 0.5); /* Blue hint */
+    border-color: rgba(59, 130, 246, 0.5);
+    /* Blue hint */
 }
 
 .dark .ocr-not-found :deep(.el-input__wrapper),

@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from typing import Optional
+import json
 import uvicorn
 import uuid
 import sys
@@ -369,15 +370,26 @@ async def get_history_list(
     statement = select(HealthRecord).where(HealthRecord.user_id == current_user.id).order_by(col(HealthRecord.record_date).desc())
     records = session.exec(statement).all()
     
-    return [
-        {
+    # 构建返回结果，安全处理 metrics 字段
+    result = []
+    for r in records:
+        # 计算指标摘要
+        summary = "无数据"
+        if r.metrics:
+            try:
+                metrics_dict = json.loads(r.metrics)
+                summary = f"包含 {len(metrics_dict)} 项指标"
+            except (json.JSONDecodeError, TypeError):
+                summary = "数据解析错误"
+        
+        result.append({
             "id": r.id,
             "date": r.record_date.strftime("%Y-%m-%d %H:%M"),
             "source": r.source,
-            "summary": f"包含 {len(json.loads(r.metrics))} 项指标"
-        } 
-        for r in records
-    ]
+            "summary": summary
+        })
+    
+    return result
 
 @app.get("/history/trends")
 async def get_history_trends(

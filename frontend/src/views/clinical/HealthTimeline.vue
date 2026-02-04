@@ -17,7 +17,7 @@
             <GlassCard class="h-[400px] flex flex-col" :glow="true">
                 <template #header>
                     <div class="flex justify-between items-center">
-                        <span class="font-bold text-gray-700 dark:text-gray-200">📊 核心指标趋势 (Trends)</span>
+                        <span class="font-bold text-gray-700 dark:text-gray-200">📊 历史健康轨迹 (Historical Trends)</span>
                         <div class="flex gap-2">
                             <el-radio-group v-model="selectedMetric" size="small">
                                 <el-radio-button label="BMI">BMI</el-radio-button>
@@ -273,6 +273,7 @@ const fetchHistory = async () => {
     }
 }
 
+
 // 2. Render Chart
 const renderChart = () => {
     if (!chartRef.value) return
@@ -285,13 +286,46 @@ const renderChart = () => {
 
     const dates = trendData.value.dates
     const data = trendData.value.metrics[selectedMetric.value] || []
+    
+    // 判断数据是否充足 (少于2条时调整显示策略)
+    const hasEnoughData = dates.length >= 2
 
     const option = {
         tooltip: { 
             trigger: 'axis',
-            backgroundColor: 'rgba(255, 255, 255, 0.9)',
+            backgroundColor: 'rgba(255, 255, 255, 0.95)',
             borderColor: '#e2e8f0',
-            textStyle: { color: '#1e293b' }
+            textStyle: { color: '#1e293b' },
+            // 优化 Tooltip：显示完整时间戳 YYYY-MM-DD HH:mm:ss
+            formatter: (params) => {
+                if (!params || params.length === 0) return ''
+                const item = params[0]
+                // 尝试解析完整时间
+                const dateStr = item.axisValue || ''
+                let displayTime = dateStr
+                try {
+                    const d = new Date(dateStr)
+                    if (!isNaN(d.getTime())) {
+                        displayTime = d.toLocaleString('zh-CN', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            second: '2-digit'
+                        })
+                    }
+                } catch (e) {
+                    // 使用原始值
+                }
+                return `<div style="padding: 8px;">
+                    <div style="font-weight: bold; margin-bottom: 6px; color: #64748b;">📅 ${displayTime}</div>
+                    <div style="display: flex; justify-content: space-between; gap: 20px;">
+                        <span>${item.seriesName}</span>
+                        <span style="font-weight: bold; color: #3b82f6;">${item.value ?? 'N/A'}</span>
+                    </div>
+                </div>`
+            }
         },
         grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
         xAxis: { 
@@ -299,7 +333,28 @@ const renderChart = () => {
             boundaryGap: false, 
             data: dates,
             axisLine: { lineStyle: { color: '#94a3b8' } },
-            axisLabel: { color: '#64748b' }
+            axisLabel: { 
+                color: '#64748b',
+                // 优化 X 轴：Smart Formatter，显示 MM-DD HH:mm 格式
+                formatter: (value) => {
+                    try {
+                        const d = new Date(value)
+                        if (!isNaN(d.getTime())) {
+                            const month = String(d.getMonth() + 1).padStart(2, '0')
+                            const day = String(d.getDate()).padStart(2, '0')
+                            const hour = String(d.getHours()).padStart(2, '0')
+                            const min = String(d.getMinutes()).padStart(2, '0')
+                            return `${month}-${day} ${hour}:${min}`
+                        }
+                    } catch (e) {
+                        // fallback
+                    }
+                    return value
+                },
+                // 防止标签重叠
+                rotate: dates.length > 5 ? 30 : 0,
+                interval: 0
+            }
         },
         yAxis: { 
             type: 'value', 
@@ -310,18 +365,27 @@ const renderChart = () => {
             {
                 name: selectedMetric.value,
                 type: 'line',
-                smooth: true, // Curve
+                smooth: hasEnoughData, // 数据少时不平滑
                 symbol: 'circle',
-                symbolSize: 8,
+                symbolSize: hasEnoughData ? 8 : 12, // 数据少时放大数据点
+                showSymbol: true, // 始终显示数据点
                 data: data,
                 lineStyle: { width: 3, color: '#3b82f6' },
-                areaStyle: {
+                areaStyle: hasEnoughData ? {
                     color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
                         { offset: 0, color: 'rgba(59, 130, 246, 0.4)' },
                         { offset: 1, color: 'rgba(59, 130, 246, 0.0)' }
                     ])
-                },
-                itemStyle: { color: '#3b82f6', borderColor: '#fff', borderWidth: 2 }
+                } : null, // 数据少时不显示面积
+                itemStyle: { color: '#3b82f6', borderColor: '#fff', borderWidth: 2 },
+                // 数据点标签 (数据少时显示)
+                label: {
+                    show: !hasEnoughData,
+                    position: 'top',
+                    formatter: '{c}',
+                    color: '#3b82f6',
+                    fontWeight: 'bold'
+                }
             }
         ]
     }
