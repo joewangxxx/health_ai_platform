@@ -58,7 +58,9 @@ class UserProfile(SQLModel, table=True):
     Sleep_Hours: Optional[float] = None
     
     # ================= 基因组 & 历史数据 (JSON) =================
-    genomic_data: Optional[str] = None   # JSON: {rsid: genotype, ...}
+    # Task 134: 敏感数据加密存储
+    # genomic_data 使用加密存储，通过 property 透明处理
+    _encrypted_genomic_data: Optional[str] = Field(default=None, alias="genomic_data")
     risk_history: Optional[str] = None   # JSON: 上次计算的风险报告
     
     # Task 73: Store non-structured extra findings
@@ -69,6 +71,30 @@ class UserProfile(SQLModel, table=True):
 
     # Relationship
     user: Optional[User] = Relationship(back_populates="profile")
+    
+    # ============================================
+    # Task 134: 加密字段属性 (Property Decorators)
+    # ============================================
+    @property
+    def genomic_data(self) -> Optional[str]:
+        """解密读取基因组数据"""
+        if not self._encrypted_genomic_data:
+            return None
+        try:
+            from backend.core.security import decrypt_value
+            return decrypt_value(self._encrypted_genomic_data)
+        except Exception:
+            # 兼容旧数据 (未加密的)
+            return self._encrypted_genomic_data
+    
+    @genomic_data.setter
+    def genomic_data(self, value: Optional[str]):
+        """加密存储基因组数据"""
+        if value is None:
+            self._encrypted_genomic_data = None
+        else:
+            from backend.core.security import encrypt_value
+            self._encrypted_genomic_data = encrypt_value(value)
 
 class HealthRecord(SQLModel, table=True):
     """
@@ -117,4 +143,37 @@ class MedicalDocument(SQLModel, table=True):
     file_url: str               # 前端访问 URL
     upload_date: datetime = Field(default_factory=datetime.utcnow)
     ocr_summary: Optional[str] = None  # JSON: 关键提取摘要
+
+
+# ============================================
+# Task 132: 亲情账户关联体系 (Family Account Linking)
+# ============================================
+class FamilyLink(SQLModel, table=True):
+    """
+    亲情账户关联表
+    - manager: 主账户 (子女/管理者)
+    - member: 被管理账户 (父母/家人)
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    manager_id: int = Field(foreign_key="user.id", index=True)  # 管理者账户ID
+    member_id: int = Field(foreign_key="user.id", index=True)   # 被管理账户ID
+    relation_name: str = Field(default="家人")  # 关系名称: 父亲/母亲/爷爷等
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    is_active: bool = Field(default=True)  # 是否有效
+
+    class Config:
+        # 确保唯一性: 一个管理者不能重复关联同一个家人
+        # 通过业务逻辑校验，而非数据库约束
+
+
+class FamilyInvite(SQLModel, table=True):
+    """
+    亲情账户邀请码表
+    """
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", unique=True)  # 生成邀请码的用户
+    invite_code: str = Field(unique=True, index=True)  # 6位邀请码
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    expires_at: Optional[datetime] = None  # 过期时间 (可选)
+
 

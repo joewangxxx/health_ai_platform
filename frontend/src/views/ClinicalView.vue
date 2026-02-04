@@ -53,11 +53,11 @@
                     <div class="p-4 rounded-xl bg-white/30 dark:bg-black/20 border border-gray-100 dark:border-white/5">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">基本信息 (Basic)</h3>
                         <div class="grid grid-cols-2 gap-6">
-                            <el-form-item label="年龄 (Age)">
+                            <el-form-item label="年龄 (Age)" :class="{ 'ocr-updated': isOcrUpdated('Age') }">
                                 <el-input-number v-model="profile.Age" :min="0" :max="120" controls-position="right"
                                     class="w-full" placeholder="岁" />
                             </el-form-item>
-                            <el-form-item label="性别 (Gender)">
+                            <el-form-item label="性别 (Gender)" :class="{ 'ocr-updated': isOcrUpdated('Gender') }">
                                 <el-select v-model="profile.Gender" class="w-full">
                                     <el-option label="男 (Male)" :value="1" />
                                     <el-option label="女 (Female)" :value="2" />
@@ -70,17 +70,17 @@
                     <div class="p-4 rounded-xl bg-white/30 dark:bg-black/20 border border-gray-100 dark:border-white/5">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">身体指标 (Metrics)</h3>
                         <div class="grid grid-cols-2 gap-6">
-                            <el-form-item label="身高 (cm)">
+                            <el-form-item label="身高 (cm)" :class="{ 'ocr-updated': isOcrUpdated('Height') }">
                                 <el-input-number v-model="profile.Height" :min="30" :max="250" controls-position="right"
                                     class="w-full" placeholder="cm" />
                             </el-form-item>
-                            <el-form-item label="体重 (kg)">
+                            <el-form-item label="体重 (kg)" :class="{ 'ocr-updated': isOcrUpdated('Weight') }">
                                 <el-input-number v-model="profile.Weight" :min="1" :max="300" :precision="1"
                                     controls-position="right" class="w-full" placeholder="kg" />
                             </el-form-item>
                         </div>
                         <div class="grid grid-cols-2 gap-6 mt-2">
-                            <el-form-item label="BMI">
+                            <el-form-item label="BMI" :class="{ 'ocr-updated': isOcrUpdated('BMI') }">
                                 <el-input-number v-model="profile.BMI" :precision="1" disabled controls-position="right"
                                     class="w-full" />
                             </el-form-item>
@@ -90,7 +90,7 @@
                             </el-form-item>
                         </div>
                         <div class="mt-4">
-                            <el-form-item label="血压 (BP)">
+                            <el-form-item label="血压 (BP)" :class="{ 'ocr-updated': isOcrUpdated('SBP') || isOcrUpdated('DBP') }">
                                 <div class="flex gap-2 w-full">
                                     <el-input-number v-model="profile.SBP" :min="50" :max="300" placeholder="收缩压"
                                         controls-position="right" class="flex-1" />
@@ -107,57 +107,62 @@
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">生化指标 (Bio-Markers)
                         </h3>
                         <div class="grid grid-cols-2 gap-6">
-                            <el-form-item label="空腹血糖">
+                            <el-form-item label="空腹血糖" :class="{ 'ocr-updated': isOcrUpdated('Glucose_Fasting'), 'ocr-not-found': isOcrNotFound('Glucose_Fasting') }">
                                 <el-input-number v-model="profile.Glucose_Fasting" :min="1" :max="50" :precision="1"
-                                    controls-position="right" class="w-full" placeholder="mmol/L" />
+                                    controls-position="right" class="w-full" :placeholder="getPlaceholder('Glucose_Fasting', 'mmol/L')" />
                             </el-form-item>
-                            <el-form-item label="糖化血红蛋白">
+                            <el-form-item label="糖化血红蛋白" :class="{ 'ocr-updated': isOcrUpdated('HbA1c'), 'ocr-not-found': isOcrNotFound('HbA1c') }">
                                 <el-input-number v-model="profile.HbA1c" :min="4" :max="15" :precision="1" :step="0.1"
-                                    controls-position="right" class="w-full" />
+                                    controls-position="right" class="w-full" :placeholder="getPlaceholder('HbA1c', '%')" />
                             </el-form-item>
-                            <el-form-item label="总胆固醇">
+                            <el-form-item label="总胆固醇" :class="{ 'ocr-updated': isOcrUpdated('Cholesterol_Total'), 'ocr-not-found': isOcrNotFound('Cholesterol_Total') }">
                                 <el-input-number v-model="profile.Cholesterol_Total" :min="0" :max="20" :precision="2"
-                                    controls-position="right" class="w-full" placeholder="mmol/L" />
+                                    controls-position="right" class="w-full" :placeholder="getPlaceholder('Cholesterol_Total', 'mmol/L')" />
                             </el-form-item>
-                            <el-form-item label="甘油三酯">
+                            <el-form-item label="甘油三酯" :class="{ 'ocr-updated': isOcrUpdated('Triglycerides'), 'ocr-not-found': isOcrNotFound('Triglycerides') }">
                                 <el-input-number v-model="profile.Triglycerides" :min="0" :max="30" :precision="2"
-                                    controls-position="right" class="w-full" placeholder="mmol/L" />
+                                    controls-position="right" class="w-full" :placeholder="getPlaceholder('Triglycerides', 'mmol/L')" />
                             </el-form-item>
-                            <el-form-item label="高密度脂蛋白">
+                            <el-form-item label="高密度脂蛋白" :class="{ 'ocr-updated': isOcrUpdated('Cholesterol_HDL'), 'ocr-not-found': isOcrNotFound('Cholesterol_HDL') }">
                                 <el-input-number v-model="profile.Cholesterol_HDL" :min="0" :max="5" :precision="2"
-                                    controls-position="right" class="w-full" placeholder="mmol/L" />
+                                    controls-position="right" class="w-full" :placeholder="getPlaceholder('Cholesterol_HDL', 'mmol/L')" />
                             </el-form-item>
                             <el-form-item label="睡眠时长(h)">
                                 <el-input-number v-model="profile.Sleep_Hours" :min="0" :max="24" :step="0.5"
                                     controls-position="right" class="w-full" />
                             </el-form-item>
-                            <el-form-item label="eGFR (肾)">
+                            <el-form-item label="eGFR (肾)" :class="{ 'ocr-updated': isOcrUpdated('eGFR'), 'ocr-not-found': isOcrNotFound('eGFR') }">
                                 <el-input-number v-model="profile.eGFR" :min="0" controls-position="right"
-                                    class="w-full" />
+                                    class="w-full" :placeholder="getPlaceholder('eGFR', 'mL/min')" />
                             </el-form-item>
-                            <el-form-item label="ALT (肝)">
+                            <el-form-item label="ALT (肝)" :class="{ 'ocr-updated': isOcrUpdated('ALT'), 'ocr-not-found': isOcrNotFound('ALT') }">
                                 <el-input-number v-model="profile.ALT" :min="0" controls-position="right"
-                                    class="w-full" />
+                                    class="w-full" :placeholder="getPlaceholder('ALT', 'U/L')" />
                             </el-form-item>
                         </div>
 
                         <!-- New V10 Indicators -->
                         <div class="grid grid-cols-2 gap-6 mt-6 border-t border-gray-100 dark:border-white/5 pt-6">
-                            <el-form-item label="白细胞 (WBC)">
+                            <el-form-item label="白细胞 (WBC)" :class="{ 'ocr-updated': isOcrUpdated('WBC') }">
                                 <el-input-number v-model="profile.WBC" :min="0" :precision="1" :step="0.1"
                                     controls-position="right" class="w-full" placeholder="10^9/L" />
                             </el-form-item>
-                            <el-form-item label="血小板 (PLT)">
+                            <el-form-item label="血小板 (PLT)" :class="{ 'ocr-updated': isOcrUpdated('Platelet') }">
                                 <el-input-number v-model="profile.Platelet" :min="0" controls-position="right"
                                     class="w-full" placeholder="10^9/L" />
                             </el-form-item>
-                            <el-form-item label="GGT (肝)">
+                            <el-form-item label="GGT (肝)" :class="{ 'ocr-updated': isOcrUpdated('GGT') }">
                                 <el-input-number v-model="profile.GGT" :min="0" controls-position="right" class="w-full"
                                     placeholder="U/L" />
                             </el-form-item>
-                            <el-form-item label="ALP (肝/骨)">
+                            <el-form-item label="ALP (肝/骨)" :class="{ 'ocr-updated': isOcrUpdated('ALP'), 'ocr-not-found': isOcrNotFound('ALP') }">
                                 <el-input-number v-model="profile.ALP" :min="0" controls-position="right" class="w-full"
-                                    placeholder="未检测(U/L)" />
+                                    :placeholder="getPlaceholder('ALP', 'U/L')" />
+                            </el-form-item>
+                            <!-- Task 128: 肜酯输入 (用于 eGFR 自动计算) -->
+                            <el-form-item label="肜酯 (Cr)" :class="{ 'ocr-updated': isOcrUpdated('Creatinine'), 'ocr-not-found': isOcrNotFound('Creatinine') }">
+                                <el-input-number v-model="profile.Creatinine" :min="0" :max="2000" controls-position="right" class="w-full"
+                                    :placeholder="getPlaceholder('Creatinine', 'umol/L')" />
                             </el-form-item>
                         </div>
                     </div>
@@ -217,7 +222,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch, onMounted, nextTick, h } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useHealthStore } from '../stores/healthStore'
 import GlassCard from '../components/ui/GlassCard.vue'
@@ -232,6 +237,112 @@ const { userProfile: profile, importData } = storeToRefs(store)
 const saving = ref(false)
 const ocrLoading = ref(false)
 const { showToast } = useToast()
+
+// Task 126: OCR Updated Fields Highlight
+const ocrUpdatedFields = ref(new Set())
+
+// Task 131: OCR 撤销快照 - 保存 OCR 前的表单状态
+const lastProfileSnapshot = ref(null)
+
+// Task 127: Smart Placeholder - 记录 OCR 是否已完成
+const ocrCompleted = ref(false)
+
+// Helper to check if a field was just updated by OCR
+const isOcrUpdated = (fieldName) => ocrUpdatedFields.value.has(fieldName)
+
+// Task 127: 动态 Placeholder - 根据 OCR 状态显示不同提示
+const getPlaceholder = (fieldName, defaultText = '请输入数值') => {
+    // 如果 OCR 已完成且该字段不在更新列表中（即未识别到）
+    if (ocrCompleted.value && !ocrUpdatedFields.value.has(fieldName)) {
+        // 检查当前值是否为空
+        const currentVal = profile.value[fieldName]
+        if (currentVal === null || currentVal === undefined || currentVal === '') {
+            return '报告中未找到此项'
+        }
+    }
+    return defaultText
+}
+
+// Task 127: 检查字段是否为 OCR 未识别状态
+const isOcrNotFound = (fieldName) => {
+    if (!ocrCompleted.value) return false
+    const currentVal = profile.value[fieldName]
+    const isEmpty = currentVal === null || currentVal === undefined || currentVal === ''
+    return isEmpty && !ocrUpdatedFields.value.has(fieldName)
+}
+
+// ============================================
+// Task 128: eGFR 智能填充策略 (CKD-EPI 2021)
+// ============================================
+
+/**
+ * CKD-EPI 2021 公式计算 eGFR (无种族校正版)
+ * @param {number} creatinine - 血清肜酯 (umol/L)
+ * @param {number} age - 年龄 (岁)
+ * @param {number} gender - 性别 (1=男, 2=女)
+ * @returns {number|null} eGFR (mL/min/1.73m²) 或 null 若输入无效
+ */
+const calculateCKDEPI2021 = (creatinine, age, gender) => {
+    // 参数验证
+    if (!creatinine || !age || !gender) return null
+    if (creatinine <= 0 || age <= 0) return null
+    
+    // 将 umol/L 转换为 mg/dL (公式要求)
+    const Scr = creatinine / 88.4
+    
+    // 性别参数
+    const isFemale = gender === 2
+    const kappa = isFemale ? 0.7 : 0.9
+    const alpha = isFemale ? -0.241 : -0.302
+    const sexMultiplier = isFemale ? 1.012 : 1.0
+    
+    // CKD-EPI 2021 公式
+    const ratio = Scr / kappa
+    const minRatio = Math.min(ratio, 1)
+    const maxRatio = Math.max(ratio, 1)
+    
+    const eGFR = 142 * Math.pow(minRatio, alpha) * Math.pow(maxRatio, -1.200) * Math.pow(0.9938, age) * sexMultiplier
+    
+    return parseFloat(eGFR.toFixed(1))
+}
+
+/**
+ * Task 128: 智能计算 eGFR - 仅当 eGFR 为空且有肜酯时自动计算
+ * OCR 优先: 如果 OCR 已填入 eGFR，不覆盖
+ */
+const tryAutoCalculateEGFR = () => {
+    // 检查当前 eGFR 是否为空 - 不覆盖已有值
+    const currentEGFR = profile.value.eGFR
+    if (currentEGFR !== null && currentEGFR !== undefined && currentEGFR !== '') {
+        console.log('⏭️ eGFR 已有值，跳过自动计算')
+        return
+    }
+    
+    // 检查必要参数
+    const age = profile.value.Age
+    const gender = profile.value.Gender
+    const creatinine = profile.value.Creatinine
+    
+    if (!age || !gender || !creatinine) {
+        return // 参数不全，无法计算
+    }
+    
+    // 执行计算
+    const calculatedEGFR = calculateCKDEPI2021(creatinine, age, gender)
+    if (calculatedEGFR !== null) {
+        profile.value.eGFR = calculatedEGFR
+        console.log(`🧮 eGFR 自动计算: Cr=${creatinine} → eGFR=${calculatedEGFR}`)
+    }
+}
+
+// Task 128: 监听年龄、性别、肜酯变化，自动触发 eGFR 计算
+watch(
+    [() => profile.value.Age, () => profile.value.Gender, () => profile.value.Creatinine],
+    () => {
+        tryAutoCalculateEGFR()
+    },
+    { immediate: false }
+)
 
 // Task 89: Anomaly Detection State
 const anomalyLoading = ref(false)
@@ -317,6 +428,15 @@ onMounted(() => {
 
 // Shared function to apply OCR/imported data to profile
 const applyOcrDataToProfile = (data) => {
+    // Task 125: Smart Merge - 只有当 OCR 数据有效时才覆盖，保留用户手填数据
+    const isValidValue = (val) => {
+        if (val === null || val === undefined) return false
+        if (val === 'null' || val === 'undefined') return false
+        if (typeof val === 'string' && val.trim() === '') return false
+        if (typeof val === 'number' && isNaN(val)) return false
+        return true
+    }
+
     // Task 67/68: Enhanced mapping with Age, Gender, Height, Weight
     const mapping = {
         // Basic Info
@@ -341,6 +461,9 @@ const applyOcrDataToProfile = (data) => {
         'GGT': 'GGT',
         'ALP': 'ALP',
         'eGFR': 'eGFR',
+        'Creatinine': 'Creatinine',  // Task 128: 肜酯映射
+        'Cr': 'Creatinine',           // 常见缩写
+        'CREA': 'Creatinine',         // 体检单缩写
         // Blood
         'WBC': 'WBC',
         'PLT': 'Platelet',
@@ -353,13 +476,23 @@ const applyOcrDataToProfile = (data) => {
         console.log("🔥 Found Extra Findings:", data.extra_findings)
         // Initialize if undefined
         if (!profile.value.extra_data) profile.value.extra_data = {}
-        // Merge
-        Object.assign(profile.value.extra_data, data.extra_findings)
+        // Merge (only valid values)
+        for (const [k, v] of Object.entries(data.extra_findings)) {
+            if (isValidValue(v)) {
+                profile.value.extra_data[k] = v
+            }
+        }
     }
 
     let filledCount = 0
+    let skippedCount = 0
+    
     for (const [key, val] of Object.entries(data)) {
-        if (val === null || val === undefined || val === 'null') continue
+        // Task 125: Smart Merge - 如果 OCR 没读到这个数据，直接跳过，保留表单里原本可能存在的手填数据
+        if (!isValidValue(val)) {
+            skippedCount++
+            continue
+        }
         
         const profileKey = mapping[key] || (profile.value.hasOwnProperty(key) ? key : null)
         if (profileKey && profile.value.hasOwnProperty(profileKey)) {
@@ -380,9 +513,69 @@ const applyOcrDataToProfile = (data) => {
                 }
             }
             filledCount++
+            
+            // Task 126: Track this field for highlight animation
+            ocrUpdatedFields.value.add(profileKey)
         }
     }
+    
+    if (skippedCount > 0) {
+        console.log(`⏭️ Smart Merge: Skipped ${skippedCount} empty/null fields (preserved existing data)`)
+    }
+    
+    // Task 126: Clear highlights after animation duration (2.5s)
+    if (ocrUpdatedFields.value.size > 0) {
+        console.log(`✨ Highlighting ${ocrUpdatedFields.value.size} OCR-updated fields`)
+        setTimeout(() => {
+            ocrUpdatedFields.value.clear()
+        }, 2500)
+    }
+    
     return filledCount
+}
+
+// ============================================
+// Task 131: OCR 撤销功能 (Undo)
+// ============================================
+const handleUndoOcr = async () => {
+    // 检查是否有快照可用
+    if (!lastProfileSnapshot.value) {
+        showToast('没有可撤销的操作', 'warning')
+        return
+    }
+    
+    try {
+        // 恢复快照数据到当前 profile
+        Object.keys(lastProfileSnapshot.value).forEach(key => {
+            profile.value[key] = lastProfileSnapshot.value[key]
+        })
+        
+        // 更新 store 并保存到云端
+        store.updateProfile(profile.value)
+        const saveSuccess = await store.saveProfileToCloud()
+        
+        if (saveSuccess) {
+            ElNotification({
+                title: '↩️ 已撤销 OCR 更改',
+                message: '已恢复到识别前的数据状态并同步至云端。',
+                type: 'success',
+                duration: 4000
+            })
+        } else {
+            showToast('撤销成功但同步失败，请手动保存', 'warning')
+        }
+        
+        // 清空快照
+        lastProfileSnapshot.value = null
+        
+        // 清除 OCR 相关状态
+        ocrCompleted.value = false
+        ocrUpdatedFields.value.clear()
+        
+    } catch (e) {
+        console.error('Undo failed:', e)
+        showToast('撤销失败: ' + e.message, 'error')
+    }
 }
 
 // 📷 OCR Upload Handler
@@ -403,17 +596,58 @@ const handleOcrUpload = async (uploadFile) => {
         if (res.status === 'success' && res.data) {
             const data = res.data
             
+            // Task 131: 在修改前保存快照 (用于撤销)
+            lastProfileSnapshot.value = JSON.parse(JSON.stringify(profile.value))
+            
             // 🔥 Refactored to use shared function (Task 68/71)
             const filledCount = applyOcrDataToProfile(res.data)
+            
+            // Task 127: 标记 OCR 已完成
+            ocrCompleted.value = true
+            
+            // Task 130: 等待 Vue 响应式更新 (让 eGFR watcher 生效)
+            await nextTick()
 
             if (filledCount > 0) {
-                // Success Notification
-                ElNotification({
-                    title: '识别成功',
-                    message: `已更新 ${filledCount} 项数据，请核对。`,
-                    type: 'success',
-                    duration: 5000
-                })
+                // Task 130: 自动保存到云端
+                try {
+                    store.updateProfile(profile.value)
+                    const saveSuccess = await store.saveProfileToCloud()
+                    
+                    if (saveSuccess) {
+                        // Task 131: 自动保存成功 - 显示带撤销按钮的通知
+                        ElNotification({
+                            title: '✅ 识别成功且已自动保存',
+                            message: h('div', { style: 'line-height: 1.6' }, [
+                                h('span', null, `已提取 ${filledCount} 项数据并同步至健康档案。`),
+                                h('br'),
+                                h('button', {
+                                    class: 'el-button el-button--primary is-link',
+                                    style: 'padding: 0; margin-top: 8px; font-size: 13px;',
+                                    onClick: handleUndoOcr
+                                }, '↩️ 撤销更改 (Undo)')
+                            ]),
+                            type: 'success',
+                            duration: 8000  // 给用户足够时间反应
+                        })
+                    } else {
+                        // 识别成功但保存失败
+                        ElNotification({
+                            title: '⚠️ 提取成功但自动保存失败',
+                            message: `已提取 ${filledCount} 项数据，请检查后手动点击"保存到云端"按钮。`,
+                            type: 'warning',
+                            duration: 6000
+                        })
+                    }
+                } catch (saveError) {
+                    console.error('Auto-save failed:', saveError)
+                    ElNotification({
+                        title: '⚠️ 提取成功但自动保存失败',
+                        message: `已提取 ${filledCount} 项数据，请检查后手动点击"保存到云端"按钮。`,
+                        type: 'warning',
+                        duration: 6000
+                    })
+                }
             } else {
                 showToast('识别成功，但未匹配到有效指标数据', 'warning')
             }
@@ -502,5 +736,64 @@ const saveToCloud = async () => {
     background-color: rgba(0, 0, 0, 0.3);
     border: 1px solid rgba(255, 255, 255, 0.1);
     color: white;
+}
+
+/* Task 126: OCR 数据填入时的"高亮呼吸"特效 */
+@keyframes flash-green {
+    0% {
+        background-color: rgba(16, 185, 129, 0.25); /* Emerald-500 with opacity */
+        box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+        border-color: rgba(16, 185, 129, 0.6);
+    }
+    50% {
+        background-color: rgba(16, 185, 129, 0.15);
+        box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    100% {
+        background-color: transparent;
+        box-shadow: none;
+        border-color: inherit;
+    }
+}
+
+/* 应用于 Element Plus 输入框内部 wrapper */
+.ocr-updated :deep(.el-input__wrapper),
+.ocr-updated :deep(.el-input-number__decrease),
+.ocr-updated :deep(.el-input-number__increase),
+.ocr-updated :deep(.el-select__wrapper),
+.ocr-updated :deep(.el-textarea__inner) {
+    animation: flash-green 2.5s ease-out forwards;
+}
+
+/* Task 127: OCR 未找到的字段样式 - 灰色虚线边框 */
+.ocr-not-found :deep(.el-input__wrapper),
+.ocr-not-found :deep(.el-input-number__decrease),
+.ocr-not-found :deep(.el-input-number__increase),
+.ocr-not-found :deep(.el-select__wrapper) {
+    background-color: rgba(148, 163, 184, 0.08); /* Slate-400 with low opacity */
+    border: 1.5px dashed rgba(148, 163, 184, 0.4);
+    transition: all 0.3s ease;
+}
+
+.ocr-not-found :deep(.el-input__inner)::placeholder,
+.ocr-not-found :deep(.el-input-number .el-input__inner)::placeholder {
+    color: rgba(148, 163, 184, 0.7);
+    font-style: italic;
+}
+
+/* 悬停时恢复正常样式，提示可以手填 */
+.ocr-not-found:hover :deep(.el-input__wrapper),
+.ocr-not-found:hover :deep(.el-input-number__decrease),
+.ocr-not-found:hover :deep(.el-input-number__increase) {
+    background-color: rgba(255, 255, 255, 0.5);
+    border-style: solid;
+    border-color: rgba(59, 130, 246, 0.5); /* Blue hint */
+}
+
+.dark .ocr-not-found :deep(.el-input__wrapper),
+.dark .ocr-not-found :deep(.el-input-number__decrease),
+.dark .ocr-not-found :deep(.el-input-number__increase) {
+    background-color: rgba(30, 41, 59, 0.3);
+    border-color: rgba(148, 163, 184, 0.3);
 }
 </style>
