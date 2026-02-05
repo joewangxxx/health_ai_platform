@@ -7,13 +7,38 @@
 ![Vue](https://img.shields.io/badge/Vue-3.x-42b883?logo=vue.js)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
-### 全周期慢病精准管理平台
+### 基于多模态数据融合与AI决策的个性化健康管理平台
 
 **Multi-Modal AI Health Management System**
 
 *融合基因组学 · 临床表型 · 生活行为数据的智能医疗平台*
 
 </div>
+
+---
+
+## 📂 Product Strategy & Management Artifacts
+
+> 本项目不仅是代码的实现，更是一个**完整产品生命周期**的推演。
+> 从市场洞察到商业闭环，每一个决策都基于数据与逻辑。
+
+## 📌 核心价值主张
+> **🛑 行业痛点**:
+> 当前健康管理市场面临严重的**数据孤岛效应**。基因数据锁在实验室，体检报告沉睡在 PDF 中，IoT 数据散落在各个 App 里。更致命的是，市面产品止步于"相关性分析"，无法回答用户最关心的因果问题（*"如果我现在减重 5kg，未来 10 年心血管风险能降多少？"*）。
+
+> **🟢 我们的破局**:
+> **Health AI Platform (HAP)** 引入了 **"Bayesian Fusion (贝叶斯融合)"** 范式。我们将 **Clinical (临床表型)**、**Genomic (基因组学)**、**Lifestyle (生活方式)** 三维异构数据在概率图模型中统一，实现从"被动记录"到"主动预测"的范式转换。
+
+### 📄 产品工件集 (Documentation Matrix)
+
+以下文档完整展示了 HAP v2.0 从 0 到 1 的孵化过程，点击 **View** 可查看详细报告：
+
+| Document Type | Key Focus | Core Competencies | Link |
+| :--- | :--- | :--- | :---: |
+| **📊 竞品分析与行业洞察**<br>*(Market Analysis)* | 市场规模测算 (TAM/SAM/SOM)、SWOT分析、差异化定位 | `Market Research` `Competitive Analysis` `Blue Ocean Strategy` | [👉 View](./docs/COMPETITIVE_ANALYSIS.md) |
+| **💼 商业模型与数据指标**<br>*(Business Logic)* | 商业画布 (BMC)、北极星指标、CLV/CAC 经济模型 | `Business Model Canvas` `North Star Metric` `Unit Economics` | [👉 View](./docs/BUSINESS_AND_METRICS.md) |
+| **🚀 商业化验证与增长实验**<br>*(GTM Strategy)* | MVP 冷启动策略、A/B Test 实验设计、会员分层体系 | `Growth Hacking` `GTM Strategy` `Monetization` | [👉 View](./docs/COMMERCIAL_VALIDATION.md) |
+| **📝 产品需求文档 (PRD)**<br>*(Execution)* | 功能详细定义、用户故事 (User Stories)、非功能性需求 | `Requirement Definition` `Product Roadmap` `System Design` | [👉 View](./docs/PRD.md) |
 
 ---
 
@@ -25,8 +50,8 @@ HealthAI Platform 是一个基于**多模态数据融合**的智能医疗平台�
 ┌─────────────────────────────────────────────────────────────┐
 │                    Fusion Risk Engine                       │
 ├─────────────────┬─────────────────┬─────────────────────────┤
-│  🧬 Genomics    │  🩺 Clinical    │  ⌚ Lifestyle           │
-│  基因风险因子   │  体检生化指标    │  IoT 行为数据           │
+│  🧬 Genomics    │  🩺 Clinical   │  ⌚ Lifestyle          │
+│  基因风险因子    │  体检生化指标    │   IoT 行为数据           │
 │  (SNP/PRS)      │  (NHANES)       │  (MobileWell)           │
 └─────────────────┴─────────────────┴─────────────────────────┘
                            ↓
@@ -271,37 +296,42 @@ DATABASE_URL=sqlite:///./health_ai.db
 
 ```
 health_ai_platform_2.0/
-├── backend/                    # 后端服务
-│   ├── api/                    # API 路由层
-│   │   └── api_v1/endpoints/   # RESTful 端点
-│   ├── core/                   # 核心配置
-│   │   ├── config.py           # 环境配置
-│   │   ├── constants.py        # 业务常量
-│   │   └── cache.py            # Redis 缓存管理
-│   ├── models/                 # SQLModel 数据模型
-│   ├── services/               # 业务逻辑层
-│   │   ├── risk_engine.py      # 疾病风险引擎
-│   │   ├── gene_risk_engine.py # 基因风险引擎
-│   │   ├── fusion_engine.py    # 多模态融合引擎
-│   │   ├── chat_service.py     # Dr. AI 问答
+├── backend/                      # 后端服务
+│   ├── api/                      # API 路由层
+│   │   └── api_v1/endpoints/     # RESTful 端点
+│   ├── core/                     # 核心配置
+│   │   ├── config.py             # 环境配置
+│   │   ├── constants.py          # 业务常量
+│   │   └── cache.py              # Redis 缓存管理
+│   ├── models/                   # SQLModel 数据模型
+│   ├── services/                 # 业务逻辑层
+│   │   ├── risk_engine.py        # 疾病风险引擎
+│   │   ├── gene_risk_engine.py   # 基因风险引擎
+│   │   ├── fusion_engine.py      # 多模态融合引擎
+│   │   ├── chat_service.py       # Dr. AI 问答
 │   │   └── nutrition_service.py# 营养规划
-│   └── rag/                    # RAG 知识库
-│       ├── vector_store/       # ChromaDB 向量库
-│       └── guidelines/         # 医学指南文档
-├── frontend/                   # Vue 3 前端
-│   └── src/
-│       ├── views/              # 页面组件
-│       ├── stores/             # Pinia 状态
-│       └── components/         # UI 组件
-├── ai_core/                    # AI 模型训练脚本
-│   ├── train_risk_models.py    # 风险模型训练
-│   └── train_diet_model.py     # 膳食模型训练
-├── data_warehouse/             # 数据仓库
-│   ├── raw_data/               # 原始数据 (gitignore)
-│   └── processed_data/         # ETL 处理后数据
-├── run.py                      # 启动入口
-├── requirements.txt            # Python 依赖
-└── .env.example                # 环境变量模板
+│   └── rag/                      # RAG 知识库
+│       ├── vector_store/         # ChromaDB 向量库
+│       └── guidelines/           # 医学指南文档
+├── frontend/                     # Vue 3 前端
+│   └── src/  
+│       ├── views/                # 页面组件
+│       ├── stores/               # Pinia 状态
+│       └── components/           # UI 组件
+├── ai_core/                      # AI 模型训练脚本
+│   ├── train_risk_models.py      # 风险模型训练
+│   └── train_diet_model.py       # 膳食模型训练
+├── data_warehouse/               # 数据仓库
+│   ├── raw_data/                 # 原始数据 (gitignore)
+│   └── processed_data/           # ETL 处理后数据
+│── docs/                         # 产品经理报告输出
+│   ├── BUSINESS_AND_METRICS.md/  # 商业模型与数据指标体系             
+│   └── COMMERCIAL_VALIDATION.md/ # 商业化验证与增长实验计划
+│   └── COMPETITIVE_ANALYSIS.md/  # 竞品分析与行业洞察报告
+│   └── PRD.md/                   # 产品需求文档
+├── run.py                        # 启动入口
+├── requirements.txt              # Python 依赖
+└── .env.example                  # 环境变量模板
 ```
 
 ---
