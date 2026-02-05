@@ -138,22 +138,31 @@ async def lifespan(app: FastAPI):
     from backend.core.cache import CacheManager
     await CacheManager.init(settings.REDIS_URL)
     
-    print("🔄 初始化核心引擎...")
+    print("🔄 Lazy Loading: 初始化核心引擎...")
     global risk_engine, gene_engine, pharm_engine, fusion_engine, food_predictor, food_vision_engine, general_predictor, admin_service
     try:
+        # 创建实例 (轻量级，不加载模型)
         risk_engine = DiseaseRiskEngine()
         gene_engine = GeneRiskEngine()
         pharm_engine = PharmService()
+        food_predictor = FoodPredictor()
+        general_predictor = Predictor()
+        
+        # Lazy Loading: 在 lifespan 中统一加载模型 (只执行一次)
+        await risk_engine.load_models()
+        await gene_engine.load_models()
+        await pharm_engine.load_models()
+        await food_predictor.load_models()
+        await general_predictor.load_models()
+        
+        # FusionEngine 依赖其他引擎，最后初始化
         fusion_engine = FusionRiskEngine(risk_engine=risk_engine, gene_engine=gene_engine)
+        food_vision_engine = food_predictor  # 🔥 别名，确保路由函数能访问
         
         # Initialize Admin Service with engine references for Hot Reload
         admin_service = AdminDataService(risk_engine=risk_engine, gene_engine=gene_engine, pharm_engine=pharm_engine)
         
-        # V2.0 Legacy
-        food_predictor = FoodPredictor()
-        food_vision_engine = food_predictor  # 🔥 别名，确保路由函数能访问
-        general_predictor = Predictor()
-        print("✅ 引擎初始化完成")
+        print("✅ 所有引擎 Lazy Loading 完成")
     except Exception as e:
         print(f"❌ 引擎初始化失败: {e}")
         traceback.print_exc()

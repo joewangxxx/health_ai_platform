@@ -139,6 +139,11 @@ export function createRadarOption(riskReport, isDark = false) {
  * getRiskLevelClass('Low')        // 返回绿色渐变
  */
 export function getRiskLevelClass(level) {
+    // 🔥 防御性检查: level 为空时返回默认灰色样式
+    if (!level || typeof level !== 'string') {
+        return 'bg-linear-to-br from-gray-300 to-gray-400'
+    }
+
     // Very High: 红色渐变 (最高风险)
     if (level.includes('Very High')) {
         return 'bg-linear-to-br from-red-600 to-rose-700'

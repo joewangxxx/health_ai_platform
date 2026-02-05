@@ -22,14 +22,23 @@ MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "nutrition_efficientnet.pth")
 
 class FoodPredictor:
     def __init__(self):
-        self.device = torch.device("cpu") # 视觉推理用 CPU 足够快且稳定
+        # Lazy Loading: 只定义变量，不加载模型
+        self.device = torch.device("cpu")
         self.model = None
+        self.transform = None
+        self._loaded = False
+
+    async def load_models(self):
+        """异步加载视觉模型 (在 FastAPI lifespan 中调用)"""
+        if self._loaded:
+            return
         print("\n📸 初始化全能营养视觉引擎 (EfficientNet-B0)...")
         print(f"   📂 目标模型路径: {MODEL_PATH}")
         
         # 1. 检查文件是否存在
         if not os.path.exists(MODEL_PATH):
             print(f"   ❌ 错误：模型文件未找到！请确认文件位于: {MODEL_PATH}")
+            self._loaded = True
             return
         
         try:
@@ -59,6 +68,8 @@ class FoodPredictor:
             print(f"   ❌ 模型加载崩溃: {e}")
             traceback.print_exc()
             self.model = None
+        
+        self._loaded = True
 
     def predict(self, image_bytes):
         """

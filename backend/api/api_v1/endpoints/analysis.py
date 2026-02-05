@@ -24,7 +24,7 @@ from backend.auth import get_current_user
 from backend.services.projection_service import projection_service
 from backend.services.analysis_service import anomaly_service
 from backend.services.pdf_service import pdf_service, PDFGenerationError
-from backend.services.risk_engine import disease_risk_engine
+# disease_risk_engine 已移至 main.py 的全局实例，在函数内部延迟导入
 from backend.services.lifestyle_service import hydration_advisor
 
 router = APIRouter()
@@ -142,10 +142,11 @@ async def export_health_report_pdf(
         profile_data["name"] = current_user.username
         
         # 2. 获取风险评估
-        risk_data = disease_risk_engine.assess_health(profile_data)
+        from backend.main import risk_engine
+        risk_data = risk_engine.assess_health(profile_data)
         
         # 3. 获取 CKM 分期
-        ckm_data = disease_risk_engine.assess_ckm_stage(profile_data)
+        ckm_data = risk_engine.assess_ckm_stage(profile_data)
         
         # 4. 生成 AI 分析摘要
         ai_analysis = _generate_ai_summary(profile_data, risk_data, ckm_data)

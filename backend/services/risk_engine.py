@@ -51,10 +51,21 @@ class DiseaseRiskEngine:
         
     Example:
         >>> engine = DiseaseRiskEngine()
+        >>> await engine.load_models()
         >>> result = engine.assess_health({"BMI": 28, "Age": 45, "SBP": 140})
         >>> print(result["T2D"]["probability"])  # 糖尿病风险概率
     """
     def __init__(self):
+        # Lazy Loading: 只定义变量，不加载模型
+        self.models = {}
+        self.features_map = {}
+        self.bundle = None
+        self._loaded = False
+
+    async def load_models(self):
+        """异步加载模型 (在 FastAPI lifespan 中调用)"""
+        if self._loaded:
+            return
         print("🏥 初始化全科疾病风险引擎 (LightGBM Cluster)...")
         if os.path.exists(RISK_MODEL_PATH):
             self.bundle = joblib.load(RISK_MODEL_PATH)
@@ -63,8 +74,7 @@ class DiseaseRiskEngine:
             print(f"   ✅ 加载成功: 支持 {len(self.models)} 种疾病评估")
         else:
             print("   ❌ 警告: 未找到模型文件！")
-            self.models = {}
-            self.features_map = {}
+        self._loaded = True
 
     def reload(self):
         """重新加载模型文件 (Hot Reload)"""
@@ -72,7 +82,7 @@ class DiseaseRiskEngine:
         self.__init__()
 
     def _clean_keys(self, data_dict):
-        """清洗输入字典的 Key，使其与训练时的特征名一致"""
+        """清洗输入字典的 Key,使其与训练时的特征名一致"""
         new_dict = {}
         for k, v in data_dict.items():
             # 替换非字母数字下划线为 _
@@ -496,8 +506,8 @@ class DiseaseRiskEngine:
         }
 
 
-# 单例实例
-disease_risk_engine = DiseaseRiskEngine()
+# 注意: 不再在模块级创建单例，以避免 import 时加载模型
+# 单例由 main.py lifespan 统一管理
 
 
 if __name__ == "__main__":

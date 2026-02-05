@@ -1,7 +1,9 @@
-from typing import Optional, List
+from typing import Optional, List, Any
 from datetime import datetime
 from sqlmodel import Field, SQLModel, Relationship
 from sqlalchemy import JSON, Column
+from pydantic import field_validator
+import json
 
 class UserBase(SQLModel):
     username: str = Field(index=True, unique=True)

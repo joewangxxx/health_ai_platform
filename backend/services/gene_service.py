@@ -9,8 +9,15 @@ BASE_DIR = GENE_KB_DIR
 
 class GeneRiskEngine:
     def __init__(self):
-        print("🧬 初始化全病种基因引擎 (Real GWAS Data)...")
+        # Lazy Loading: 只定义变量，不加载数据
         self.disease_models = {}
+        self._loaded = False
+
+    async def load_models(self):
+        """异步加载基因库 (在 FastAPI lifespan 中调用)"""
+        if self._loaded:
+            return
+        print("🧬 初始化全病种基因引擎 (Real GWAS Data)...")
         
         # 自动扫描所有 GWAS_*.csv
         files = glob.glob(os.path.join(BASE_DIR, "GWAS_*_weights.csv"))
@@ -41,6 +48,7 @@ class GeneRiskEngine:
                 print(f"   ⚠️ 加载失败 {disease_name}: {e}")
                 
         print(f"   ✅ 共加载 {len(self.disease_models)} 个基因模型")
+        self._loaded = True
 
     def reload(self):
         """重新加载基因库 (Hot Reload)"""

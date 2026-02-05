@@ -48,10 +48,16 @@ class GlucoseLSTM(nn.Module):
 
 class Predictor:
     def __init__(self):
+        # Lazy Loading: 只定义变量，不加载模型
         self.device = torch.device("cpu")
-        self.scaler = None # 先初始化为 None，防止报错
+        self.scaler = None
         self.model = None
+        self._loaded = False
 
+    async def load_models(self):
+        """异步加载 LSTM 模型 (在 FastAPI lifespan 中调用)"""
+        if self._loaded:
+            return
         print(f"🔍 正在加载 LSTM 模型...\n   路径: {MODEL_PATH}")
         
         try:
@@ -71,6 +77,8 @@ class Predictor:
         except Exception as e:
             print(f"❌ LSTM 模型加载失败: {e}")
             # 这里不抛出异常，允许主程序继续运行，但预测功能将不可用
+        
+        self._loaded = True
 
     def predict_scenario(self, current_glucose, carbs, hr, prs_score):
         """

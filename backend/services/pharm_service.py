@@ -12,10 +12,18 @@ from backend.core.constants import (
 
 class PharmService:
     def __init__(self):
-        print("💊 初始化药物基因组学服务 (PharmService)...")
+        # Lazy Loading: 只定义变量，不加载数据
         self.rules_df = None
         self.kb_path = os.path.join(DATA_WAREHOUSE_DIR, "processed_data", "knowledge_base", "drug_gene_rules.csv")
+        self._loaded = False
+
+    async def load_models(self):
+        """异步加载药物规则库 (在 FastAPI lifespan 中调用)"""
+        if self._loaded:
+            return
+        print("💊 初始化药物基因组学服务 (PharmService)...")
         self._load_kb()
+        self._loaded = True
 
     def reload(self):
         """重新加载药物基因知识库"""
