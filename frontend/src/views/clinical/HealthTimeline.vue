@@ -42,8 +42,11 @@
                         <!-- 1. Time Travel -->
                         <div class="bg-white/40 dark:bg-white/5 p-4 rounded-xl border border-white/20">
                             <div class="flex justify-between mb-2">
-                                <span class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">时间穿梭 (Years)</span>
-                                <span class="text-sm font-black text-purple-600 dark:text-purple-400">+{{ timeTravelYears }} 年</span>
+                                <span class="text-xs font-bold uppercase text-slate-500 dark:text-slate-400">时间穿梭
+                                    (Years)</span>
+                                <span class="text-sm font-black text-purple-600 dark:text-purple-400">+{{
+                                    timeTravelYears }}
+                                    年</span>
                             </div>
                             <el-slider v-model="timeTravelYears" :min="1" :max="20" :step="1" show-stops />
                         </div>
@@ -54,41 +57,46 @@
                                 <span class="text-sm font-bold flex items-center gap-2">
                                     🧬 干预调节 (Intervention)
                                     <el-tooltip content="开启以模拟生活方式改变的影响" placement="top">
-                                        <el-icon class="text-slate-400 cursor-help"><InfoFilled /></el-icon>
+                                        <el-icon class="text-slate-400 cursor-help">
+                                            <InfoFilled />
+                                        </el-icon>
                                     </el-tooltip>
                                 </span>
                                 <el-switch v-model="enableIntervention" size="small" />
                             </div>
 
-                            <div v-if="enableIntervention" class="space-y-4 animate-in slide-in-from-top-2 duration-300">
+                            <div v-if="enableIntervention"
+                                class="space-y-4 animate-in slide-in-from-top-2 duration-300">
                                 <!-- Weight Slider -->
-                                <div class="bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30">
+                                <div
+                                    class="bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded-lg border border-blue-100 dark:border-blue-800/30">
                                     <div class="flex justify-between text-xs mb-1">
                                         <span class="text-slate-600 dark:text-slate-300">体重变化 (kg)</span>
-                                        <span class="font-bold text-blue-600">{{ weightIntervention > 0 ? '+' : ''}}{{ weightIntervention }}kg</span>
+                                        <span class="font-bold text-blue-600">{{ weightIntervention > 0 ? '+' : '' }}{{
+                                            weightIntervention }}kg</span>
                                     </div>
-                                    <el-slider v-model="weightIntervention" :min="-10" :max="10" :step="0.5" size="small" />
+                                    <el-slider v-model="weightIntervention" :min="-10" :max="10" :step="0.5"
+                                        size="small" />
                                 </div>
 
                                 <!-- Exercise Slider -->
-                                <div class="bg-green-50/50 dark:bg-green-900/10 p-3 rounded-lg border border-green-100 dark:border-green-800/30">
+                                <div
+                                    class="bg-green-50/50 dark:bg-green-900/10 p-3 rounded-lg border border-green-100 dark:border-green-800/30">
                                     <div class="flex justify-between text-xs mb-1">
                                         <span class="text-slate-600 dark:text-slate-300">运动频率 (周)</span>
                                         <span class="font-bold text-green-600">{{ exerciseFreq }} 次</span>
                                     </div>
-                                    <el-slider v-model="exerciseFreq" :min="0" :max="7" :step="1" show-stops size="small" />
+                                    <el-slider v-model="exerciseFreq" :min="0" :max="7" :step="1" show-stops
+                                        size="small" />
                                 </div>
                             </div>
                         </div>
 
                         <!-- 3. Action Button -->
-                        <GlassButton 
-                            variant="primary" 
-                            class="w-full justify-center group" 
-                            @click="runSimulation" 
-                            :loading="simulating"
-                        >
-                            <component :is="simulating ? 'div' : Wand2" class="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
+                        <GlassButton variant="primary" class="w-full justify-center group" @click="runSimulation"
+                            :loading="simulating">
+                            <component :is="simulating ? 'div' : Wand2"
+                                class="w-4 h-4 mr-2 group-hover:rotate-12 transition-transform" />
                             {{ simulating ? '推演计算中...' : '开始魔法推演 (Simulate)' }}
                         </GlassButton>
                     </div>
@@ -98,7 +106,9 @@
                 <GlassCard class="md:col-span-2 relative overflow-hidden min-h-[400px]">
                     <div v-if="!simulationResult"
                         class="absolute inset-0 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-black/20 z-10 backdrop-blur-sm">
-                        <el-icon class="text-6xl mb-4 opacity-50"><DataAnalysis /></el-icon>
+                        <el-icon class="text-6xl mb-4 opacity-50">
+                            <DataAnalysis />
+                        </el-icon>
                         <span class="text-lg font-medium">✨ 等待信号输入...</span>
                         <span class="text-xs mt-2">调整左侧参数开始推演</span>
                     </div>
@@ -113,34 +123,42 @@
                                     {{ enableIntervention ? 'Intervention Mode' : 'Natural History' }}
                                 </el-tag>
                             </div>
-                            <span class="text-sm font-mono text-slate-500">{{ timeTravelYears }} Years Later / Age {{ simulationResult.simulated_profile_summary.Age }}</span>
+                            <span class="text-sm font-mono text-slate-500">{{ timeTravelYears }} Years Later / Age {{
+                                simulationResult.simulated_profile_summary.Age }}</span>
                         </div>
 
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
                             <!-- Left: Vitals Delta -->
                             <div class="space-y-4">
                                 <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">核心指标变化 (Vitals Delta)</h4>
-                                <div class="bg-white/50 dark:bg-white/5 rounded-xl p-4 space-y-4 border border-slate-100 dark:border-white/10">
+                                <div
+                                    class="bg-white/50 dark:bg-white/5 rounded-xl p-4 space-y-4 border border-slate-100 dark:border-white/10">
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm text-slate-600 dark:text-slate-400">BMI 指数</span>
                                         <div class="flex items-center gap-2">
-                                            <span class="font-bold text-lg">{{ simulationResult.simulated_profile_summary.BMI }}</span>
+                                            <span class="font-bold text-lg">{{
+                                                simulationResult.simulated_profile_summary.BMI
+                                                }}</span>
                                             <!-- Mock Delta logic for UI demo -->
-                                            <span v-if="enableIntervention" class="text-xs font-bold text-green-500 bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded">
+                                            <span v-if="enableIntervention"
+                                                class="text-xs font-bold text-green-500 bg-green-100 dark:bg-green-900/30 px-1.5 py-0.5 rounded">
                                                 ↓ 2.1
                                             </span>
-                                            <span v-else class="text-xs font-bold text-red-500 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
+                                            <span v-else
+                                                class="text-xs font-bold text-red-500 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded">
                                                 ↑ 0.5
                                             </span>
                                         </div>
                                     </div>
-                                    
+
                                     <div class="w-full h-px bg-slate-200 dark:bg-white/10"></div>
 
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm text-slate-600 dark:text-slate-400">收缩压 (SBP)</span>
                                         <div class="flex items-center gap-2">
-                                            <span class="font-bold text-lg">{{ simulationResult.simulated_profile_summary.SBP }}</span>
+                                            <span class="font-bold text-lg">{{
+                                                simulationResult.simulated_profile_summary.SBP
+                                                }}</span>
                                             <span class="text-xs text-slate-400">mmHg</span>
                                         </div>
                                     </div>
@@ -149,7 +167,7 @@
 
                                     <div class="flex items-center justify-between">
                                         <span class="text-sm text-slate-600 dark:text-slate-400">空腹血糖 (Glucose)</span>
-                                         <!-- Using mock data if not in summary, or just standard fields -->
+                                        <!-- Using mock data if not in summary, or just standard fields -->
                                         <div class="flex items-center gap-2">
                                             <span class="font-bold text-lg">5.6</span>
                                             <span class="text-xs text-slate-400">mmol/L</span>
@@ -164,23 +182,27 @@
                                 <div class="space-y-3">
                                     <template v-for="(val, key) in simulationResult.risk_result" :key="key">
                                         <!-- Only show High/Medium risks -->
-                                        <div v-if="val.level !== 'Low'" 
-                                             class="relative overflow-hidden p-4 rounded-xl border transition-all duration-300 hover:shadow-lg"
-                                             :class="enableIntervention ? 'bg-green-50/50 border-green-200 dark:bg-green-900/10 dark:border-green-800' : 'bg-red-50/50 border-red-200 dark:bg-red-900/10 dark:border-red-800'">
-                                            
+                                        <div v-if="val.level !== 'Low'"
+                                            class="relative overflow-hidden p-4 rounded-xl border transition-all duration-300 hover:shadow-lg"
+                                            :class="enableIntervention ? 'bg-green-50/50 border-green-200 dark:bg-green-900/10 dark:border-green-800' : 'bg-red-50/50 border-red-200 dark:bg-red-900/10 dark:border-red-800'">
+
                                             <div class="flex justify-between items-center relative z-10">
                                                 <div class="flex flex-col">
-                                                    <span class="font-bold text-slate-700 dark:text-slate-200">{{ key }}</span>
+                                                    <span class="font-bold text-slate-700 dark:text-slate-200">{{ key
+                                                        }}</span>
                                                     <span class="text-xs opacity-75">{{ val.level }} Risk</span>
                                                 </div>
                                                 <div class="text-right">
                                                     <div class="text-2xl font-black tabular-nums"
-                                                         :class="enableIntervention ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
+                                                        :class="enableIntervention ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
                                                         {{ val.probability }}%
                                                     </div>
-                                                    <div v-if="enableIntervention" class="text-xs font-bold text-green-600 flex items-center justify-end gap-1">
+                                                    <div v-if="enableIntervention"
+                                                        class="text-xs font-bold text-green-600 flex items-center justify-end gap-1">
                                                         <span>↓ {{ (val.probability * 0.2).toFixed(1) }}%</span>
-                                                        <el-icon><bottom /></el-icon>
+                                                        <el-icon>
+                                                            <bottom />
+                                                        </el-icon>
                                                     </div>
                                                 </div>
                                             </div>
@@ -191,15 +213,19 @@
                         </div>
 
                         <!-- Bottom: Insight -->
-                        <div v-if="interventionResult" class="mt-6 p-4 rounded-xl bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 flex items-start gap-3">
-                             <el-icon class="text-blue-500 text-xl mt-0.5"><Trophy /></el-icon>
-                             <div>
-                                 <h4 class="font-bold text-blue-600 dark:text-blue-400 text-sm">AI 医生洞察</h4>
-                                 <p class="text-sm text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
-                                     通过当前干预方案，您的心血管疾病风险预期降低 <span class="font-black text-blue-600">{{ interventionResult.risk_reduction_percent }}%</span>。
-                                     建议重点关注 <b>{{ selectedMetric }}</b> 的控制。
-                                 </p>
-                             </div>
+                        <div v-if="interventionResult"
+                            class="mt-6 p-4 rounded-xl bg-linear-to-r from-blue-500/10 to-purple-500/10 border border-blue-500/20 flex items-start gap-3">
+                            <el-icon class="text-blue-500 text-xl mt-0.5">
+                                <Trophy />
+                            </el-icon>
+                            <div>
+                                <h4 class="font-bold text-blue-600 dark:text-blue-400 text-sm">AI 医生洞察</h4>
+                                <p class="text-sm text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                                    通过当前干预方案，您的心血管疾病风险预期降低 <span class="font-black text-blue-600">{{
+                                        interventionResult.risk_reduction_percent }}%</span>。
+                                    建议重点关注 <b>{{ selectedMetric }}</b> 的控制。
+                                </p>
+                            </div>
                         </div>
                     </div>
                 </GlassCard>
@@ -277,7 +303,7 @@ const fetchHistory = async () => {
 // 2. Render Chart
 const renderChart = () => {
     if (!chartRef.value) return
-    
+
     if (!myChart) {
         myChart = echarts.init(chartRef.value)
     }
@@ -286,12 +312,12 @@ const renderChart = () => {
 
     const dates = trendData.value.dates
     const data = trendData.value.metrics[selectedMetric.value] || []
-    
+
     // 判断数据是否充足 (少于2条时调整显示策略)
     const hasEnoughData = dates.length >= 2
 
     const option = {
-        tooltip: { 
+        tooltip: {
             trigger: 'axis',
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
             borderColor: '#e2e8f0',
@@ -328,12 +354,12 @@ const renderChart = () => {
             }
         },
         grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
-        xAxis: { 
-            type: 'category', 
-            boundaryGap: false, 
+        xAxis: {
+            type: 'category',
+            boundaryGap: false,
             data: dates,
             axisLine: { lineStyle: { color: '#94a3b8' } },
-            axisLabel: { 
+            axisLabel: {
                 color: '#64748b',
                 // 优化 X 轴：Smart Formatter，显示 MM-DD HH:mm 格式
                 formatter: (value) => {
@@ -356,8 +382,8 @@ const renderChart = () => {
                 interval: 0
             }
         },
-        yAxis: { 
-            type: 'value', 
+        yAxis: {
+            type: 'value',
             splitLine: { lineStyle: { type: 'dashed', color: '#e2e8f0' } },
             axisLabel: { color: '#64748b' }
         },
