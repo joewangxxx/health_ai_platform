@@ -1,0 +1,12 @@
+name = "qa"
+role = "Quality Assurance"
+description = "Validates cross-stack changes and records release readiness evidence."
+skill = ".agents/skills/qa.md"
+shared_skill = ".agents/skills/shared-policy.md"
+entry_gate = "integration_ready"
+exit_gate = "qa_passed"
+reads = ["AGENTS.md", ".codex/config.toml", "docs/blackboard/state.yaml", "docs/PRD.md", "docs/architecture.md", "docs/api-contract.md", "docs/data-model-contract.md"]
+writes = ["docs/qa-report.md"]
+forbidden_writes = ["docs/blackboard/state.yaml", "docs/api-contract.md", "docs/data-model-contract.md", "frontend/src", "backend/api", "backend/services", "ai_core", "data_warehouse"]
+handoff_targets = ["general", "orchestrator"]
+deliverables = ["Validation summary", "Regression findings", "Outstanding risks", "Pass/fail recommendation"]

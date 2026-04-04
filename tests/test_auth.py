@@ -1,6 +1,8 @@
 """
 Tests for authentication and authorization (RBAC).
 """
+import uuid
+
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import MagicMock
@@ -93,3 +95,46 @@ class TestAdminAccess:
         assert response.status_code == 200
         
         app.dependency_overrides.clear()
+
+
+class TestAuthContracts:
+    def test_register_returns_bearer_token_type(self, client: TestClient):
+        username = f"auth_{uuid.uuid4().hex[:8]}"
+
+        response = client.post(
+            "/auth/register",
+            json={
+                "username": username,
+                "email": f"{username}@example.com",
+                "password": "SmokePass123",
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["access_token"]
+        assert response.json()["token_type"] == "bearer"
+
+    def test_login_returns_bearer_token_type(self, client: TestClient):
+        username = f"login_{uuid.uuid4().hex[:8]}"
+
+        register_response = client.post(
+            "/auth/register",
+            json={
+                "username": username,
+                "email": f"{username}@example.com",
+                "password": "SmokePass123",
+            },
+        )
+
+        login_response = client.post(
+            "/auth/token",
+            data={
+                "username": username,
+                "password": "SmokePass123",
+            },
+        )
+
+        assert register_response.status_code == 200
+        assert login_response.status_code == 200
+        assert login_response.json()["access_token"]
+        assert login_response.json()["token_type"] == "bearer"

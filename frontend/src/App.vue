@@ -14,9 +14,14 @@ import ToastProvider from './components/ui/ToastProvider.vue'
 html,
 body,
 #app {
-  height: 100%;
+  min-height: 100%;
   margin: 0;
   padding: 0;
-  overflow: hidden;
+}
+
+body {
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
 }
 </style>

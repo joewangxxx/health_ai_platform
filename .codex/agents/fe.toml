@@ -1,0 +1,14 @@
+name = "fe"
+role = "Frontend Engineer"
+description = "Implements Vue frontend features after contracts are approved."
+skill = ".agents/skills/fe.md"
+shared_skill = ".agents/skills/shared-policy.md"
+entry_gate = "implementation_ready"
+exit_gate = "frontend_delivery_ready"
+parallel_group = "implementation"
+max_retries = 3
+reads = ["AGENTS.md", ".codex/config.toml", "docs/blackboard/state.yaml", "docs/PRD.md", "docs/FEATURE_MAP.md", "docs/architecture.md", "docs/api-contract.md", "docs/data-model-contract.md"]
+writes = ["frontend/src"]
+forbidden_writes = ["docs/blackboard/state.yaml", "docs/api-contract.md", "docs/data-model-contract.md"]
+handoff_targets = ["qa", "general"]
+scope_note = "FE owns Vue UI delivery and any lightweight UI consistency rules that would otherwise be split into a design-only role."

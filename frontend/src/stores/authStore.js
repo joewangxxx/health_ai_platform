@@ -24,7 +24,7 @@ export const useAuthStore = defineStore('auth', () => {
             params.append('username', username)
             params.append('password', password)
 
-            const res = await axios.post('http://127.0.0.1:8000/auth/token', params, {
+            const res = await axios.post('/auth/token', params, {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             })
 
@@ -49,7 +49,7 @@ export const useAuthStore = defineStore('auth', () => {
     async function register(email, username, password) {
         try {
             // Fix: ensure correct endpoint /auth/register
-            await axios.post('http://127.0.0.1:8000/auth/register', {
+            await axios.post('/auth/register', {
                 username, email, password
             })
             return true
@@ -63,7 +63,7 @@ export const useAuthStore = defineStore('auth', () => {
     async function fetchProfile() {
         if (!token.value) return
         try {
-            const res = await axios.get('http://127.0.0.1:8000/user/me')
+            const res = await axios.get('/user/me')
             user.value = res.data
 
             // Sync clinical data to HealthStore

@@ -1,0 +1,25 @@
+﻿{
+  "analyze": [
+    {"concurrency": 10, "requests": 80, "rt_avg_ms": 12.63, "rt_p99_ms": 15.90, "tps": 705.50, "error_rate_pct": 0.00, "errors": 0},
+    {"concurrency": 50, "requests": 400, "rt_avg_ms": 21939.19, "rt_p99_ms": 30081.95, "tps": 0.60, "error_rate_pct": 73.00, "errors": 292},
+    {"concurrency": 100, "requests": 800, "rt_avg_ms": 30036.95, "rt_p99_ms": 30069.33, "tps": 0.00, "error_rate_pct": 100.00, "errors": 800}
+  ],
+  "iot": [
+    {"concurrency": 10, "requests": 80, "rt_avg_ms": 139.92, "rt_p99_ms": 722.87, "tps": 69.55, "error_rate_pct": 0.00, "errors": 0},
+    {"concurrency": 50, "requests": 400, "rt_avg_ms": 262.58, "rt_p99_ms": 298.68, "tps": 175.46, "error_rate_pct": 0.00, "errors": 0},
+    {"concurrency": 100, "requests": 800, "rt_avg_ms": 528.57, "rt_p99_ms": 604.93, "tps": 174.10, "error_rate_pct": 0.00, "errors": 0}
+  ],
+  "chat_cache": {
+    "no_cache_n": 3,
+    "no_cache_rt_avg_ms": 31699.18,
+    "no_cache_rt_p99_ms": 33466.72,
+    "cache_n": 8,
+    "cache_rt_avg_ms": 2.04,
+    "cache_rt_p99_ms": 2.46,
+    "speedup_x": 15511.11,
+    "hitrate_pct": 100.00
+  },
+  "log_evidence": {
+    "backend_log_signal": "sqlalchemy.exc.TimeoutError: QueuePool limit of size 5 overflow 10 reached, connection timed out"
+  }
+}

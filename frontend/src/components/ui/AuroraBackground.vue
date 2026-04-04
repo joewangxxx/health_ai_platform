@@ -1,7 +1,7 @@
 <template>
   <div
     :class="cn(
-      'relative flex flex-col h-screen w-full items-center justify-center text-slate-950 transition-colors duration-500 overflow-hidden bg-zinc-50',
+      'relative flex flex-col min-h-screen w-full items-center justify-center text-slate-950 transition-colors duration-500 overflow-x-hidden bg-zinc-50',
       props.class
     )"
   >
@@ -34,7 +34,7 @@
     </div>
     
     <!-- Content Layer -->
-    <div class="relative z-10 w-full h-full">
+    <div class="relative z-10 w-full min-h-screen">
       <slot />
     </div>
   </div>

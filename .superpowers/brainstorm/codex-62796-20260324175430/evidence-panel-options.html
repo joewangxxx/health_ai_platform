@@ -1,0 +1,108 @@
+<h2>Evidence Panel Options</h2>
+<p class="subtitle">Choose the evidence panel style that best fits Dr. AI. Focus on trust, clarity, and how naturally it fits the current chat layout.</p>
+
+<div class="cards">
+  <div class="card" data-choice="inline" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Option A: Inline Expand Panel</div>
+        <div class="mockup-body">
+          <div class="mock-content" style="padding:12px;">
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
+              Assistant reply
+            </div>
+            <div style="border:1px solid #dbeafe;border-radius:14px;padding:12px;background:#f8fbff;">
+              <div style="font-weight:600;margin-bottom:8px;">Evidence Panel</div>
+              <div style="display:grid;gap:8px;">
+                <div class="placeholder" style="min-height:42px;">Profile Evidence</div>
+                <div class="placeholder" style="min-height:42px;">Trend Evidence</div>
+                <div class="placeholder" style="min-height:42px;">Guideline Evidence</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Option A</h3>
+      <p>Each assistant message gets its own expandable evidence panel directly underneath. Strong message-to-evidence pairing and the simplest mental model.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="side" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Option B: Right Detail Panel</div>
+        <div class="mockup-body">
+          <div style="display:flex;gap:10px;">
+            <div class="mock-content" style="flex:1;padding:12px;">
+              <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
+                Assistant reply
+              </div>
+              <div class="placeholder" style="min-height:120px;">Chat stream</div>
+            </div>
+            <div class="mock-sidebar" style="width:42%;padding:12px;">
+              <div style="font-weight:600;margin-bottom:8px;">Evidence Detail</div>
+              <div class="placeholder" style="min-height:44px;margin-bottom:8px;">Profile</div>
+              <div class="placeholder" style="min-height:44px;margin-bottom:8px;">Trend</div>
+              <div class="placeholder" style="min-height:44px;">Guideline</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Option B</h3>
+      <p>A fixed side detail panel shows evidence for the selected assistant answer. Best for dense evidence, but changes the current page structure more.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="hybrid" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">Option C: Hybrid Summary + Expand</div>
+        <div class="mockup-body">
+          <div class="mock-content" style="padding:12px;">
+            <div style="background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:10px 12px;margin-bottom:10px;">
+              Assistant reply
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <button class="mock-button">Profile</button>
+              <button class="mock-button">Trends</button>
+              <button class="mock-button">Guideline</button>
+            </div>
+            <div style="border:1px dashed #cbd5e1;border-radius:14px;padding:12px;background:#fcfdff;">
+              <div style="font-weight:600;margin-bottom:8px;">Expanded Evidence Section</div>
+              <div class="placeholder" style="min-height:54px;">Selected evidence block</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>Option C</h3>
+      <p>Compact evidence chips stay under each answer, and one focused block expands inline. Best balance between clean chat flow and richer evidence detail.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Recommendation</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Recommended: Option C</h4>
+      <ul>
+        <li>Fits the current Dr. AI page without a major layout rewrite</li>
+        <li>Lets us go beyond the current plain evidence tags</li>
+        <li>Keeps each answer tied to its own evidence context</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Tradeoffs</h4>
+      <ul>
+        <li>Needs slightly more interaction logic than Option A</li>
+        <li>Still lighter than a full right-side evidence workspace</li>
+      </ul>
+    </div>
+  </div>
+</div>

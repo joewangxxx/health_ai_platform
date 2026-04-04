@@ -1,0 +1,504 @@
+% !TeX root = ../main.tex
+% ============================================
+% 第四章 多模态数据融合与预测模型构建（核心算法章节）
+% ============================================
+
+\chapter{多模态数据融合与预测模型构建}
+
+\section{数据采集与预处理}
+
+本系统的数据采集与预处理阶段承担了多源异构数据的标准化接入职责。系统从三个独立的数据域——临床体检、基因组学以及行为与营养——分别获取原始数据，经过清洗、映射和特征工程处理后，输出可供下游模型直接消费的结构化数据集。
+
+\subsection{NHANES临床表型数据ETL流程}
+
+\subsubsection*{数据来源}
+
+本系统选用美国疾病控制与预防中心（CDC）发布的国家健康与营养调查（National Health and Nutrition Examination Survey, NHANES）2017--2020 Pre-Pandemic 周期数据作为临床模型的主要训练语料。该数据以 SAS Transport（XPT）格式分模块发布，系统共接入 25 个原始文件，涵盖人口学（DEMO）、体格测量（BMX）、血压（BPX）、血糖与胰岛素（GLU / GHB / INS）、血脂（TCHOL / HDL / TRIGLY）、肝肾功能（BIOPRO）、血常规（CBC）、膳食摄入（DR1TOT / DR2TOT）、尿流率（UCFLOW）、微量元素（VID / FOLATE）以及多项健康问卷等子集。所有子表以唯一受试者编号 SEQN 为连接键（Join Key），通过左外连接（Left Outer Join）逐步融合为一张宽表。
+
+\subsubsection*{三级变量映射策略}
+
+原始 NHANES 数据的列名采用 SAS 编码命名（如 \texttt{LBXGLU}、\texttt{BMXBMI}），缺乏语义可读性，且无法直接与前端中文界面对接。为此，系统设计了一套三级变量映射策略：
+
+\begin{enumerate}
+    \item \textbf{第一级：SAS 编码 $\rightarrow$ 英文语义名}。将晦涩的 SAS 变量代码转译为具有医学语义的英文标识符，例如 \texttt{LBXGLU} $\rightarrow$ \texttt{Glucose\_Fasting}、\texttt{BPXOSY1} $\rightarrow$ \texttt{SBP}。该映射由 \texttt{NHANES\_MAPPING} 字典集中维护，涵盖 50 余个核心变量。
+    \item \textbf{第二级：英文语义名 $\rightarrow$ 中文业务名}。将英文标识符映射为面向终端用户的中文显示名称，例如 \texttt{Glucose\_Fasting} $\rightarrow$ ``空腹血糖 (mmol/L)''。该映射由 \texttt{FIELD\_CHINESE\_NAMES} 字典维护，用于 AI 报告生成和前端可视化。
+    \item \textbf{第三级：内部变量名 $\rightarrow$ 中文疾病名}。将疾病代码映射为中文名称，例如 \texttt{T2D} $\rightarrow$ ``2型糖尿病''，由 \texttt{DISEASE\_CHINESE\_NAMES} 字典维护。
+\end{enumerate}
+
+该三级映射策略使得同一套代码能够同时服务于模型训练（使用英文语义名）和用户交互（使用中文业务名），在不引入冗余数据副本的前提下实现了多场景适配。
+
+\begin{figure}[htbp]
+    \centering
+    % TODO: 插入 NHANES 数据清洗与特征映射流程图
+    \caption{NHANES 数据清洗与特征映射流程}
+    \label{fig:nhanes_etl_flow}
+\end{figure}
+
+\begin{table}[htbp]
+    \centering
+    \caption{核心临床表型特征字典片段}
+    \label{tab:feature_dict}
+    \begin{tabular}{lll}
+        \hline
+        SAS 编码 & 英文语义名 & 中文业务名 \\
+        \hline
+        LBXGLU  & Glucose\_Fasting & 空腹血糖 (mmol/L) \\
+        LBXGH   & HbA1c            & 糖化血红蛋白 (\%) \\
+        BMXBMI  & BMI              & 体重指数 \\
+        BPXOSY1 & SBP              & 收缩压 (mmHg) \\
+        LBXTC   & Cholesterol\_Total & 总胆固醇 (mmol/L) \\
+        LBXSCR  & Creatinine       & 肌酐 ($\mu$mol/L) \\
+        LBXHSCRP & HS\_CRP         & 超敏C反应蛋白 \\
+        URXPMAX & Urine\_Peak\_Flow & 最大尿流率 (mL/s) \\
+        \hline
+    \end{tabular}
+\end{table}
+
+\subsubsection*{衍生特征工程}
+
+在完成基础变量映射后，系统基于临床指南计算了三项关键衍生特征：
+
+\begin{itemize}
+    \item \textbf{eGFR}（估算肾小球滤过率）：采用 CKD-EPI 2009 公式，以血清肌酐（Creatinine）、年龄（Age）和性别（Gender）为输入，计算肾功能评估指标。
+    \item \textbf{UACR}（尿白蛋白肌酐比）：按 $\text{UACR} = (\text{Urine\_Albumin} / \text{Urine\_Creatinine}) \times 100$ 计算，用于早期肾损伤筛查。
+    \item \textbf{HOMA-IR}（胰岛素抵抗指数）：按 $\text{HOMA-IR} = (\text{Glucose\_Fasting} \times \text{Insulin}) / 405$ 计算，用于代谢综合征评估。
+\end{itemize}
+
+\subsubsection*{缺失值处理}
+
+系统采用分类型缺失值处理策略：对于连续型数值变量（如血糖、血压、肝功能指标等），以该列的中位数进行填充；对于问卷类分类变量（如"是否患有哮喘"），通过二值化函数将阳性应答（编码值为 1）标记为 1，其余情况（包括缺失）统一标记为 0。同时，系统删除 Age 和 BMI 同时缺失的样本行，因为这两项指标是所有下游模型的必要输入。
+
+\subsubsection*{病种判定规则与标签生成}
+
+ETL 流程的最终产出是包含 30 余种疾病二分类标签的结构化数据集。每种疾病的判定规则均基于国际临床指南，主要包括三类判定方式：
+
+\begin{itemize}
+    \item \textbf{基于生化阈值}：如 2 型糖尿病（HbA1c $\geq$ 6.5\% 或空腹血糖 $\geq$ 126 mg/dL）、高血压（SBP $\geq$ 140 或 DBP $\geq$ 90 mmHg，或正在服用降压药）、慢性肾病（eGFR $<$ 60 或 UACR $>$ 30）。
+    \item \textbf{基于复合计分}：如代谢综合征采用 ATP III 标准，腹型肥胖、高甘油三酯、低 HDL、高血压、高血糖五项中满足三项及以上即判定为阳性。
+    \item \textbf{基于问卷自报告}：如冠心病、中风、哮喘等疾病直接引用受试者在 MCQ 问卷中的自报告结果。
+\end{itemize}
+
+\begin{table}[htbp]
+    \centering
+    \caption{部分疾病判定规则摘要}
+    \label{tab:disease_rules}
+    \begin{tabular}{llp{7cm}}
+        \hline
+        疾病 & 类型 & 判定条件 \\
+        \hline
+        2型糖尿病   & 阈值 & HbA1c $\geq$ 6.5\% 或 FPG $\geq$ 126 \\
+        高血压       & 阈值+药物 & SBP $\geq$ 140 或 DBP $\geq$ 90 或服用降压药 \\
+        慢性肾病     & 阈值 & eGFR $<$ 60 或 UACR $>$ 30 \\
+        代谢综合征   & 复合 & ATP III 五项中 $\geq$ 3 项 \\
+        贫血         & 阈值 & 男性 Hb $<$ 13，女性 Hb $<$ 12 \\
+        冠心病       & 问卷 & MCQ160C 自报告 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+% ---------------------------------------------------------------
+\subsection{GWAS基因组数据标准化处理}
+
+\subsubsection*{数据来源与挑战}
+
+基因组学数据来源于 GWAS Catalog 公开发布的全基因组关联分析（Genome-Wide Association Study）汇总统计量（Summary Statistics）。不同研究团队提交的数据文件在列名命名、分隔符格式以及效应量表示方式（Beta 系数或 Odds Ratio）方面存在显著的异构性，这给自动化批量处理带来了工程挑战。
+
+\subsubsection*{自适应列名识别}
+
+为应对上述异构性，系统设计了一套基于候选词表的自适应列名识别机制。对于每一个目标字段（如 rsid、p\_value、weight、risk\_allele），系统维护一组候选别名列表，并在读取文件时逐一匹配。例如，效应量列可能被命名为 \texttt{beta}、\texttt{log\_odds}、\texttt{or}、\texttt{odds\_ratio}、\texttt{effect\_size} 等，系统会自动识别并统一映射为 \texttt{weight} 字段。当文件缺少 rsid 列但包含染色体坐标（chr + pos）时，系统自动拼接 ``chr:pos'' 作为降级标识符。
+
+\subsubsection*{显著性筛选}
+
+系统对每个疾病的 GWAS 数据采用 $p < 10^{-5}$ 作为 SNP 显著性筛选阈值。相较于标准全基因组显著性水平（$p < 5 \times 10^{-8}$），该宽松阈值的选取基于以下考量：多基因风险评分（PRS）的计算通常需要纳入大量弱效应位点以提升预测解释方差，过于严格的阈值会导致有效位点数量不足，从而降低 PRS 的区分效能。该策略与 PRS 领域的最佳实践（如 PRSice-2 中的 P-value Thresholding 方法）保持一致。
+
+\subsubsection*{效应值标准化}
+
+不同 GWAS 研究采用不同的效应量表示方式：部分使用 Beta 系数（即 log(OR)），部分直接报告 Odds Ratio（OR）。系统通过检测权重列的列名关键词自动判断其类型：当识别到 OR 类型时，自动执行对数转换以统一为 log(OR) 形式：
+\begin{equation}
+    w_i = \begin{cases}
+        \beta_i & \text{若原始数据为 Beta 系数} \\
+        \ln(OR_i) & \text{若原始数据为 Odds Ratio}
+    \end{cases}
+    \label{eq:or_transform}
+\end{equation}
+
+经过上述清洗流程，每种疾病的最终产出为一个标准化权重文件（\texttt{GWAS\_\{Disease\}\_weights.csv}），包含 rsid、p\_value、weight 和 risk\_allele 四列，按 p 值升序排列并去重，供后续 PRS 引擎直接加载。
+
+\begin{figure}[htbp]
+    \centering
+    % TODO: 插入 GWAS 数据清洗流程图
+    \caption{GWAS 基因组数据标准化处理流程}
+    \label{fig:gwas_etl_flow}
+\end{figure}
+
+% ---------------------------------------------------------------
+\subsection{行为与营养数据预处理}
+
+\subsubsection*{IoT行为数据处理（MobileWell）}
+
+系统使用 MobileWell 公开数据集中的活动识别（Activity Recognition）记录作为行为模态的训练语料。原始数据以时间戳粒度记录受试者的活动状态标签（如 WALKING、STILL、RUNNING、ON\_BICYCLE 等）。
+
+ETL 流程首先将活动标签二值化为"活跃"与"久坐"两类：包含 WALK、RUN、BICYCLE、FOOT 等关键词的标签标记为活跃（$is\_active = 1$），其余标记为久坐（$is\_active = 0$）。随后，以"受试者 $\times$ 日期"为粒度进行聚合，计算每日的活跃比率：
+\begin{equation}
+    Active\_Ratio = \frac{\sum is\_active}{N_{total}}
+    \label{eq:active_ratio}
+\end{equation}
+其中 $N_{total}$ 为当日的总记录数。系统过滤掉日记录数不足 100 条的低质量数据天，并基于群体第 30 分位数阈值生成二分类伪标签：活跃比率低于阈值的样本标记为高久坐风险（$Lifestyle\_Risk = 1$），用于后续 XGBoost 行为风险分类器的训练。
+
+\subsubsection*{食物营养视觉数据处理（Nutrition5k）}
+
+Nutrition5k 数据集包含食物俯拍 RGB 图像及其对应的营养成分标注（热量、碳水化合物、蛋白质、脂肪）。系统通过递归扫描图像目录建立 ``dish\_id $\rightarrow$ 图像路径'' 的索引映射，再与营养素 CSV 标签文件按 dish\_id 进行匹配，过滤掉热量为零的异常记录后，输出 ``图像路径 + 四维营养标签'' 的结构化训练集。该数据集用于训练食物识别与热量估算的视觉模型。
+
+\subsubsection*{USDA食品营养数据库处理}
+
+系统接入 USDA SR Legacy 食品营养数据库作为 AI 营养师模块的知识基础。ETL 流程包含三层净化策略：首先，基于食品分组编号过滤快餐、饮料、酒精等非正餐类别；其次，通过关键词黑名单剔除品牌快餐（如 McDonald's、KFC）和工业制品；最后，对保留的食品名称进行标准化美化处理，并提取六项核心营养素（热量、蛋白质、脂肪、碳水化合物、膳食纤维、钠）。最终输出为 JSON 格式的食品营养数据库，供个性化食谱生成模块直接检索。
+
+
+\section{疾病风险预测模型}
+
+本节描述系统用于健康风险评估的三类模型：基于 LightGBM 的多疾病统计模型、基于 AHA 临床指南的规则推理引擎以及基于 GWAS 权重的多基因风险评分（PRS）模型。三者在方法论上各有侧重，分别对应数据驱动、知识驱动和遗传统计三种范式。
+
+\subsection{基于LightGBM的多疾病风险评估模型}
+
+\subsubsection*{模型选型论证}
+
+本系统的核心风险评估任务是：基于结构化临床体检数据（表格型、高维、含缺失值），对 30 余种慢性疾病同时进行二分类预测。在模型选型中，系统选择了 LightGBM（Light Gradient Boosting Machine）梯度提升树框架，而非深度神经网络，主要基于以下考量：
+
+\begin{enumerate}
+    \item \textbf{数据形态适配}。临床体检数据为中等规模的结构化表格数据（约 $10^4$ 量级样本、$10^2$ 量级特征），并非深度学习擅长的高维非结构化数据（如图像、文本）。在此类场景下，梯度提升树在多项基准测试中持续优于深度模型。
+    \item \textbf{缺失值原生处理}。LightGBM 在分裂节点时能够自动处理缺失特征，无需预先进行全局填充，避免了人为填充策略引入的信息偏差。
+    \item \textbf{可解释性需求}。医疗场景对模型的可解释性具有刚性要求。树模型天然支持特征重要性分析，便于生成面向用户的中文风险归因报告。
+\end{enumerate}
+
+\subsubsection*{模型集群架构与训练流程}
+
+系统为每种目标疾病训练独立的 LightGBM 二分类子模型，形成并行预测集群。训练流程的关键参数如下：
+
+\begin{itemize}
+    \item \textbf{数据划分}：采用 80\%/20\% 的训练/测试分层随机抽样（Stratified Split），确保正负样本比例在训练集与测试集中保持一致。
+    \item \textbf{超参数配置}：树数量 $n\_estimators = 150$，学习率 $\eta = 0.05$，最大叶节点数 $num\_leaves = 31$。
+    \item \textbf{类别不平衡处理}：启用 \texttt{is\_unbalance=True} 参数，令 LightGBM 根据正负样本比例自动调整叶节点权重，等效于代价敏感学习（Cost-sensitive Learning）。相较于 SMOTE 等过采样方法，该策略无需生成合成样本，避免了训练分布的人为扭曲。
+    \item \textbf{样本下限}：阳性样本数不足 20 的疾病自动跳过训练，防止因样本稀疏导致的过拟合。
+\end{itemize}
+
+\subsubsection*{防数据泄漏机制}
+
+在医学预测建模中，一个常被忽视的陷阱是\textbf{数据泄漏}（Data Leakage）：若训练特征中包含了与标签定义直接相关的变量，模型将学到标签到标签的恒等映射，而非真正的病理模式。例如，若在预测 2 型糖尿病（$y = \mathbb{1}[\text{HbA1c} \geq 6.5]$）时，输入特征中包含 HbA1c 本身，模型只需学习一个简单的阈值规则即可获得接近 1.0 的 AUC，但这一结果不具备任何临床推广价值。
+
+为此，系统维护了一个\textbf{逐疾病的泄漏特征映射表}（Leakage Mapping），在每种疾病的训练阶段，动态地从输入特征中移除与该疾病标签高度相关的变量。部分映射规则如下：
+
+\begin{table}[htbp]
+    \centering
+    \caption{防数据泄漏特征排除映射（部分）}
+    \label{tab:leakage_mapping}
+    \begin{tabular}{lp{8cm}}
+        \hline
+        目标疾病 & 排除特征 \\
+        \hline
+        2型糖尿病 (T2D) & HbA1c, Glucose\_Fasting, Insulin, HOMA\_IR \\
+        高血压 & SBP, DBP, 降压药使用 \\
+        慢性肾病 (CKD) & Creatinine, eGFR, UACR \\
+        肥胖 & BMI, WaistCircum, Weight, Height \\
+        高脂血症 & Cholesterol\_Total, HDL, Triglycerides \\
+        贫血 & Hemoglobin, Ferritin, MCV \\
+        \hline
+    \end{tabular}
+\end{table}
+
+该机制确保了每个子模型学习到的是\textbf{间接病理关联}（如 T2D 模型学习到"年龄+BMI+家族史$\rightarrow$糖尿病风险"），而非"标签$\rightarrow$标签"的恒等映射，从而保障了模型在未见数据上的泛化能力与临床参考价值。
+
+\subsubsection*{推理流程与风险归因分析}
+
+在推理阶段，系统针对每位用户执行以下流程：
+
+\begin{enumerate}
+    \item 清洗用户输入的健康数据字典，统一变量命名格式。
+    \item 对每种疾病，加载该子模型所需的特征列表，缺失特征填充为 NaN（由 LightGBM 自动处理）。
+    \item 调用 \texttt{predict\_proba} 获取阳性类概率 $p \in [0, 1]$，乘以 100 转为百分制 $P_c$。
+    \item 根据阈值将 $P_c$ 映射为四级风险等级（低 / 中 / 高 / 极高）。
+    \item 对风险概率超过 20\% 的疾病，利用 LightGBM 内建的特征重要性（基于分裂增益），提取贡献最高的 Top-5 风险因子，转译为中文输出，形成可解释的风险归因报告。
+\end{enumerate}
+
+\begin{figure}[htbp]
+    \centering
+    % TODO: 插入 LightGBM 训练与推理流程图
+    \caption{LightGBM 多疾病模型训练与预测流程}
+    \label{fig:lgb_flow}
+\end{figure}
+
+\begin{figure}[htbp]
+    \centering
+    % TODO: 插入 Top-30 特征重要性排名图
+    \caption{跨疾病模型平均特征重要性排名（Top-30）}
+    \label{fig:feature_importance}
+\end{figure}
+
+% ---------------------------------------------------------------
+\subsection{AHA CKM综合征分期评估模型}
+
+\subsubsection*{设计理由：规则引擎与机器学习的边界}
+
+对于已有明确临床金标准的疾病分期任务，系统选择了确定性规则推理引擎（Rule-based Reasoning Engine），而非统计学习模型。这一设计选择基于以下判断：AHA 于 2023 年发布的心血管-肾脏-代谢（Cardiovascular-Kidney-Metabolic, CKM）综合征分期标准，其判定条件已由权威医学机构以离散阈值的形式严格定义。在这种场景下，使用黑盒机器学习模型不仅不会带来精度提升，反而会引入不必要的不确定性和可解释性损失。因此，系统将 CKM 分期实现为一套确定性的规则引擎，确保输出与 AHA 指南完全一致。
+
+\subsubsection*{CKM 0--4 期分期逻辑}
+
+系统根据用户的体检数据，按照优先级从高到低依次判定 CKM 分期：
+
+\begin{enumerate}
+    \item \textbf{Stage 4（临床期）}：用户存在心血管疾病确诊病史（中风、心梗、心衰或冠心病中任意一项）。
+    \item \textbf{Stage 3（亚临床期）}：存在早期器官损伤证据，即 eGFR $< 60$ 或 UACR $\geq 30$ mg/g。
+    \item \textbf{Stage 2（代谢风险期）}：至少满足以下一项代谢异常：糖尿病（HbA1c $\geq 6.5\%$）、高血压（SBP $\geq 130$ 或 DBP $\geq 80$ mmHg）、血脂异常（TG $> 1.7$ mmol/L 或低 HDL）。
+    \item \textbf{Stage 1（超重/糖耐量受损期）}：BMI $\geq 25$、腹型肥胖（男性腰围 $\geq 90$ cm、女性 $\geq 85$ cm，采用中国标准）或糖耐量受损（$5.7\% \leq$ HbA1c $< 6.5\%$）。
+    \item \textbf{Stage 0（健康期）}：上述条件均不满足。
+\end{enumerate}
+
+该引擎在输出分期结果的同时，返回所有命中的判定条件列表（如"糖尿病 (HbA1c $\geq$ 6.5\%)"、"腹型肥胖 (腰围 = 95 cm)"）以及对应分期的个性化干预建议，供前端直接展示。
+
+\begin{figure}[htbp]
+    \centering
+    % TODO: 插入 CKM 分期决策树流程图
+    \caption{AHA 2023 CKM 综合征分期决策树}
+    \label{fig:ckm_flow}
+\end{figure}
+
+% ---------------------------------------------------------------
+\subsection{基因风险评估模型（PRS引擎）}
+
+多基因风险评分（Polygenic Risk Score, PRS）的理论基础已在第二章中详细推导。本节侧重描述 PRS 引擎在系统内的工程实现 机制。
+
+\subsubsection*{计算流转过程}
+
+PRS 引擎的完整计算流转分为三个阶段：
+
+\textbf{（1）用户基因数据解析。}系统支持用户上传 23andMe 格式的基因检测文本文件。解析器逐行读取该文件，跳过注释行后，将每条 SNP 记录转化为 ``rsid $\rightarrow$ genotype'' 的索引映射。基因型字段被编码为风险等位基因的携带数（0、1 或 2），表示用户在该位点上携带风险等位基因的拷贝数。
+
+\textbf{（2）加权累加计算。}对于每种目标疾病，引擎加载 §4.1.2 中预处理生成的 GWAS 权重文件，按 p 值升序排列后取前 50 个位点以降低弱信号噪声。随后，遍历这 50 个位点，将用户基因型编码 $g_i$ 与 GWAS 效应值权重 $w_i$ 逐位点相乘并累加：
+\begin{equation}
+    PRS_{raw} = \sum_{i=1}^{N} w_i \cdot g_i, \quad N \leq 50
+    \label{eq:prs_raw}
+\end{equation}
+其中 $w_i$ 为 §4.1.2 中标准化后的 log(OR) 值，$g_i \in \{0, 1, 2\}$ 为用户在第 $i$ 个风险位点上的等位基因拷贝数。
+
+\textbf{（3）归一化与修正系数映射。}原始 PRS 分值的量纲和尺度因疾病而异，无法直接用于跨疾病比较和下游融合。系统将其归一化至 $[0, 100]$ 的百分制分数：
+\begin{equation}
+    PRS_{norm} = \min\left(100, \; \frac{PRS_{raw}}{PRS_{max}} \times 100\right)
+    \label{eq:prs_norm}
+\end{equation}
+其中 $PRS_{max}$ 为预设的归一化上限（系统默认取 50）。随后，该分数通过线性映射转化为 §4.3 节贝叶斯融合所需的基因修正系数 $\alpha \in [0.8, 1.5]$：
+\begin{equation}
+    \alpha = 0.8 + \frac{PRS_{norm}}{100} \times 0.7
+    \label{eq:prs_to_alpha}
+\end{equation}
+
+当用户未上传基因数据时，$\alpha$ 默认取 1.0（中性值），融合引擎退化为临床-行为两维模型。
+
+\begin{figure}[htbp]
+    \centering
+    % TODO: 插入 PRS 计算流转图
+    \caption{PRS 基因风险评分计算流转过程}
+    \label{fig:prs_flow}
+\end{figure}
+
+
+\section{多模态融合风险引擎}
+
+\subsection{基于领域知识的半监督数据增强策略（表型反推法）}
+
+在构建多模态健康风险预测模型的过程中，系统面临的首要挑战是多源异构数据之间缺乏统一的高质量标注。具体而言，基因组学数据（如 GWAS 效应值）、临床体检数据（如血液生化指标）以及连续采集的物联网（IoT）行为数据，往往来源于不同的时空尺度与受试群体，这导致各模态特征难以在同一个样本空间中直接配对并对齐，进而无法采用传统的端到端（End-to-End）有监督学习算法进行联合训练。
+
+为解决上述问题，本研究提出了一种基于领域知识（Domain Knowledge）的半监督数据增强策略，即“表型反推法”（Phenotype Back-propagation）。
+
+该方法的核心思想在于利用医学和分子遗传学领域的先验证据，建立隐性基因特征谱与其映射的显性临床表型之间的关联桥梁。根据已有的遗传流行病学研究，2型糖尿病及代谢综合征患者的胰岛素抵抗指数（HOMA-IR）与特定基因（如 TCF7L2、FTO、KCNQ1 等）的变异表达模式存在显著的强相关性，其表型变异的群体遗传度（Heritability，$h^2$）估算通常介于 $40\% \sim 50\%$ 之间。以此为切入点，本研究提出如下系统核心机制推演的支撑假设：
+
+\textbf{假设 H1}：在缺乏全基因组靶向测序特征层的常规临床体检样本中，外周血特定生化反馈指标（如基于空腹血糖与胰岛素联合计算的 HOMA-IR 及其衍生的动态代谢负荷特征），可作为个体具备高易感遗传风险的稳健“表型代理标记物”（Phenotypic Proxy Marker）。
+
+依托上述假设，表型反推法在系统内的具体实施流水线如下：首先，在具备详细膳食摄入记录的数据集中，基于时序对齐（Time-series Alignment）机制截取患者进食后的连续血糖波动片段以及同期对应的碳水化合物绝对摄入当量，进而定义“碳水敏感度”（Carbohydrate Sensitivity）这一基于刺激-响应范式的复合表型指标。其标准计算公式如下：
+\begin{equation}
+    S_i = \frac{\Delta \text{Glucose}_i}{\text{Carbs}_i}
+    \label{eq:carb_sensitivity}
+\end{equation}
+其中，式中所列 $\Delta \text{Glucose}_i$ 表示摄入外源性碳水化合物后两小时观测窗口内，血糖曲线下面积（AUC）对比基础代谢状态下的净增绝对量；而 $\text{Carbs}_i$ 表示触发第 $i$ 次饮食代谢反馈事件时，碳水化合物的标准化摄入量（克）。
+
+系统在完成该群体队列的 $S_i$ 概率分布推断后，会将其转化为用于指导异构特征投影映射的伪标签（Pseudo-labels）矩阵。给定一个基于人群大样本统计的分位数阈值 $\tau$（本文系统算法中默认选取截断于上四分位数），伪标签的软分配生成逻辑被形式化为如下示性函数：
+\begin{equation}
+    \hat{y}_g = \mathbb{1}(S_i > \tau)
+    \label{eq:pseudo_label}
+\end{equation}
+通过上述伪标签注入机制，碳水敏感度偏高的样本（即 $\hat{y}_g=1$）在特征空间中被“软对齐”（Soft Alignment）至高 PRS 风险区域附近。该半监督策略缓解了多模态数据因来源差异导致的特征稀疏（Feature Sparsity）问题，使模型在训练阶段能够间接学习基因-临床表型间的交互效应，从而提升风险预测模型对代谢性疾病的泛化能力。
+
+\subsection{临床-基因-行为三维贝叶斯融合算法}
+
+在异构特征完成概率空间对齐的基础上，本课题需要从决策层面实现多模态预测结果的可解释聚合。为此，本文基于朴素贝叶斯（Naive Bayes）推断框架，设计了一种临床-基因-行为三维后融合（Late Fusion）架构。
+
+相较于深度张量拼接融合（Deep Feature Concatenation）等黑盒方法，该后融合策略具有两方面优势：其一，保留了各单模态基线分类器的医学可解释性；其二，通过似然概率的乘积形式，在统计学意义上表达了不同证据维度对整体风险的独立修正作用。
+
+\textbf{三维解耦模型。}融合引擎将慢性疾病的综合风险解耦为三个正交的因果维度，分别对应三个关键评估因子：
+
+\begin{itemize}
+    \item \textbf{临床基准概率 $P_c$}。由 LightGBM 梯度提升树集群负责计算。该模型以受试者的多维静态体检指标、血液生化结果及结构化病历特征向量 $\mathbf{x}_c$ 作为输入，输出目标疾病的基准发生概率。系统内部统一采用百分制表示：
+    \begin{equation}
+        P_c = f_{lgb}(\mathbf{x}_c) \times 100 \in [0, 100] \quad (\text{单位: \%})
+        \label{eq:clinical_prob}
+    \end{equation}
+
+    \item \textbf{基因修正系数 $\alpha$}。系统调用 \texttt{gene\_service} 模块完成全基因组位点比对，计算受试者针对特定疾病的多基因风险评分（PRS）。随后，通过一个基于比值比（Odds Ratio）的非线性映射函数 $\varPhi$，将离散的 PRS 分值转化为连续的乘积修正因子。当 PRS 偏高时，$\alpha$ 相应增大以放大风险估计；当 PRS 偏低时，$\alpha$ 缩小以体现遗传保护效应。其映射关系及截断边界定义如下：
+    \begin{equation}
+        \alpha = \varPhi(PRS) \in [\alpha_{min}, \alpha_{max}], \quad (\alpha_{min}=0.8, \;\alpha_{max}=1.5)
+        \label{eq:gene_modifier}
+    \end{equation}
+    其中 PRS 为 $0$ 分时 $\alpha=0.8$（遗传保护效应），PRS 为 $100$ 分时 $\alpha=1.5$（高危遗传）。当用户未上传基因检测数据时，$\alpha$ 默认取 $1.0$，即不施加遗传修正。
+
+    \item \textbf{行为修正系数 $\beta$}。该因子量化后天生活方式对疾病风险的动态影响。系统接收可穿戴设备上报的日均步数 $x_{steps}$，经归一化后构造活跃度特征，输入预训练的 XGBoost 二分类器获取久坐风险概率 $p_{risk}$，再通过线性映射转换为修正因子：
+    \begin{equation}
+        \beta = 0.8 + p_{risk} \times 0.5 \in [0.8, 1.3]
+        \label{eq:behavior_modifier}
+    \end{equation}
+    其中 $\beta=0.8$ 表示高活跃度下的风险折减，$\beta=1.3$ 表示久坐模式下的风险放大。当无 IoT 数据接入时，$\beta$ 默认取 $1.0$。
+\end{itemize}
+
+\textbf{融合公式与边界截断。}基于条件独立假设，三个因子以乘积形式完成最终的风险融合。为防止数值溢出和概率越界，融合结果被截断在 $[0.1, 99.9]$ 的安全区间内（单位：\%）：
+\begin{equation}
+    P_{fusion} = \text{clip} \big( P_c \times \alpha \times \beta, \; 0.1, \; 99.9 \big)
+    \label{eq:fusion}
+\end{equation}
+
+\textbf{极值边界安全保护机制。}在工程实现中，融合引擎的 \texttt{calculate\_composite\_risk} 函数末端设置了一项兜底保护规则。该规则针对以下特殊情形：受试者的临床指标正常（$P_c$ 较低），但基因风险显著偏高（$\alpha \geq 1.2$），导致融合后概率仍处于低风险区间（$P_{fusion} \leq 20\%$）。此时，系统将绕过常规的分级判定逻辑，强制将该个体的风险等级标记为"潜在遗传风险（Potential）"。该机制的设计目的有二：
+\begin{enumerate}
+    \item 避免因临床表型正常而遗漏具有高遗传易感性的个体（降低漏诊率）；
+    \item 为临床医生提供显式的遗传风险提示，辅助制定个性化随访方案。
+\end{enumerate}
+
+\subsection{IoT实时贝叶斯风险更新}
+
+传统健康风险评估系统通常以季度或半年度为周期执行批量计算。在两次评估之间，模型无法感知用户的实时健康状态变化。这一局限使得系统难以应对突发性的生理异常事件，如急性心率失常或代谢指标骤变。
+
+为弥补上述不足，本系统通过 \texttt{update\_realtime\_risk} 模块实现了基于事件驱动的在线贝叶斯风险更新机制。当可穿戴设备上报异常生理信号时，系统将实时修正先前的静态风险评估结果。其理论表达遵循贝叶斯后验更新公式：
+\begin{equation}
+    P_{t+1}(Risk | HR_{abnormal}) = \frac{P(HR_{abnormal}|Risk) \cdot P_t(Risk)}{P(HR_{abnormal})}
+    \label{eq:realtime_update}
+\end{equation}
+
+其中，$P_t(Risk)$ 为当前时刻的先验风险概率（即最近一次静态评估结果），$P(HR_{abnormal}|Risk)$ 为似然函数，$P(HR_{abnormal})$ 为归一化常数。需要指出的是，该式用于给出在线更新的概率论依据；在工程实现中，系统并未对连续似然项进行实时估计，而是以离散 Bayes Factor 对似然比进行近似。
+
+在工程实践中，该模块围绕以下三个子机制展开：
+
+\subsubsection*{实时事件捕获机制}
+
+系统通过流式数据接口持续接收可穿戴设备上报的心率数据。当检测到心率超过临床阈值（$HR_{latest} > 100\,\text{bpm}$）时，触发实时更新流程。系统将当前心率读数与用户的历史健康档案（特别是 BMI 等基础体征）进行联合评估，以确定异常事件的严重程度。
+
+事件分级规则如下：
+\begin{itemize}
+    \item 若 $HR_{latest} > 100\,\text{bpm}$ 且 $\text{BMI} > 28$（高心率伴肥胖），判定为高危复合事件；
+    \item 若 $HR_{latest} > 100\,\text{bpm}$ 且 $\text{BMI} \leq 28$（单纯高心率），判定为中等风险事件；
+    \item 若 $HR_{latest} < 50\,\text{bpm}$（心动过缓），判定为低风险异常事件。
+\end{itemize}
+
+\subsubsection*{计算降维与查表优化}
+
+在实际部署环境中，逐次计算完整的似然比 $\frac{P(HR_{abnormal}|Risk)}{P(HR_{abnormal})}$ 需要大量的条件概率估计，计算开销较大。为满足实时响应的延迟要求，本系统采用预定义贝叶斯因子（Bayes Factor）$\gamma$ 的查表策略，对式~\eqref{eq:realtime_update}~中的似然比进行离散近似。
+
+具体而言，系统根据事件分级预先设定 $\gamma$ 的离散取值：
+\begin{itemize}
+    \item 高危复合事件（高心率 + 肥胖）：$\gamma = 1.8$；
+    \item 中等风险事件（单纯高心率）：$\gamma = 1.3$；
+    \item 低风险异常事件（心动过缓）：$\gamma = 1.2$。
+\end{itemize}
+
+该策略将式~\eqref{eq:realtime_update}~中的似然比简化为常数乘子，使得后验更新退化为 $P_{t+1} \propto \gamma \cdot P_t$，从而将单次更新的时间复杂度降至 $O(1)$。
+
+\subsubsection*{假阳性过滤与分级修正}
+
+在实际使用场景中，可穿戴设备频繁产生的噪声信号（如运动后短暂的心率升高、情绪波动导致的瞬时心率异常等）可能触发大量非病理性的假阳性事件。若不加区分地对每次异常均施加较大的修正权重，将导致风险估计产生不必要的波动，降低用户体验并消耗不必要的医疗资源。
+
+为此，系统采用分级修正策略：对于缺乏多维度交叉验证支持的孤立异常事件，仅施加较小的修正因子（如 $\gamma = 1.3$）。该设计使得 $P_{t+1}$ 相对于 $P_t$ 仅产生温和的增量变化，避免因单一噪声信号引发不必要的高危预警。只有当异常信号与其他风险因素（如高 BMI）形成多维度关联时，系统才施加较大的修正因子（$\gamma = 1.8$），以确保对真实风险事件的及时响应。
+
+该分级策略在假阳性率控制与真阳性敏感度之间取得了工程平衡：既避免了对用户的过度干扰，又保证了对高危事件的捕获能力。
+
+
+\section{基于反事实推理的健康干预推演模型}
+
+从自动化控制论的视角出发，前述的融合风险引擎（§4.3）完成了"感知"与"决策"两个环节——采集多模态数据并计算当前风险。然而，一个完整的闭环控制系统还需要"预测"与"仿真"能力：在施加控制输入之前，预判系统的未来行为轨迹。本节所设计的反事实推演模型正是承担这一角色。
+
+系统将用户的当前健康状态视为\textbf{系统当前态}（State），将干预方案视为\textbf{控制输入}（Control Input），将融合风险引擎视为\textbf{受控对象的数字孪生模型}（Digital Twin）。通过在数字孪生上施加不同的输入条件，系统能够在不影响真实用户的前提下，模拟多种假设情景下的风险演化轨迹，从而为健康决策提供量化依据。
+
+\subsection{自然老化风险推演}
+
+\subsubsection*{问题定义}
+
+自然老化推演回答的是一个\textbf{开环预测}问题：在不施加任何人工干预的前提下，用户的生理指标将沿何种轨迹退化？对应的风险水平将如何演变？该推演构成了干预效果评估的\textbf{基线参照}（Baseline），即"不做干预的最坏情况"。
+
+\subsubsection*{数字孪生构建与退化函数}
+
+系统首先通过深拷贝（Deep Copy）用户的当前健康档案，构建一个独立于真实用户的\textbf{健康数字孪生}。随后，在该副本上施加基于流行病学统计的年化退化参数，模拟生理指标随年龄增长的自然变化趋势。退化函数定义如下：
+
+\begin{equation}
+    \mathbf{x}_{t+\Delta} = \mathbf{x}_t + \boldsymbol{\delta} \cdot \Delta
+    \label{eq:aging_model}
+\end{equation}
+
+其中 $\mathbf{x}_t$ 为当前健康指标向量，$\Delta$ 为推演年数，$\boldsymbol{\delta}$ 为年化退化率向量。系统当前设定的退化参数如下：
+
+\begin{table}[htbp]
+    \centering
+    \caption{年化退化参数设定}
+    \label{tab:aging_params}
+    \begin{tabular}{llll}
+        \hline
+        指标 & 年化退化量 & 单位 & 生理依据 \\
+        \hline
+        收缩压 (SBP) & $+0.5$ & mmHg/年 & 动脉硬化导致外周阻力增加 \\
+        空腹血糖 (FPG) & $+0.05$ & mmol/L/年 & 胰岛素敏感性随年龄下降 \\
+        体重指数 (BMI) & $+0.1$ & kg/m$^2$/年 & 基础代谢率降低 \\
+        年龄 (Age) & $+\Delta$ & 岁 & 自然增长 \\
+        \hline
+    \end{tabular}
+\end{table}
+
+完成指标修改后，系统将退化后的数字孪生数据直接传入 §4.3 节的融合引擎（\texttt{calculate\_composite\_risk}），获取推演年份下的完整多疾病风险报告。该设计实现了推演模块与风险引擎的\textbf{完全复用}——推演并不引入新的模型或新的参数，仅对输入进行系统性扰动后复用已有的推理流水线，从而确保推演结果与当前评估结果在方法论上的一致性。
+
+\begin{figure}[htbp]
+    \centering
+    % TODO: 插入自然老化风险推演曲线图
+    \caption{自然老化情景下多疾病风险随年龄变化趋势}
+    \label{fig:aging_curve}
+\end{figure}
+
+% ---------------------------------------------------------------
+\subsection{生活方式干预推演}
+
+\subsubsection*{反事实推理框架}
+
+干预推演回答的是一个典型的\textbf{反事实}（Counterfactual）问题："如果用户在当前时刻执行了某项生活方式干预（如减重 5\%），其风险水平将如何改变？"反事实推理的核心在于构造一个与现实世界仅在干预变量上存在差异的\textbf{平行假设世界}，并比较两个世界的结局差异。
+
+在本系统中，反事实推理的实现遵循以下范式：以用户当前健康档案为\textbf{事实世界}（Factual World），在数字孪生副本上施加干预引发的指标变化作为\textbf{反事实世界}（Counterfactual World），分别通过融合引擎计算两个世界的完整风险报告，最终量化干预带来的风险收益。
+
+\subsubsection*{干预联动效应建模}
+
+在真实的人体代谢系统中，各生理指标之间存在耦合关系：单一干预往往引发多个指标的联动变化。系统对此进行了建模。以体重干预（减重 $\lambda\%$）为例，其联动效应链如下：
+
+\begin{enumerate}
+    \item \textbf{体重直接变化}：$W_{new} = W_{current} \times (1 - \lambda)$。
+    \item \textbf{BMI 重新计算}：$\text{BMI}_{new} = W_{new} / H^2$（$H$ 为身高，单位 m）。
+    \item \textbf{血压联动改善}：$\text{SBP}_{new} = \text{SBP}_{current} - 5$ mmHg。根据临床干预试验的经验均值，每减重 5\%--10\% 体重，收缩压平均下降约 5 mmHg。
+    \item \textbf{血糖联动改善}：$\text{FPG}_{new} = \text{FPG}_{current} - 0.5$ mmol/L。减重可通过改善胰岛素敏感性降低空腹血糖水平。
+\end{enumerate}
+
+该联动模型将单一的减重干预映射为一组\textbf{多维指标扰动}（Multi-dimensional Perturbation），使得干预效果的评估不局限于体重本身，而是反映了代谢系统的整体改善。
+
+\subsubsection*{双轨对比与收益量化}
+
+系统分别在事实世界与反事实世界上调用融合引擎，获取两份完整的多疾病风险报告。随后，提取各疾病中最高风险概率进行对比，计算干预的最大风险降幅：
+
+\begin{equation}
+    \Delta_{reduction} = \frac{P_{max}^{base} - P_{max}^{new}}{P_{max}^{base}} \times 100\%
+    \label{eq:risk_reduction}
+\end{equation}
+
+其中 $P_{max}^{base}$ 为干预前所有疾病中的最高风险概率，$P_{max}^{new}$ 为干预后的对应值。该指标以百分比形式呈现用户可感知的健康收益（如"减重 5\% 后，您的最高疾病风险降低了 12.3\%"），为用户的健康决策提供直观的量化支撑。
+
+\begin{figure}[htbp]
+    \centering
+    % TODO: 插入干预前后风险对比图
+    \caption{干预推演双轨对比示意：自然老化轨迹 vs 干预后轨迹}
+    \label{fig:intervention_compare}
+\end{figure}

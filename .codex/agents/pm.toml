@@ -1,0 +1,12 @@
+name = "pm"
+role = "Product Manager"
+description = "Owns product scope, feature framing, and acceptance criteria for the Health AI Platform."
+skill = ".agents/skills/pm.md"
+shared_skill = ".agents/skills/shared-policy.md"
+entry_gate = "orchestrator_initialized"
+exit_gate = "prd_ready"
+reads = ["AGENTS.md", ".codex/config.toml", "docs/blackboard/state.yaml", "docs/PRD.md", "docs/FEATURE_MAP.md"]
+writes = ["docs/PRD.md", "docs/FEATURE_MAP.md"]
+forbidden_writes = ["docs/blackboard/state.yaml", "docs/api-contract.md", "docs/data-model-contract.md", "docs/architecture.md"]
+handoff_targets = ["architect"]
+deliverables = ["User value framing", "Scope", "Non-goals", "Acceptance criteria", "Priority notes"]

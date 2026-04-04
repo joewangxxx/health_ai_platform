@@ -1,41 +1,43 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../stores/authStore'
-import MainLayout from '../layout/MainLayout.vue'
-import { showToast } from '../composables/useToast'
 
-// Views
-import DashboardView from '../views/DashboardView.vue'
-import ClinicalView from '../views/ClinicalView.vue'
-import GenomicsView from '../views/GenomicsView.vue'
-import LifestyleView from '../views/LifestyleView.vue'
-import PharmacyView from '../views/PharmacyView.vue'
-import NutritionPlanView from '../views/nutrition/NutritionPlan.vue'
-import ProfileView from '../views/ProfileView.vue'
-import SettingsView from '../views/SettingsView.vue'
-import LoginView from '../views/LoginView.vue'
-import RegisterView from '../views/RegisterView.vue'
-import DataCenterView from '../views/admin/DataCenterView.vue'
-import AdminDashboardView from '../views/admin/AdminDashboardView.vue'
-import UserManagementView from '../views/admin/UserManagementView.vue'
-import KnowledgeBaseView from '../views/admin/KnowledgeBase.vue'
+import { showToast } from '../composables/useToast'
+import { useAuthStore } from '../stores/authStore'
+
+const LoginView = () => import('../views/LoginView.vue')
+const RegisterView = () => import('../views/RegisterView.vue')
+const MainLayout = () => import('../layout/MainLayout.vue')
+const DashboardView = () => import('../views/DashboardView.vue')
+const ClinicalView = () => import('../views/ClinicalView.vue')
+const GenomicsView = () => import('../views/GenomicsView.vue')
+const LifestyleView = () => import('../views/LifestyleView.vue')
+const PharmacyView = () => import('../views/PharmacyView.vue')
+const NutritionPlanView = () => import('../views/nutrition/NutritionPlan.vue')
+const ProfileView = () => import('../views/ProfileView.vue')
+const SettingsView = () => import('../views/SettingsView.vue')
+const DrAIView = () => import('../views/chat/DrAI.vue')
+const HealthTimelineView = () => import('../views/clinical/HealthTimeline.vue')
+const DataCenterView = () => import('../views/admin/DataCenterView.vue')
+const AdminDashboardView = () => import('../views/admin/AdminDashboardView.vue')
+const UserManagementView = () => import('../views/admin/UserManagementView.vue')
+const KnowledgeBaseView = () => import('../views/admin/KnowledgeBase.vue')
 
 const routes = [
     {
         path: '/login',
         name: 'Login',
-        component: LoginView
+        component: LoginView,
     },
     {
         path: '/register',
         name: 'Register',
-        component: RegisterView
+        component: RegisterView,
     },
     {
         path: '/',
         component: MainLayout,
         meta: { requiresAuth: true },
         children: [
-            { path: '', name: 'Dashboard', component: DashboardView }, // User Dashboard
+            { path: '', name: 'Dashboard', component: DashboardView },
             { path: 'clinical', name: 'Clinical', component: ClinicalView },
             { path: 'genomics', name: 'Genomics', component: GenomicsView },
             { path: 'lifestyle', name: 'Lifestyle', component: LifestyleView },
@@ -43,9 +45,9 @@ const routes = [
             { path: 'nutrition', name: 'Nutrition', component: NutritionPlanView },
             { path: 'profile', name: 'Profile', component: ProfileView },
             { path: 'settings', name: 'Settings', component: SettingsView },
-            { path: 'chat', name: 'DrAI', component: () => import('../views/chat/DrAI.vue') }, // Lazy load
-            { path: 'timeline', name: 'HealthTimeline', component: () => import('../views/clinical/HealthTimeline.vue') }, // Task 29
-        ]
+            { path: 'chat', name: 'DrAI', component: DrAIView },
+            { path: 'timeline', name: 'HealthTimeline', component: HealthTimelineView },
+        ],
     },
     {
         path: '/admin',
@@ -56,32 +58,27 @@ const routes = [
             { path: 'data-center', name: 'DataCenter', component: DataCenterView },
             { path: 'users', name: 'UserManagement', component: UserManagementView },
             { path: 'knowledge', name: 'KnowledgeBase', component: KnowledgeBaseView },
-        ]
-    }
+        ],
+    },
 ]
 
 const router = createRouter({
     history: createWebHistory(),
-    routes
+    routes,
 })
 
-// Global Guard
 router.beforeEach(async (to, from, next) => {
     const authStore = useAuthStore()
 
-    // 1. Auth Guard
-    if (to.matched.some(record => record.meta.requiresAuth)) {
-        // Explicit token check
+    if (to.matched.some((record) => record.meta.requiresAuth)) {
         if (!authStore.token) {
             next({ name: 'Login' })
             return
         }
 
-        // Ensure profile is loaded for role check
         if (!authStore.user) {
             try {
                 await authStore.fetchProfile()
-                // Double-check user loaded
                 if (!authStore.user) {
                     authStore.logout()
                     next({ name: 'Login' })
@@ -94,27 +91,23 @@ router.beforeEach(async (to, from, next) => {
             }
         }
 
-        // 2. Admin Guard
-        if (to.matched.some(record => record.meta.requiresAdmin)) {
+        if (to.matched.some((record) => record.meta.requiresAdmin)) {
             if (!authStore.user?.is_superuser) {
-                showToast("Access Denied: Admin only", "error")
-                next({ name: 'Dashboard' }) // Kick back to user dashboard
+                showToast('Access Denied: Admin only', 'error')
+                next({ name: 'Dashboard' })
                 return
             }
         }
 
         next()
-    } else {
-        // Redirect to appropriate dashboard if logged in
-        if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
-            if (authStore.user?.is_superuser) {
-                next({ name: 'AdminDashboard' })
-            } else {
-                next({ name: 'Dashboard' })
-            }
+    } else if ((to.name === 'Login' || to.name === 'Register') && authStore.isAuthenticated) {
+        if (authStore.user?.is_superuser) {
+            next({ name: 'AdminDashboard' })
         } else {
-            next()
+            next({ name: 'Dashboard' })
         }
+    } else {
+        next()
     }
 })
 

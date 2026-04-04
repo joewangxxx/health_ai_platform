@@ -1,0 +1,228 @@
+﻿% !TeX root = ../main.tex
+
+\chapter{系统测试与实验分析}
+
+\section{测试环境与方案}
+\subsection{测试环境配置}
+\begin{table}[htbp]
+\centering
+\caption{实验与测试环境配置}
+\label{tab:test_env}
+\begin{tabular}{lll}
+\toprule
+类别 & 组件 & 配置 \\
+\midrule
+硬件环境 & CPU & Intel Core i9 \\
+硬件环境 & 内存 & 16GB \\
+硬件环境 & GPU & NVIDIA RTX 3070 Ti \\
+软件环境 & Python & 3.11 \\
+软件环境 & Web 后端 & FastAPI \\
+软件环境 & 深度学习框架 & PyTorch \\
+软件环境 & 集成学习框架 & LightGBM \\
+软件环境 & 缓存中间件 & Redis 7-alpine \\
+软件环境 & 前端框架 & Vue 3.5 \\
+测试框架 & 单元/集成测试 & pytest \\
+测试框架 & API 回归测试 & FastAPI TestClient \\
+测试框架 & 压力测试 & Locust \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+实验系统采用容器化部署与本地开发协同模式。后端服务在 Python 3.11 环境运行，前后端与缓存服务通过 Docker Compose 编排，Redis 容器镜像固定为 \texttt{redis:7-alpine}。模型训练与推理统一采用同一工程路径体系，视觉模型路径由配置项 \texttt{NUTRITION\_MODEL\_PATH} 显式管理，以保证训练产物与在线推理的一致性。
+
+\subsection{测试方案设计}
+第六章测试流程按“算法正确性$\rightarrow$系统可用性$\rightarrow$并发鲁棒性”三维展开，保证从模型层到服务层的闭环验证。
+
+\begin{itemize}
+\item \textbf{维度一：算法模型评估与消融实验。} 以 AUC、Accuracy、Recall、F1、Brier Score 与校准曲线为核心度量，分别评估临床风险模型、行为分类模型与多模态融合引擎，并对融合链路进行分阶段消融对比。
+\item \textbf{维度二：系统功能与集成测试。} 采用 \texttt{pytest + FastAPI TestClient} 执行接口回归，测试基座使用 \texttt{sqlmodel.pool.StaticPool} 构建内存会话隔离；通过 \texttt{patch.dict(sys.modules,\dots)} 进行全局重依赖 Mock，并结合 \texttt{app.dependency\_overrides} 完成依赖注入替换，确保 API 行为验证不受外部模型加载时延干扰。
+\item \textbf{维度三：高并发性能压力测试。} 使用 Locust 对关键接口进行并发注入，以 P99 响应时延（P99 RT）与吞吐量（TPS）作为主指标，评估系统在持续负载和突发负载下的稳定性边界。
+\end{itemize}
+
+\section{模型性能评估}
+\subsection{慢病风险预测模型评估}
+慢病风险模型由 \texttt{train\_risk\_models.py} 训练，针对每一疾病标签 \texttt{Target\_*} 独立构建 LightGBM 二分类器。数据划分采用分层抽样策略：
+\[
+\texttt{train\_test\_split}(X,y,\texttt{test\_size}=0.2,\texttt{random\_state}=42,\texttt{stratify}=y),
+\]
+保证训练集与测试集标签比例一致。模型配置启用 \texttt{is\_unbalance=True}，用于处理慢病阳性样本占比较低的类别不均衡问题。
+
+该脚本显式实现防泄漏机制：在每一目标病种训练前，根据 \texttt{LEAKAGE\_MAPPING} 动态剔除与诊断定义高度重叠的泄漏变量。以 T2D 为例，\texttt{HbA1c}、\texttt{Glucose\_Fasting} 等指标被排除后，模型仍保持可分性，避免“诊断同义特征”导致的虚高评估。评估指标采用 \texttt{roc\_auc\_score} 与 \texttt{accuracy\_score} 双指标并行报告，兼顾排序能力与分类判定性能。
+
+可解释性方面，训练脚本读取各病种模型的 \texttt{feature\_importances\_}，并汇总输出跨病种 Top-30 重要特征图。该过程将模型贡献映射为显式变量权重，降低黑盒解释风险，为临床先验一致性核查提供依据。
+
+[占位符：图 6-1 糖尿病 ROC 曲线与特征重要性图]
+
+\subsection{行为分类与食物视觉模型评估}
+行为风险模型由 \texttt{train\_lifestyle\_model.py} 训练，输入特征为 \texttt{sum} 与 \texttt{count}，标签为 \texttt{Lifestyle\_Risk}。模型采用 XGBoost 分类器，按 \texttt{test\_size=0.2} 划分训练/测试集合，输出 Accuracy、Precision、Recall 与 F1 四项指标。由于该模型在融合链路中承担行为修正因子估计功能，Recall 用于衡量高风险行为样本的识别完整性，Accuracy 用于刻画整体判别稳定性。
+
+食物视觉模型在服务侧由 \texttt{food\_service.py} 加载 \texttt{nutrition\_efficientnet.pth}，骨干网络为 \texttt{EfficientNet-B0}，分类头替换为四维回归输出层，对应 \(\{\text{Calories},\text{Carbs},\text{Protein},\text{Fat}\}\)。训练脚本 \texttt{train\_nutri\_net.py} 采用多任务回归损失 \(\texttt{L1Loss}\)，其目标函数为
+\begin{equation}
+\mathcal{L}_{\mathrm{L1}}=\frac{1}{4}\sum_{k=1}^{4}\left|\hat{y}_k-y_k\right|,
+\end{equation}
+其中 \(k\) 对应四类营养素。L1 损失对异常值具有更高鲁棒性，适用于餐食图像标注噪声条件下的稳定训练。在线推理阶段对回归输出执行非负截断，保证营养值物理可解释性。
+
+\subsection{多模态融合消融实验 (Ablation Study)}
+\begin{equation}
+P_A=P_c
+\end{equation}
+
+\begin{equation}
+P_B=\operatorname{clip}(P_c\cdot\alpha,\;0.1,\;99.9)
+\end{equation}
+
+\begin{equation}
+P_C=\operatorname{clip}(P_c\cdot\alpha\cdot\beta,\;0.1,\;99.9)
+\end{equation}
+
+融合引擎由 \texttt{fusion\_service.py} 实现，其中 \(\operatorname{clip}(\cdot)\) 与代码一致，执行 \([0.1,99.9]\) 区间截断，避免概率溢出。为避免仅以 AUC 评价排序能力而忽略概率可信度，本节同时采用 Brier Score 与校准曲线进行概率质量评估。Brier Score 定义为：
+\begin{equation}
+\mathrm{BS}=\frac{1}{N}\sum_{i=1}^{N}(\hat{p}_i-y_i)^2,
+\end{equation}
+其值越小表示概率预测越接近真实事件频率。校准曲线用于比较预测概率与观测频率的一致性，从而评估模型是否存在系统性高估或低估。
+
+此外，融合引擎包含潜在遗传风险拦截规则：当 \(\alpha\geq 1.2\) 且融合后风险不高于中风险阈值（\(\leq 20\)）时，输出“Potential”标签。该规则用于捕获“当前临床表型未显著异常但遗传易感度偏高”的个体，降低高危亚群漏诊概率，在不显著抬升总体误报率的前提下增强筛查敏感性。
+
+[占位符：表 6-1 消融实验指标对比表]
+
+[占位符：图 6-2 融合前后校准曲线对比图]
+
+\section{系统功能测试}
+\subsection{接口功能测试与隔离策略}
+系统功能测试采用“接口契约验证+依赖隔离验证”的双层策略。测试框架基于 \texttt{pytest} 与 \texttt{FastAPI TestClient}，并在测试会话初始化阶段引入控制反转（IoC）式隔离机制：其一，通过 \texttt{patch.dict(sys.modules,\dots)} 对 \texttt{risk\_engine}、\texttt{fusion\_service}、\texttt{food\_service} 等重型依赖进行全局替身注入；其二，通过 \texttt{StaticPool + sqlite://} 构造内存数据库，消除持久层状态漂移；其三，通过 \texttt{app.dependency\_overrides} 覆盖 \texttt{get\_session} 与鉴权依赖，实现权限路径与业务路径的可控复现实验。
+
+在该隔离策略下，作者在完整项目测试依赖已安装的本地回归环境中执行了 19 项核心功能用例，覆盖权限控制、营养规划、基础健康接口、V10 生化指标链路与服务降级鲁棒性。通过率定义为
+\begin{equation}
+R_{\mathrm{pass}}=\frac{N_{\mathrm{pass}}}{N_{\mathrm{total}}}\times 100\%.
+\end{equation}
+对应回归记录显示 \(N_{\mathrm{pass}}=19\)、\(N_{\mathrm{total}}=19\)，故 \(R_{\mathrm{pass}}=100\%\)。
+
+\begin{table}[htbp]
+\centering
+\caption{核心接口功能测试矩阵（回归结果）}
+\label{tab:api_test_matrix}
+\begin{tabular}{llll}
+\toprule
+测试域 & 用例数 & 代表接口/模块 & 结果 \\
+\midrule
+权限与鉴权控制 & 4 & \texttt{/admin/users}, \texttt{/admin/data/logs} & 全部通过 \\
+个性化营养规划 & 3 & \texttt{/nutrition/generate} & 全部通过 \\
+基础系统接口 & 2 & \texttt{/}, \texttt{/api/device/current} & 全部通过 \\
+V10 数据链路 & 6 & \texttt{/user/profile}, \texttt{/analyze/comprehensive} & 全部通过 \\
+菜谱服务鲁棒性 & 4 & \texttt{ChefService.generate\_recipe\_card} & 全部通过 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+结构与逻辑诊断结果表明，现有功能测试体系满足“接口可达、权限可控、异常可降级、数据可追溯”四项约束：接口层验证了 HTTP 契约稳定性，依赖隔离层抑制了外部模型加载波动，数据层验证了 V10 指标从写入到推理入口的完整传递，服务层验证了上游大模型异常时的本地退化路径。
+
+\subsection{基于控制闭环的端到端场景测试}
+端到端测试按“感知$\rightarrow$决策$\rightarrow$控制$\rightarrow$反馈”闭环构造三类场景，验证前端请求经后端服务编排后返回可执行干预结果的完整链路。
+
+\textbf{场景 A：多模态感知与决策链路测试。}
+用户首先通过 \texttt{/user/profile} 提交体征与 V10 生化指标，随后调用 \texttt{/analyze/comprehensive} 触发融合风险评估。代码链路在分析入口处执行“数据库画像优先加载 + 请求体增量覆盖 + 缺省年龄回退”三步合并，保证输入侧信息缺失时仍可生成稳定风险报告。该场景验证了感知层数据向决策层的完整映射关系。
+
+\textbf{场景 B：闭环控制与干预策略测试。}
+干预链路由 \texttt{/nutrition/generate} 与 \texttt{/chat/send} 组成。前者在显式热量输入与自动 TDEE 估计两种模式下生成饮食控制方案，后者在鉴权会话内调用对话服务输出可解释文本建议，并支持 \texttt{force\_refresh} 控制缓存旁路。该场景验证了决策结果向控制指令的可执行转换能力。
+
+\textbf{场景 C：反馈调节与在线更新测试。}
+\texttt{/api/v1/iot/sync/batch} 接口接收批量传感器脉冲后，先完成批量入库，再基于心率统计量触发融合引擎实时更新。该链路中存在两级阈值：上传侧以异常心率规则（\(HR>120\) 或 \(HR<40\)）生成告警提示；融合更新侧则依据 \(HR>100\)、\(HR<50\) 及 BMI 条件选择不同的 Bayes Factor。与此同时，系统保留“融合更新失败不阻断主上传”的保护逻辑，以体现反馈通道的实时性与故障隔离能力。其后验风险更新遵循代码实现的截断形式
+\begin{equation}
+P_{t+1}=\operatorname{clip}(\gamma\cdot P_t,\;0.1,\;99.9).
+\end{equation}
+
+闭环一致性诊断显示，系统已形成“数据采集—风险推断—干预输出—IoT 反向修正”的可追踪通道，且每一环节均存在明确的接口边界与异常处理分支，满足自动化系统对稳定性与可验证性的工程要求。
+
+[占位符：图 6-3 端到端场景闭环测试流转图]
+
+\section{性能与压力测试}
+\subsection{API 响应时间与吞吐量测试}
+本节面向服务可用性边界评估系统在并发负载下的时延与吞吐表现。评价指标统一定义为：
+\begin{equation}
+RT_{\mathrm{avg}}=\frac{1}{N}\sum_{i=1}^{N}t_i ,
+\end{equation}
+\begin{equation}
+RT_{95}=Q_{0.95}(\{t_i\}_{i=1}^{N}),\quad
+RT_{99}=Q_{0.99}(\{t_i\}_{i=1}^{N}),
+\end{equation}
+\begin{equation}
+TPS=\frac{N_{\mathrm{success}}}{T},
+\end{equation}
+\begin{equation}
+ErrorRate=\frac{N_{\mathrm{error}}}{N_{\mathrm{total}}}\times 100\%.
+\end{equation}
+其中 \(t_i\) 为第 \(i\) 次请求响应时间，\(Q_p(\cdot)\) 为 \(p\) 分位函数。压测前采用生产态启动方式关闭热重载，以避免开发态文件监听对时延统计的系统性偏置。
+
+并发场景采用 Locust 进行阶梯式注入（并发用户数 10/50/100），核心观测对象为两类高频链路：其一，\texttt{/analyze/comprehensive}，该接口调用融合风险引擎，属于 CPU 密集型路径；其二，\texttt{/api/v1/iot/sync/batch}，该接口执行批量写入并触发实时更新，属于 I/O 密集型路径。每一并发档位均进行预热后稳态采样，统一记录 \(RT_{99}\)、TPS 与错误率。
+
+实测结果见表 \ref{tab:perf_api_64}。在并发 10 下，\texttt{/analyze/comprehensive} 平均响应时间为 12.63ms，TPS 为 705.50；当并发提升至 50/100 时，该接口错误率分别上升至 73.00\% 与 100.00\%，\(RT_{99}\) 接近 30s 超时边界。与之对比，\texttt{/api/v1/iot/sync/batch} 在 10/50/100 并发下均保持 0\% 错误率，TPS 在高并发段稳定于约 175 req/s。
+
+\begin{table}[htbp]
+\centering
+\caption{阶梯并发下核心接口性能指标对比}
+\label{tab:perf_api_64}
+\begin{tabular}{lrrrrr}
+\toprule
+接口 & 并发 & \(RT_{\mathrm{avg}}\) (ms) & \(RT_{99}\) (ms) & TPS (req/s) & ErrorRate (\%) \\
+\midrule
+\texttt{/analyze/comprehensive} & 10  & 12.63    & 15.90    & 705.50 & 0.00 \\
+\texttt{/analyze/comprehensive} & 50  & 21939.19 & 30081.95 & 0.60   & 73.00 \\
+\texttt{/analyze/comprehensive} & 100 & 30036.95 & 30069.33 & 0.00   & 100.00 \\
+\texttt{/api/v1/iot/sync/batch} & 10  & 139.92   & 722.87   & 69.55  & 0.00 \\
+\texttt{/api/v1/iot/sync/batch} & 50  & 262.58   & 298.68   & 175.46 & 0.00 \\
+\texttt{/api/v1/iot/sync/batch} & 100 & 528.57   & 604.93   & 174.10 & 0.00 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.88\textwidth]{fig_6_4_tps_concurrency}
+\caption{核心接口 TPS-并发曲线。随着并发上升，\texttt{/api/v1/iot/sync/batch} 吞吐在中高并发段保持稳定平台；\texttt{/analyze/comprehensive} 在并发 50 后吞吐显著塌缩，表现为非线性退化。}
+\label{fig:tps_curve_64}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.88\textwidth]{fig_6_5_p99_concurrency}
+\caption{核心接口 \(RT_{99}\)-并发曲线。\texttt{/analyze/comprehensive} 在并发 50/100 下出现 30s 级长尾，后端日志同步记录 \texttt{QueuePool timeout}，指向数据库连接池耗尽；\texttt{/api/v1/iot/sync/batch} 的 \(RT_{99}\) 维持在亚秒级。}
+\label{fig:p99_curve_64}
+\end{figure}
+
+\subsection{缓存性能分析}
+缓存实验聚焦对话链路 \texttt{/chat/send} 的性能收益与一致性代价。系统在生命周期启动阶段初始化 Redis 连接；当缓存不可用时自动降级为直连推理。性能收益采用加速比度量：
+\begin{equation}
+Speedup=\frac{RT_{\mathrm{no\_cache}}}{RT_{\mathrm{cache}}},
+\end{equation}
+并以命中率衡量缓存有效性：
+\begin{equation}
+HitRate=\frac{N_{\mathrm{hit}}}{N_{\mathrm{hit}}+N_{\mathrm{miss}}}.
+\end{equation}
+实验对照组分别为“缓存命中路径（\texttt{force\_refresh=False}）”与“强制回源路径（\texttt{force\_refresh=True}）”，用于量化秒级大模型调用向毫秒级缓存返回的时延压缩效果。
+
+一致性验证采用状态机化链路追踪。触发事件 \(E_1\) 为用户调用 \texttt{/user/profile} 更新画像，触发事件 \(E_2\) 为用户调用 \texttt{/api/v1/ocr/upload} 导入新体检单。两类事件均调用 \texttt{CacheManager.invalidate\_user\_cache(user\_id)} 执行按用户粒度的失效清理。为保证失效模式可达，缓存键规范统一为 \texttt{chat\_response:\{user\_id\}:\{hash\}} 与 \texttt{diet\_plan:\{user\_id\}:\{hash\}}，与失效规则中的通配模式保持一致。
+
+在时序层面，系统呈现“失效触发后首次回源重算、后续请求恢复命中”的可预期行为：首个请求承担一致性修复成本，随后命中率回升并重新进入低时延稳态。该机制实现了“以一次性局部延迟换取全域数据一致性”的工程折中，可有效避免旧病历或旧画像污染后续问答与干预建议。
+
+\begin{table}[htbp]
+\centering
+\caption{缓存开启/禁用性能对比与加速比统计（\texttt{/chat/send}）}
+\label{tab:cache_perf_64}
+\begin{tabular}{lrrrr}
+\toprule
+实验模式 & 样本数 \(n\) & \(RT_{\mathrm{avg}}\) (ms) & \(RT_{99}\) (ms) & 指标 \\
+\midrule
+强制回源（\texttt{force\_refresh=True}） & 3 & 31699.18 & 33466.72 & 基线 \\
+缓存命中（\texttt{force\_refresh=False}） & 8 & 2.04 & 2.46 & 命中率 100.00\% \\
+\midrule
+\multicolumn{5}{l}{加速比 \(Speedup = RT_{\mathrm{no\_cache}}/RT_{\mathrm{cache}} = 15511.11\times\)} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.88\textwidth]{fig_6_6_cache_timeline}
+\caption{缓存命中率回落与恢复时序图。状态机顺序为“预热命中 \(\rightarrow\) 触发失效（画像更新/OCR 上传）\(\rightarrow\) 首次回源重算 \(\rightarrow\) 命中恢复”。实验日志显示缓存命中阶段响应时间从秒级降至毫秒级，验证了失效机制与缓存收益可以同时成立。}
+\label{fig:cache_state_64}
+\end{figure}

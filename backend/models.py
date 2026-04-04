@@ -18,6 +18,7 @@ class User(UserBase, table=True):
     # Relationship
     profile: Optional["UserProfile"] = Relationship(back_populates="user")
     records: List["HealthRecord"] = Relationship(back_populates="user")
+    conversations: List["ChatConversation"] = Relationship(back_populates="user")
 
 class UserRead(UserBase):
     id: int
@@ -66,7 +67,7 @@ class UserProfile(SQLModel, table=True):
     risk_history: Optional[str] = None   # JSON: 上次计算的风险报告
     
     # Task 73: Store non-structured extra findings
-    extra_data: Optional[dict] = Field(default={}, sa_column=Column(JSON))
+    extra_data: dict = Field(default_factory=dict, sa_column=Column(JSON))
     
     # Task 85: Privacy-preserving research data sharing consent
     allow_research: bool = Field(default=False, description="是否允许匿名数据用于科研")
@@ -117,12 +118,90 @@ class HealthRecord(SQLModel, table=True):
     # Relationship
     user: Optional[User] = Relationship(back_populates="records")
 
+
+class ChatConversation(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    title: Optional[str] = Field(default=None, max_length=255)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    last_accessed_at: Optional[datetime] = Field(default=None, index=True)
+    pinned_at: Optional[datetime] = Field(default=None, index=True)
+    archived_at: Optional[datetime] = Field(default=None, index=True)
+
+    user: Optional[User] = Relationship(back_populates="conversations")
+    messages: List["ChatMessage"] = Relationship(back_populates="conversation")
+
+
+class ChatMessage(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    conversation_id: int = Field(foreign_key="chatconversation.id", index=True)
+    role: str = Field(max_length=32)
+    content: str
+    sequence: int = Field(index=True)
+    sources: list = Field(default_factory=list, sa_column=Column(JSON))
+    evidence_tags: list = Field(default_factory=list, sa_column=Column(JSON))
+    decision_summary: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    response_verdict: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    evidence_panel: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    suggestion_card: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    takeover: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    conversation: Optional[ChatConversation] = Relationship(back_populates="messages")
+
+
+class AgentAuditEvent(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    schema_version: str = Field(default="agent_audit_responsibility.v2", max_length=64)
+    timestamp: datetime = Field(default_factory=datetime.utcnow, index=True)
+    user_id: int = Field(index=True)
+    conversation_id: int = Field(index=True)
+    intent: Optional[str] = Field(default=None, max_length=128)
+    governance_version: Optional[str] = Field(default=None, max_length=64)
+    lane: Optional[str] = Field(default=None, max_length=64)
+    verdict: Optional[str] = Field(default=None, max_length=64)
+    selected_rule: Optional[str] = Field(default=None, max_length=64)
+    policy_version: Optional[str] = Field(default=None, max_length=64)
+    response_mode: Optional[str] = Field(default=None, max_length=64)
+    evidence_sufficiency: Optional[str] = Field(default=None, max_length=32)
+    degraded_reason: Optional[str] = Field(default=None, max_length=64)
+    human_escalation_required: Optional[bool] = Field(default=None)
+    model_name: Optional[str] = Field(default=None, max_length=128)
+    tool_plan_source: Optional[str] = Field(default=None, max_length=64)
+    tool_used: list = Field(default_factory=list, sa_column=Column(JSON))
+    cache_hit: Optional[bool] = Field(default=None)
+    safety_level: Optional[str] = Field(default=None, max_length=64)
+    evidence_tags: list = Field(default_factory=list, sa_column=Column(JSON))
+    context_budget_summary: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    tool_latency_ms: Optional[int] = None
+    tool_count: int = Field(default=0)
+    response_latency_ms: Optional[int] = None
+    fallback_used: Optional[bool] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+
+class AgentAnswerReplay(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    schema_version: str = Field(default="agent_answer_replay.v1", max_length=64)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    user_id: int = Field(index=True)
+    conversation_id: int = Field(index=True)
+    chat_message_id: int = Field(foreign_key="chatmessage.id", index=True, unique=True)
+    audit_event_id: int = Field(foreign_key="agentauditevent.id", index=True, unique=True)
+    policy_snapshot: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    execution_snapshot: dict = Field(default_factory=dict, sa_column=Column(JSON))
+    context_budget_summary: Optional[dict] = Field(default=None, sa_column=Column(JSON))
+    tool_result_summary: list = Field(default_factory=list, sa_column=Column(JSON))
+    rag_source_refs: list = Field(default_factory=list, sa_column=Column(JSON))
+
 # Schema for Auth
 class UserCreate(UserBase):
     password: str
 
 class Token(SQLModel):
     access_token: str
+    token_type: str = "bearer"
 
 class IoTHealthData(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -144,6 +223,7 @@ class MedicalDocument(SQLModel, table=True):
     file_path: str              # 本地存储路径
     file_url: str               # 前端访问 URL
     upload_date: datetime = Field(default_factory=datetime.utcnow)
+    ocr_processing_status: Optional[dict] = Field(default=None, sa_column=Column(JSON))
     ocr_summary: Optional[str] = None  # JSON: 关键提取摘要
 
 
@@ -163,10 +243,6 @@ class FamilyLink(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow)
     is_active: bool = Field(default=True)  # 是否有效
 
-    class Config:
-        # 确保唯一性: 一个管理者不能重复关联同一个家人
-        # 通过业务逻辑校验，而非数据库约束
-        pass
 
 
 class FamilyInvite(SQLModel, table=True):

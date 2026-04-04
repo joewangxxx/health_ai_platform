@@ -17,7 +17,7 @@ export const useNutritionStore = defineStore('nutrition', () => {
                 force_refresh: forceRefresh,  // Task 111/112
             }
 
-            const res = await axios.post('http://127.0.0.1:8000/nutrition/generate', payload)
+            const res = await axios.post('/nutrition/generate', payload)
 
             if (res.data.status === 'success') {
                 currentPlan.value = res.data

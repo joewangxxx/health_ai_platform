@@ -65,7 +65,7 @@ const { showToast } = useToast()
 const fetchUsers = async () => {
     loading.value = true
     try {
-        const res = await axios.get('http://127.0.0.1:8000/admin/users')
+        const res = await axios.get('/admin/users')
         users.value = res.data
         showToast("用户列表已刷新", "success", "bottom-right")
     } catch (e) {

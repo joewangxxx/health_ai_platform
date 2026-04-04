@@ -1,16 +1,25 @@
 <template>
     <div class="relative inline-block" ref="popoverRef">
         <!-- Trigger -->
-        <div @click="toggle" class="cursor-pointer">
+        <button
+            type="button"
+            :class="triggerClasses"
+            :aria-expanded="isOpen"
+            aria-haspopup="dialog"
+            :aria-label="triggerLabel"
+            @click="toggle"
+            @keydown.enter.prevent="toggle"
+            @keydown.space.prevent="toggle"
+        >
             <slot name="trigger" />
-        </div>
+        </button>
 
         <!-- Content -->
         <Teleport to="body">
             <Transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 scale-95"
                 enter-to-class="opacity-100 scale-100" leave-active-class="transition ease-in duration-150"
                 leave-from-class="opacity-100 scale-100" leave-to-class="opacity-0 scale-95">
-                <div v-if="isOpen" ref="contentRef" :class="contentClasses" :style="positionStyle">
+                <div v-if="isOpen" ref="contentRef" tabindex="-1" :class="contentClasses" :style="positionStyle">
                     <slot />
                 </div>
             </Transition>
@@ -35,6 +44,14 @@ const props = defineProps({
     sideOffset: {
         type: Number,
         default: 8
+    },
+    triggerLabel: {
+        type: String,
+        default: 'Open menu'
+    },
+    triggerClass: {
+        type: String,
+        default: ''
     }
 })
 
@@ -122,7 +139,14 @@ onUnmounted(() => {
 })
 
 const contentClasses = computed(() => {
-    return 'w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-lg outline-none dark:border-slate-800 dark:bg-slate-950'
+    return 'w-72 rounded-xl border border-slate-200 bg-white p-4 shadow-lg focus-visible:ring-2 focus-visible:ring-slate-400 dark:border-slate-800 dark:bg-slate-950 dark:focus-visible:ring-slate-500'
+})
+
+const triggerClasses = computed(() => {
+    return [
+        'inline-flex items-center justify-center rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+        props.triggerClass,
+    ].join(' ')
 })
 
 defineExpose({ close })

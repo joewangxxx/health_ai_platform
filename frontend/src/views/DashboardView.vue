@@ -3,7 +3,7 @@
 
         <!-- Empty State -->
         <transition name="el-fade-in-linear">
-            <div v-if="!store.riskReport || !store.userProfile.Age || !store.userProfile.BMI"
+            <div v-if="!hasRenderableRiskReport || !store.userProfile.Age || !store.userProfile.BMI"
                 class="empty-state p-10 rounded-3xl flex flex-col justify-center items-center h-full backdrop-blur-md transition-colors border border-dashed border-gray-400/30">
                 <div class="bg-blue-50 p-6 rounded-full mb-6 animate-bounce-slow">
                     <el-icon size="60" class="text-blue-500">
@@ -26,7 +26,7 @@
         </transition>
 
         <!-- Results Dashboard -->
-        <div v-if="store.riskReport && store.userProfile.Age" class="h-full flex flex-col gap-5 min-h-0 relative">
+        <div v-if="hasRenderableRiskReport && store.userProfile.Age" class="h-full flex flex-col gap-5 min-h-0 relative">
 
             <!-- Header Actions (Right aligned above cards) -->
             <div class="flex justify-end mb-2">
@@ -123,20 +123,37 @@ import { useToast } from '../composables/useToast'
 import GlassCard from '../components/ui/GlassCard.vue'
 import GlassButton from '../components/ui/GlassButton.vue'
 import GlowingEffect from '../components/ui/GlowingEffect.vue'
-import * as echarts from 'echarts'
+import { RadarChart } from 'echarts/charts'
+import { PolarComponent, RadarComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
 import { useHealthStore } from '../stores/healthStore'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
 
 // 导入提取的常量和工具函数
-import { DISEASE_NAME_MAP, getDiseaseName } from '../constants/diseaseNames'
+import { getDiseaseName } from '../constants/diseaseNames'
 import { createRadarOption, getRiskLevelClass, getModifierTagType } from '../utils/chartConfig'
+import { echarts, ensureEChartsModules } from '../utils/echarts'
+
+ensureEChartsModules([RadarChart, RadarComponent, PolarComponent, TooltipComponent, CanvasRenderer])
 
 const store = useHealthStore()
 const { userProfile, geneData, iotData } = storeToRefs(store)
 const loading = ref(false)
 const isDark = ref(false)
 const { showToast } = useToast()
+
+const riskEntries = computed(() => {
+    if (!store.riskReport || typeof store.riskReport !== 'object' || Array.isArray(store.riskReport)) {
+        return []
+    }
+
+    return Object.entries(store.riskReport).filter(([, value]) => {
+        return value && typeof value === 'object' && typeof value.final_risk === 'number'
+    })
+})
+
+const hasRenderableRiskReport = computed(() => riskEntries.value.length > 0)
 
 // --- Logic: Refresh Analysis ---
 const refreshAnalysis = async () => {
@@ -147,9 +164,12 @@ const refreshAnalysis = async () => {
         Object.keys(cleanForm).forEach(k => {
             if (typeof cleanForm[k] === 'string' && !isNaN(cleanForm[k])) cleanForm[k] = parseFloat(cleanForm[k])
         })
-        const payload = { ...cleanForm, user_snps: geneData.value || {} }
+        const payload = {
+            clinical: cleanForm,
+            user_snps: geneData.value || {}
+        }
 
-        const res = await axios.post('http://127.0.0.1:8000/analyze/comprehensive', payload)
+        const res = await axios.post('/analyze/comprehensive', payload)
 
         if (res.data.status === 'success') {
             store.setRiskReport(res.data.risk_report)
@@ -170,8 +190,8 @@ const refreshAnalysis = async () => {
 // 使用从 constants/diseaseNames.js 导入的 DISEASE_NAME_MAP
 
 const topRisks = computed(() => {
-    if (!store.riskReport) return []
-    const arr = Object.entries(store.riskReport).map(([k, v]) => ({
+    if (!hasRenderableRiskReport.value) return []
+    const arr = riskEntries.value.map(([k, v]) => ({
         name: getDiseaseName(k),
         prob: v.final_risk,
         level: v.level,
@@ -181,14 +201,14 @@ const topRisks = computed(() => {
 })
 
 const attributionData = computed(() => {
-    if (!store.riskReport) return []
+    if (!hasRenderableRiskReport.value) return []
     const formatMod = (val) => {
         if (!val) return 'x1.0'
         const num = parseFloat(String(val).replace('x', ''))
         if (isNaN(num)) return 'x1.0'
         return 'x' + num.toFixed(1)
     }
-    return Object.entries(store.riskReport).map(([k, v]) => {
+    return riskEntries.value.map(([k, v]) => {
         const src = v.breakdown || v.sources || {}
         let rawBase = src.clinical || src.clinical_base || src.base_clinical || 0
         let baseVal = typeof rawBase === 'number' ? rawBase : parseFloat(String(rawBase).replace('%', ''))
@@ -207,39 +227,13 @@ const getModType = getModifierTagType
 // --- Charts ---
 let radarChart = null
 const renderRadar = () => {
-    if (!store.riskReport) return
+    if (!hasRenderableRiskReport.value) return
     const chartDom = document.getElementById('radarChart')
     if (!chartDom) return
     if (radarChart) radarChart.dispose()
 
-    // Theme colors
-    const textColor = isDark.value ? '#e2e8f0' : '#334155'
-    const splitLineColor = isDark.value ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'
-
     radarChart = echarts.init(chartDom)
-    const keys = ['T2D', 'Hypertension', 'HighLipid', 'FattyLiver', 'CKD', 'Gout', 'MetabolicSyndrome']
-    const values = keys.map(k => store.riskReport[k] ? store.riskReport[k].final_risk : 0)
-
-    radarChart.setOption({
-        radar: {
-            center: ['50%', '55%'], radius: '70%',
-            indicator: keys.map(k => ({ name: nameMap[k] || k, max: 100 })),
-            splitArea: { areaStyle: { color: ['transparent'] } },
-            axisName: { color: textColor, fontWeight: 'bold' },
-            splitLine: { lineStyle: { color: splitLineColor } },
-            axisLine: { lineStyle: { color: splitLineColor } }
-        },
-        series: [{
-            type: 'radar',
-            data: [{
-                value: values,
-                name: 'Risk Profile',
-                areaStyle: { color: 'rgba(64,158,255, 0.5)' },
-                lineStyle: { color: '#409EFF', width: 3 },
-                itemStyle: { color: '#409EFF' }
-            }]
-        }]
-    })
+    radarChart.setOption(createRadarOption(store.riskReport, isDark.value))
 }
 
 // Watchers and lifecycle
@@ -256,7 +250,7 @@ onMounted(() => {
     })
     observer.observe(document.documentElement, { attributes: true })
 
-    if (store.riskReport) {
+    if (hasRenderableRiskReport.value) {
         nextTick(() => renderRadar())
     }
 })

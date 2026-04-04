@@ -1,0 +1,111 @@
+<h2>Option C Refinement</h2>
+<p class="subtitle">Now choose how rich the expanded evidence panel should be. All three options keep the same hybrid layout: chips first, one focused block expanded inline.</p>
+
+<div class="cards">
+  <div class="card" data-choice="c-light" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C1: Light Evidence Panel</div>
+        <div class="mockup-body">
+          <div class="mock-content" style="padding:12px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <button class="mock-button">Profile</button>
+              <button class="mock-button">Trend</button>
+              <button class="mock-button">Guideline</button>
+            </div>
+            <div style="border:1px solid #dbeafe;border-radius:14px;padding:12px;background:#f8fbff;">
+              <div style="font-weight:600;margin-bottom:8px;">Profile</div>
+              <div class="placeholder" style="min-height:40px;margin-bottom:8px;">One-sentence summary</div>
+              <div class="placeholder" style="min-height:34px;">1-2 short highlights</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C1</h3>
+      <p>Very clean and chat-friendly. Best if you want the panel to feel lightweight and not distract from the answer.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c-standard" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C2: Standard Evidence Panel</div>
+        <div class="mockup-body">
+          <div class="mock-content" style="padding:12px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <button class="mock-button">Profile</button>
+              <button class="mock-button">Trend</button>
+              <button class="mock-button">Guideline</button>
+              <button class="mock-button">Source</button>
+            </div>
+            <div style="border:1px solid #dbeafe;border-radius:14px;padding:12px;background:#f8fbff;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                <div style="font-weight:600;">Trend Evidence</div>
+                <span class="label">Key support</span>
+              </div>
+              <div class="placeholder" style="min-height:36px;margin-bottom:8px;">Why this evidence matters</div>
+              <div class="placeholder" style="min-height:36px;margin-bottom:8px;">2-3 extracted facts</div>
+              <div class="placeholder" style="min-height:32px;">Linked source or basis</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C2</h3>
+      <p>Balanced. Richer than simple tags, but still easy to scan. Good fit for a graduation project demo and current Dr. AI layout.</p>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c-dense" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mockup">
+        <div class="mockup-header">C3: Dense Evidence Panel</div>
+        <div class="mockup-body">
+          <div class="mock-content" style="padding:12px;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+              <button class="mock-button">Profile</button>
+              <button class="mock-button">Trend</button>
+              <button class="mock-button">Guideline</button>
+              <button class="mock-button">Decision</button>
+            </div>
+            <div style="border:1px solid #dbeafe;border-radius:14px;padding:12px;background:#f8fbff;">
+              <div style="font-weight:600;margin-bottom:8px;">Guideline Evidence</div>
+              <div class="placeholder" style="min-height:30px;margin-bottom:8px;">Evidence summary</div>
+              <div class="placeholder" style="min-height:30px;margin-bottom:8px;">Structured factors</div>
+              <div class="placeholder" style="min-height:30px;margin-bottom:8px;">Decision trace</div>
+              <div class="placeholder" style="min-height:30px;">Source details</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C3</h3>
+      <p>Most informative for technical users, but it risks making the chat feel heavy and over-engineered.</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Recommendation</h3>
+  <div class="pros-cons">
+    <div class="pros">
+      <h4>Recommended: C2</h4>
+      <ul>
+        <li>Feels richer than the current evidence chips</li>
+        <li>Still matches the current Dr. AI chat rhythm</li>
+        <li>Strongest balance of “product feel” and “engineering depth”</li>
+      </ul>
+    </div>
+    <div class="cons">
+      <h4>Tradeoffs</h4>
+      <ul>
+        <li>Needs a small amount of panel-state logic</li>
+        <li>May still need one compact mode on mobile</li>
+      </ul>
+    </div>
+  </div>
+</div>

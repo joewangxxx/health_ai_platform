@@ -24,6 +24,16 @@
                             show-password />
                     </el-form-item>
 
+                    <el-form-item label="Confirm Password">
+                        <el-input
+                            v-model.trim="form.confirmPassword"
+                            type="password"
+                            placeholder="鍐嶆杈撳叆瀵嗙爜"
+                            :prefix-icon="Lock"
+                            show-password
+                        />
+                    </el-form-item>
+
                     <div class="mt-8">
                         <GradientButton class="w-full text-lg shadow-xl" type="submit" :disabled="loading">
                             <span v-if="loading">Creating Account...</span>

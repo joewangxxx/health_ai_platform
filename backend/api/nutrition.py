@@ -9,7 +9,22 @@ from backend.schemas.nutrition import DietRequest
 from backend.services.nutrition_service import DietOptimizer
 
 router = APIRouter()
-optimizer = DietOptimizer() # Global instance to load DB once
+
+
+class _LazyDietOptimizerProxy:
+    def __init__(self):
+        self._optimizer: Optional[DietOptimizer] = None
+
+    def _get_optimizer(self) -> DietOptimizer:
+        if self._optimizer is None:
+            self._optimizer = DietOptimizer()
+        return self._optimizer
+
+    async def generate_daily_plan(self, *args, **kwargs):
+        return await self._get_optimizer().generate_daily_plan(*args, **kwargs)
+
+
+optimizer = _LazyDietOptimizerProxy()
 
 # --- New Logic: Validated Response Models ---
 # Defined locally to match the new LLM-driven service output

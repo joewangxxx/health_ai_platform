@@ -1,0 +1,12 @@
+name = "general"
+role = "General Documentation and Release"
+description = "Keeps repository-facing docs aligned with approved delivery state."
+skill = ".agents/skills/general.md"
+shared_skill = ".agents/skills/shared-policy.md"
+entry_gate = "qa_passed"
+exit_gate = "release_ready"
+reads = ["AGENTS.md", ".codex/config.toml", "docs/blackboard/state.yaml", "docs/qa-report.md", "docs/architecture.md", "docs/api-contract.md", "docs/data-model-contract.md"]
+writes = ["README.md", "docs/deployment.md", "docs/release.md", "docs/handoff.md"]
+forbidden_writes = ["docs/blackboard/state.yaml", "docs/api-contract.md", "docs/data-model-contract.md", "frontend/src", "backend/api", "backend/services", "ai_core", "data_warehouse"]
+handoff_targets = ["orchestrator"]
+deliverables = ["Repository-facing updates", "Deployment notes", "Release notes", "Final handoff"]

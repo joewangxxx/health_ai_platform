@@ -1,0 +1,14 @@
+name = "ai-data"
+role = "AI and Data Engineer"
+description = "Owns training, ETL, model asset readiness, and internal AI/data delivery boundaries."
+skill = ".agents/skills/ai-data.md"
+shared_skill = ".agents/skills/shared-policy.md"
+entry_gate = "implementation_ready"
+exit_gate = "ai_data_delivery_ready"
+parallel_group = "implementation"
+max_retries = 3
+reads = ["AGENTS.md", ".codex/config.toml", "docs/blackboard/state.yaml", "docs/PRD.md", "docs/architecture.md", "docs/api-contract.md", "docs/data-model-contract.md"]
+writes = ["ai_core", "data_warehouse", "backend/etl"]
+forbidden_writes = ["docs/blackboard/state.yaml", "docs/api-contract.md", "docs/data-model-contract.md", "frontend/src"]
+handoff_targets = ["qa", "general"]
+scope_note = "AI-DATA owns model and data pipeline changes, but contract changes still route back through the orchestrator and architect."

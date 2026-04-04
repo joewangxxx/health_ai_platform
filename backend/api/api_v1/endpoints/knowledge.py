@@ -7,9 +7,16 @@ from datetime import datetime
 
 from backend.models import User
 from backend.auth import get_current_active_superuser
-from backend.rag.build_kb import build_knowledge_base, DOCS_DIR
 
 router = APIRouter()
+
+DOCS_DIR = str((__import__("pathlib").Path(__file__).resolve().parents[3] / "rag" / "docs"))
+
+
+def _build_knowledge_base_safe():
+    from backend.rag.build_kb import build_knowledge_base
+
+    build_knowledge_base()
 
 def get_file_info(filename: str) -> Dict:
     file_path = os.path.join(DOCS_DIR, filename)
@@ -83,5 +90,5 @@ async def rebuild_knowledge_base_endpoint(
     """
     触发后台任务：重建 RAG 知识库索引
     """
-    background_tasks.add_task(build_knowledge_base)
+    background_tasks.add_task(_build_knowledge_base_safe)
     return {"status": "queued", "message": "Knowledge base rebuild task started in background."}

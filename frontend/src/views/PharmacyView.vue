@@ -166,7 +166,7 @@ const scoreColors = [
 
 onMounted(async () => {
     try {
-        const res = await axios.get('http://127.0.0.1:8000/drugs/list')
+        const res = await axios.get('/drugs/list')
         if (res.data.status === 'success') {
             allDrugs.value = res.data.drugs.map(d => ({ value: d }))
         }
@@ -212,7 +212,7 @@ const analyzeMedication = async () => {
             iot: iotData.value
         }
 
-        const res = await axios.post('http://127.0.0.1:8000/analyze/medication', payload)
+        const res = await axios.post('/analyze/medication', payload)
         if (res.data.status === 'success') {
             // Check for missing data status from service
             if (res.data.detail?.status === 'missing_data') {

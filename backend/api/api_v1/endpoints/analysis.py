@@ -21,13 +21,41 @@ from sqlmodel import Session
 from backend.database import get_session
 from backend.models import User
 from backend.auth import get_current_user
-from backend.services.projection_service import projection_service
 from backend.services.analysis_service import anomaly_service
-from backend.services.pdf_service import pdf_service, PDFGenerationError
 # disease_risk_engine 已移至 main.py 的全局实例，在函数内部延迟导入
-from backend.services.lifestyle_service import hydration_advisor
 
 router = APIRouter()
+
+
+class pdf_error(Exception):
+    pass
+
+
+def _get_projection_service():
+    try:
+        from backend.services.projection_service import projection_service
+
+        return projection_service
+    except Exception as exc:
+        raise HTTPException(503, f"Projection service unavailable: {exc}")
+
+
+def _get_pdf_service():
+    try:
+        from backend.services.pdf_service import pdf_service
+
+        return pdf_service
+    except Exception as exc:
+        raise HTTPException(503, f"PDF service unavailable: {exc}")
+
+
+def _get_hydration_advisor():
+    try:
+        from backend.services.lifestyle_service import hydration_advisor
+
+        return hydration_advisor
+    except Exception as exc:
+        raise HTTPException(503, f"Hydration advisor unavailable: {exc}")
 
 @router.post("/simulate/future")
 async def simulate_future(
@@ -41,7 +69,7 @@ async def simulate_future(
     if not current_user.profile:
         raise HTTPException(400, "User profile not found. Please complete clinical data first.")
         
-    result = projection_service.simulate_future_risk(current_user.profile, years=years)
+    result = _get_projection_service().simulate_future_risk(current_user.profile, years=years)
     return {"status": "success", "data": result}
 
 @router.post("/simulate/intervention")
@@ -56,7 +84,7 @@ async def simulate_intervention(
     if not current_user.profile:
         raise HTTPException(400, "User profile not found")
         
-    result = projection_service.simulate_intervention(current_user.profile, intervention=target)
+    result = _get_projection_service().simulate_intervention(current_user.profile, intervention=target)
     return {"status": "success", "data": result}
 
 
@@ -154,12 +182,13 @@ async def export_health_report_pdf(
         # 5. 获取水合计划 (可选)
         hydration_plan = None
         if include_hydration:
-            hydration_plan = hydration_advisor.calculate_water_plan(profile_data)
+            hydration_plan = _get_hydration_advisor().calculate_water_plan(profile_data)
         
         # 6. 生成饮食建议
         diet_advice = _generate_diet_advice(risk_data, ckm_data)
         
         # 7. 生成 PDF
+        pdf_service = _get_pdf_service()
         pdf_bytes = pdf_service.create_health_report(
             user_profile=profile_data,
             risk_data=risk_data,
@@ -180,7 +209,7 @@ async def export_health_report_pdf(
             }
         )
     
-    except PDFGenerationError as e:
+    except pdf_error as e:
         raise HTTPException(500, f"PDF 生成失败: {str(e)}")
     except Exception as e:
         raise HTTPException(500, f"报告生成过程中发生错误: {str(e)}")

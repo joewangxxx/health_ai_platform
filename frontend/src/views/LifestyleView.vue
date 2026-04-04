@@ -221,7 +221,12 @@ import axios from 'axios'
 import { useRouter } from 'vue-router'
 import { useToast } from '../composables/useToast'
 import { useBluetooth } from '../composables/useBluetooth'
-import * as echarts from 'echarts'
+import { LineChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import { echarts, ensureEChartsModules } from '../utils/echarts'
+
+ensureEChartsModules([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const store = useHealthStore()
 const { iotData, userProfile, geneData } = storeToRefs(store)
@@ -287,7 +292,7 @@ watch(heartRate, (newVal) => {
 const handleBatchSync = async (batchData) => {
     try {
         const token = localStorage.getItem('auth_token')
-        await axios.post('http://127.0.0.1:8000/api/v1/iot/sync/batch', batchData, {
+        await axios.post('/api/v1/iot/sync/batch', batchData, {
              headers: { Authorization: `Bearer ${token}` }
         })
         console.log(`Synced ${batchData.length} data points to cloud.`)
@@ -336,7 +341,7 @@ const uploadAndAnalyzeFood = async (options) => {
     analyzing.value = true
     const formData = new FormData(); formData.append('file', options.file)
     try {
-        const res = await axios.post('http://127.0.0.1:8000/analyze/food_image', formData)
+        const res = await axios.post('/analyze/food_image', formData)
         if (res.data.status === 'success' && res.data.nutrition) {
             store.setDietNutrition(res.data.nutrition)
             showToast(res.data.message || `识别成功！热量: ${res.data.nutrition.calories} kcal`, 'success')
@@ -360,7 +365,7 @@ const runFusionAnalysis = async () => {
             if (typeof cleanForm[k] === 'string' && !isNaN(cleanForm[k])) cleanForm[k] = parseFloat(cleanForm[k])
         })
         const payload = { ...cleanForm, user_snps: geneData.value || {} }
-        const res = await axios.post('http://127.0.0.1:8000/analyze/comprehensive', payload)
+        const res = await axios.post('/analyze/comprehensive', payload)
         if (res.data.status === 'success') {
             store.setRiskReport(res.data.risk_report)
             showToast("融合计算完成！", "success")

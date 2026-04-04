@@ -57,6 +57,7 @@ export const useHealthStore = defineStore('health', () => {
 
     // 6. Results
     const riskReport = ref(null)
+    const analysisContext = ref(null)
 
     // --- Actions ---
     function updateProfile(newProfile) {
@@ -79,6 +80,96 @@ export const useHealthStore = defineStore('health', () => {
         riskReport.value = data
     }
 
+    function normalizeFieldStateSummary(summary) {
+        const source = summary && typeof summary === 'object' ? summary : {}
+        return {
+            recognized: Array.isArray(source.recognized) ? source.recognized : [],
+            derived: Array.isArray(source.derived) ? source.derived : [],
+            missing: Array.isArray(source.missing) ? source.missing : [],
+            user_confirmed: Array.isArray(source.user_confirmed) ? source.user_confirmed : [],
+            user_entered: Array.isArray(source.user_entered) ? source.user_entered : [],
+        }
+    }
+
+    function normalizeAnalysisContext(context) {
+        if (!context || typeof context !== 'object' || Array.isArray(context)) {
+            return null
+        }
+
+        return {
+            ...context,
+            schema_version: context.schema_version || 'analysis_context.v1',
+            analysis_mode: context.analysis_mode || 'final',
+            provisional_reasons: Array.isArray(context.provisional_reasons) ? context.provisional_reasons : [],
+            blocking_fields: Array.isArray(context.blocking_fields) ? context.blocking_fields : [],
+            field_state_summary: normalizeFieldStateSummary(context.field_state_summary),
+        }
+    }
+
+    function normalizeDocumentImport(data) {
+        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+            return null
+        }
+
+        const normalized = { ...data }
+
+        if (normalized.ocr_processing_status && typeof normalized.ocr_processing_status === 'object') {
+            normalized.ocr_processing_status = {
+                schema_version: normalized.ocr_processing_status.schema_version || 'ocr_processing_status.v1',
+                ...normalized.ocr_processing_status,
+            }
+        }
+
+        if (normalized.analysis_context) {
+            normalized.analysis_context = normalizeAnalysisContext(normalized.analysis_context)
+        }
+
+        return normalized
+    }
+
+    function isCanonicalRiskSnapshot(data) {
+        return Boolean(
+            data &&
+            typeof data === 'object' &&
+            !Array.isArray(data) &&
+            data.schema_version === 'risk_snapshot.v1' &&
+            Array.isArray(data.findings)
+        )
+    }
+
+    async function fetchLatestRiskReport(profileOverride = userProfile.value) {
+        const cleanClinical = Object.fromEntries(
+            Object.entries(profileOverride || {}).filter(([key, value]) => {
+                if (value === null || value === undefined || value === '') return false
+                return key !== 'risk_history' && key !== 'genomic_data' && key !== 'user'
+            })
+        )
+
+        if (!Object.keys(cleanClinical).length) {
+            return false
+        }
+
+        try {
+            const res = await axios.post('/analyze/comprehensive', {
+                clinical: cleanClinical,
+                user_snps: geneData.value || {}
+            })
+
+            if (res.data.analysis_context) {
+                analysisContext.value = normalizeAnalysisContext(res.data.analysis_context)
+            }
+
+            if (res.data.status === 'success' && res.data.risk_report) {
+                riskReport.value = res.data.risk_report
+                return true
+            }
+        } catch (e) {
+            console.error('Failed to refresh backend-owned risk report:', e)
+        }
+
+        return false
+    }
+
     function setDietNutrition(data) {
         if (data) {
             dietNutrition.value = {
@@ -94,7 +185,7 @@ export const useHealthStore = defineStore('health', () => {
         try {
             // Note: In real app this might use the auth header, 
             // but the backend endpoint seems public or we rely on global defaults
-            const res = await axios.get('http://127.0.0.1:8000/api/device/current')
+            const res = await axios.get('/api/device/current')
             updateIoT(res.data)
         } catch (e) {
             deviceStatus.value = "设备离线"
@@ -104,7 +195,7 @@ export const useHealthStore = defineStore('health', () => {
     // 🔥 V7: 从云端拉取用户档案
     async function fetchRemoteProfile() {
         try {
-            const res = await axios.get('http://127.0.0.1:8000/user/profile')
+            const res = await axios.get('/user/profile')
             if (res.data.status === 'success' && res.data.profile) {
                 const profile = res.data.profile
 
@@ -125,7 +216,12 @@ export const useHealthStore = defineStore('health', () => {
                     const historyObj = typeof profile.risk_history === 'string'
                         ? JSON.parse(profile.risk_history)
                         : profile.risk_history
-                    riskReport.value = historyObj
+                    if (isCanonicalRiskSnapshot(historyObj)) {
+                        riskReport.value = null
+                        await fetchLatestRiskReport(profile)
+                    } else {
+                        riskReport.value = historyObj
+                    }
                 }
 
                 console.log('✅ 用户档案已从云端同步')
@@ -146,7 +242,7 @@ export const useHealthStore = defineStore('health', () => {
                 risk_report: riskReport.value
             }
 
-            const res = await axios.post('http://127.0.0.1:8000/user/profile', payload)
+            const res = await axios.post('/user/profile', payload)
             if (res.data.status === 'success') {
                 console.log('✅ 档案已云端同步')
                 return true
@@ -161,12 +257,14 @@ export const useHealthStore = defineStore('health', () => {
     const importData = ref(null)
 
     function setImportData(data) {
-        importData.value = data
+        importData.value = normalizeDocumentImport(data)
+        analysisContext.value = importData.value?.analysis_context || null
         console.log('📥 Import data set:', data)
     }
 
     function clearImportData() {
         importData.value = null
+        analysisContext.value = null
     }
 
     return {
@@ -179,6 +277,7 @@ export const useHealthStore = defineStore('health', () => {
         activityState,
         dietNutrition,  // V6: 4D Nutrition data
         riskReport,
+        analysisContext,
         importData,        // Task 59
         updateProfile,
         setGeneData,
@@ -186,6 +285,7 @@ export const useHealthStore = defineStore('health', () => {
         setRiskReport,
         setDietNutrition,  // V6: Set diet nutrition
         fetchIoTData,
+        fetchLatestRiskReport,
         fetchRemoteProfile,   // V7: Fetch from cloud
         saveProfileToCloud,   // V7: Save to cloud
         setImportData,        // Task 59

@@ -1,0 +1,282 @@
+% !TeX root = ../main.tex
+% ============================================
+% 第三章 系统需求分析与总体设计
+% ============================================
+
+\chapter{系统需求分析与总体设计}
+
+\section{需求分析}
+
+在构建基于多模态数据融合的个性化健康管理平台过程中，需求分析不仅涵盖了对业务逻辑的梳理，更需从系统架构层面界定其在处理高维医疗隐私数据与异步计算任务时的硬性约束。
+
+\subsection{功能性需求分析}
+
+本系统基于“感知-决策-控制”的闭环理念进行设计，将功能性需求抽象为面向不同角色的核心能力圈。
+
+\subsubsection{普通终端用户需求}
+
+终端用户的核心需求围绕个人全生命周期的健康管理展开，具体包括：
+\begin{itemize}
+    \item \textbf{多模态健康感知接入}：系统需支持异构源数据的协同输入，涵盖结构化临床生化指标（30项以上）、高频流式 IoT 时序数据（心率、步数）以及基于 OCR 技术的非结构化体检报告扫描件。
+    \item \textbf{智能化干预推演与问询}：要求系统能够提供针对特定干预策略（如饮食调节或减重）的“反事实”风险预测，量化评估干预对 40 余种潜在疾病风险目标的削减效应；同时需提供由临床指南支撑的循证医学问询服务。
+    \item \textbf{亲情群落关联管理}：鉴于医疗场景的社会属性，系统需支持“FamilyLink”亲情账户关联机制，要求实现主账户对关联账户（如高龄父母）的代理数据录入与风险监控，并具备细粒度的隐私授权边界。
+\end{itemize}
+
+\subsubsection{系统管理人员需求}
+
+管理端的职能在于维持系统算力引擎的高效运作与数据的合规流转：
+\begin{itemize}
+    \item \textbf{合规治理与脱敏审计}：系统必须提供规范化的科研数据导出管道，要求在数据离开受控环境前实施 PII（个人可识别信息）的剥离，并具备哈希映射的溯源验证能力。
+    \item \textbf{算力中枢操纵与监控}：要求提供统一的 MLOps 管理面板，支持对底层 GWAS、PharmGKB 等异构引擎的事件驱动级调优，并提供计算全过程的可观测性。
+\end{itemize}
+
+\begin{figure}[ht]
+    \centering
+    % [图 3-1 系统整体功能用例图 (UML)]
+    \caption{个性化健康管理平台系统用例分析图}
+    \label{fig:usecase}
+\end{figure}
+
+\subsection{非功能性需求分析与架构约束}
+
+为保障系统在医疗严苛场景下的稳定性与安全性，本文设定了以下四个维度的非功能性约束指标：
+
+\begin{enumerate}
+    \item \textbf{性能响应约束}：面对脉冲式 IoT 数据上报与大型语言模型（LLM）的推理穿透压力，核心 API 的响应延迟（P99）要求低于 200ms。这从需求层面规定系统必须具备高效的内存缓存机制与低延迟的资源寻址能力。
+    \item \textbf{医疗级隐私防线}：受保护健康信息（PHI）需达到最高密级。要求身份认证证书具备强抗暴力破解的盐化哈希机制，且针对高敏个人遗传变异片段必须实施物理级的字段级认证加密（AEAD），确保存储层的绝对隔离性。
+    \item \textbf{架构水平伸缩性}：规定计算节点与应用逻辑层必须保持无状态（Stateless），支持在多任务重训练负载激增时，能够通过容器化集群实现算力的平滑扩容。
+    \item \textbf{长时计算任务的容错性}：针对耗时较长的机器学习模型迭代过程，要求系统具备状态探针监控，并在网络波动的异常场景下具备数据链一致性的保护策略。
+\end{enumerate}
+
+\subsection{多模态数据需求分析}
+
+平台需处理高维度、异构的医疗级数据，按模态与时效性将其归类为以下三类需求：
+
+\begin{itemize}
+    \item \textbf{群体基线与先验图谱数据（宏观维度）}：需集成 NHANES 流行病学大样本数据集、GWAS Catalog 提供的 SNP 突变位点序列，以及 PharmGKB 指引的药物代谢规则，用于构建系统初始的决策基准。
+    \item \textbf{个体动态体征时序流（微观维度）}：由客户端传感器输入的连续健康特征波段，表征用户在真实生活场景下的实时生理变动。
+    \item \textbf{多维非结构化语料数据}：涵盖用于支撑视觉诊断算法训练的膳食营养图像矩阵，以及作为对话系统核心依据的高时效性临床指南 PDF 集合。
+\end{itemize}
+
+\begin{table}[ht]
+    \centering
+    \caption{多模态数据集特征汇总表}
+    \begin{tabularx}{\textwidth}{l X X}
+        \toprule
+        \textbf{维度分类} & \textbf{典型数据源} & \textbf{核心特征描述} \\
+        \midrule
+        人口学与临床 & NHANES, OCR 解析结果 & 静态/半动态均值，包含30+核心生化指标 \\
+        基因组学 & GWAS Catalog, 个人 TSV 序列 & 高维特征稀疏矩阵，包含百万级 SNP 位点 \\
+        药代动力学 & PharmGKB, 指南库 & 结构化规则树与 XML 文献关联 \\
+        个体动态 & IoT 传感器流 & 高频时序数据，包含心率、步数、睡眠周期 \\
+        医学辅助语料 & 临床 PDF, 视觉图像库 & 语义向量嵌入、像素级特征标记 \\
+        \bottomrule
+    \end{tabularx}
+    \label{tab:data_summary}
+\end{table}
+
+\section{系统总体架构设计}
+
+\subsection{系统逻辑分层架构}
+
+为应对海量多模态医疗数据的异构性与 AI 推理的高算力要求，本系统摒弃了传统的单体架构（Monolithic Architecture），采用自下而上（Bottom-Up）的数据流向驱动设计，将系统抽象为高内聚、低耦合的五层逻辑拓扑：
+
+\begin{enumerate}
+    \item \textbf{数据持久与缓存层（Data Storage Layer）}：作为系统的物理底座。采用 SQLite 提供结构化健康记录与关联关系的稳态落盘存储；依托 Redis 实施基于 LRU（最近最少使用）机制的瞬态内存清洗与会话保持，实现核心数据状态与计算环境的物理解耦。
+    \item \textbf{多源感知与治理层（Data Perception \& ETL Layer）}：负责异构数据的采集与同态变换。涵盖穿戴设备 IoT 时序脉冲接入、体检报告的 OCR 非结构化解析以及 ETL 数据管道清洗；该层专门负责对基因组学序列（GWAS Catalog）、群体现状与个体动态特征进行语义归一化标定。
+    \item \textbf{智能计算与决策层（Intelligent Compute Layer）}：作为架构的“算法大脑”。该层汇聚了覆盖40余项慢性病风险目标的 LightGBM 预测矩阵、多基因风险评分（PRS）先天引擎，以及统筹三维概率计算的 Bayesian Fusion（贝叶斯后验融合）核心网络。
+    \item \textbf{业务编排与服务层（Service Orchestration Layer）}：系统的中枢神经。基于微服务架构实现 RESTful 路由分发，并驱动全局无状态的 JWT 鉴权溯源；同时负责基于状态机长轮询（Polling）的异步计算任务时序调配。
+    \item \textbf{多维表现与交互层（Presentation Layer）}：数据流的视觉终端。通过响应式框架构建全息健康状态雷达面板、动态仪表渲染及针对黑盒化长效任务的虚拟观测终端。
+\end{enumerate}
+
+\begin{figure}[ht]
+    \centering
+    % [图 3-2 系统自下而上五层逻辑架构拓扑图]
+    \caption{基于数据流向驱动的五层系统逻辑架构图}
+    \label{fig:layered_architecture}
+\end{figure}
+
+\subsection{面向主动健康的“感知-决策-控制-反馈”闭环设计}
+
+系统架构将个人健康状态的时序演进抽象为负反馈闭环系统（Negative Feedback Loop）。其核心工作流由四个环节构成：
+
+\begin{itemize}
+    \item \textbf{感知（Sensing）}：通过穿戴设备、基因报告与体检指标等多模态通道采集个体状态变量，在系统内部形成可持续更新的健康画像。
+    \item \textbf{决策（Decision Making）}：将结构化生理指标、遗传证据与行为特征送入融合风险引擎，输出面向多疾病风险目标的后验概率估计。
+    \item \textbf{控制与干预（Actuation/Control）}：系统基于反事实推理构建干预推演模块，评估改变体重、步数、饮食结构等控制变量时的风险变化幅度，并生成可执行的干预建议。
+    \item \textbf{反馈调节（Feedback）}：用户执行干预后，新增观测再次进入感知层并触发后验更新，从而形成持续修正的闭环调节过程。
+\end{itemize}
+
+\begin{figure}[ht]
+    \centering
+    % [图 3-3 面向主动健康的“感知-决策-控制-反馈”闭环业务流程图]
+    \caption{系统“感知-决策-控制-反馈”动态闭环及反事实推理机制}
+    \label{fig:closed_loop}
+\end{figure}
+
+\subsection{面向服务架构（SOA）的系统逻辑解耦}
+
+在多模态健康管理场景中，AI 模型加载、基因解析与贝叶斯推演属于典型的 CPU 密集型（CPU-bound）负载；前端状态同步、日志查询与知识问答调用则具有明显的 I/O 密集型（I/O-bound）特征。若全部功能集中于单体服务内部，不同类型任务之间容易形成资源竞争，进而影响在线接口的稳定性。
+
+基于上述约束，系统采用面向服务架构（Service-Oriented Architecture, SOA）组织主要业务域。前端交互、后端计算与缓存能力通过统一 API 入口进行编排，不同业务模块在容器与服务层面保持相对独立。该设计有助于降低模型推理、数据处理与会话访问之间的耦合度，并通过无状态接口与缓存机制改善系统在并发场景下的可扩展性。
+
+\begin{figure}[ht]
+    \centering
+    % [图 3-4 面向服务体系 (SOA) 的前端/计算/缓存独立逻辑拓扑图]
+    \caption{面向服务域计算资源隔离机制与前后端解耦的逻辑拓扑}
+    \label{fig:soa_topology}
+\end{figure}
+
+
+\section{数据库设计}
+
+\subsection{概念结构设计（E-R建模）}
+
+本系统围绕个体“数字孪生”（Digital Twin）构建多维关系模型。系统核心实体及其映射关联定义如下：
+
+\begin{itemize}
+    \item \textbf{用户与画像的 1:1 关联}：\texttt{User} 负责认证与授权，\texttt{UserProfile} 负责承载生理画像与风险分析输入，二者分离有助于划清账户信息与医学数据边界。
+    \item \textbf{观测记录的 1:N 扩展}：在用户主体下进一步挂接 \texttt{IoTHealthData} 与 \texttt{MedicalDocument}，用于保存高频时序观测和 OCR 文档解析结果。
+    \item \textbf{家庭监护的 M:N 授权关系}：\texttt{FamilyLink} 记录管理者与被管理者之间的授权连接，用于支持家庭场景下的跨账户健康监护。
+\end{itemize}
+
+\begin{figure}[ht]
+    \centering
+    % [图 3-5 平台全域健康数据 E-R 概念模型图]
+    \caption{系统平台全域健康数据 E-R 概念模型拓扑图}
+    \label{fig:er_model}
+\end{figure}
+
+\subsection{逻辑结构与高阶存储策略设计}
+
+在将概念模型下沉为关系型数据库（RDBMS）的物理表结构时，传统强模式（Strict Schema）由于字段固化，难以兼顾医疗数据的动态扩展需求与隐私保护要求。因此，本论文在存储逻辑层引入了两项策略：
+
+\textbf{其一，面向异构观测的半范式化设计（Semi-structured Design）。}医疗领域特征维度更新较快，若完全依赖固定列建模，将增加模式演化成本。为此，系统在 \texttt{health\_record} 与 \texttt{medical\_document} 中引入 JSON 文本扩展列，使部分非固定维度指标能够在保持事务存储的前提下完成灵活扩展。
+
+\textbf{其二，面向敏感字段的透明加密机制。}针对受保护健康信息（PHI）中的高敏感字段，系统依托 ORM 层的属性访问逻辑，对 \texttt{genomic\_data} 相关内容实施字段级 AES-256-GCM 加密。该机制使加密与解密过程能够嵌入数据读写路径，在不改变上层业务接口的前提下提高敏感数据的存储安全性。
+
+为说明上述半结构化扩展与敏感字段保护如何在数据层落地，下文给出三类核心表结构：用户画像表（表 \ref{tab:user_profile}）、观测记录表（表 \ref{tab:health_record}）以及家庭授权关系表（表 \ref{tab:family_link}）。
+
+\begin{table}[ht]
+    \centering
+    \caption{用户生理孪生画像表（\texttt{user\_profile}）}
+    \begin{tabularx}{\textwidth}{l l l X}
+        \toprule
+        \textbf{字段名称} & \textbf{数据类型} & \textbf{键/约束} & \textbf{业务含义说明} \\
+        \midrule
+        \texttt{id} & Integer & PK, Auto & 孪生体物理主键 \\
+        \texttt{user\_id} & Integer & FK, Unique & 关联凭证中枢表 ID，落实 1:1 强偶关系 \\
+        \texttt{Glucose\_Fasting} & Float & Nullable & 核心生化指标：空腹血糖值 \\
+        \texttt{HbA1c} & Float & Nullable & 核心生化指标：糖化血红蛋白追踪 \\
+        \texttt{eGFR} & Float & Nullable & 肾脏标志物：估计肾小球滤过率 \\
+        \texttt{ALT} & Float & Nullable & 肝脏标志物：谷丙转氨酶 \\
+        \texttt{encrypted\_genomic\_data} & String & Nullable & 依托 AES-256-GCM 隔离存储的加密变异基因片段 \\
+        \bottomrule
+    \end{tabularx}
+    \label{tab:user_profile}
+\end{table}
+
+\begin{table}[ht]
+    \centering
+    \caption{多模态异构观测记录表（\texttt{health\_record}）}
+    \begin{tabularx}{\textwidth}{l l l X}
+        \toprule
+        \textbf{字段名称} & \textbf{数据类型} & \textbf{键/约束} & \textbf{业务含义说明} \\
+        \midrule
+        \texttt{id} & Integer & PK, Auto & 观测时序物理主键 \\
+        \texttt{user\_id} & Integer & FK, Index & 指向对应生理孪生的索引从流 \\
+        \texttt{record\_date} & Datetime & Not Null & 状态捕捉的基准时间戳 \\
+        \texttt{source} & String & Not Null & 标定采集通道（如 IoT 探针、手工录注、视觉 OCR） \\
+        \texttt{metrics} & JSON Text & Nullable & \textbf{半范式态延展列}，承载不规则维度异构监测值 \\
+        \texttt{risk\_snapshot} & JSON Text & Nullable & 存储该时空节点系统对其下发的高维决策推演断层快照 \\
+        \bottomrule
+    \end{tabularx}
+    \label{tab:health_record}
+\end{table}
+
+\begin{table}[ht]
+    \centering
+    \caption{多角色家庭监护授权关联表（\texttt{family\_link}）}
+    \begin{tabularx}{\textwidth}{l l l X}
+        \toprule
+        \textbf{字段名称} & \textbf{数据类型} & \textbf{键/约束} & \textbf{业务含义说明} \\
+        \midrule
+        \texttt{id} & Integer & PK, Auto & 关系边权标识主键 \\
+        \texttt{manager\_id} & Integer & FK, Index & 授权网络图中的主动调看方（监护者节点） \\
+        \texttt{member\_id} & Integer & FK, Index & 授权网络图中的被接管方（弱势关怀节点） \\
+        \texttt{relation\_name} & String & Not Null & 维系交互信任的语义标签（如同宗身份描述） \\
+        \texttt{is\_active} & Boolean & Default(True) & 关系链物理有效态指示标定，阻截隐式提权访问 \\
+        \bottomrule
+    \end{tabularx}
+    \label{tab:family_link}
+\end{table}
+
+
+\section{系统通信协议与接口设计}
+
+\subsection{面向资源的 RESTful 状态机与异步补偿机制}
+
+本系统在 API 路由层遵循表述层状态转移（Representational State Transfer, RESTful）原则。接口并非对底层数据表的直接暴露，而是围绕用户画像、风险分析、知识问答与管理任务等核心资源构建状态流转路径。借助 FastAPI 的依赖注入（Dependency Injection, DI）机制，系统在请求入口完成 JWT 鉴权、数据库会话挂载与业务上下文装配，实现路由层与底层资源之间的解耦。
+
+对于模型训练、数据导入等长时运行任务，系统采用“请求触发 + 后台执行 + 轮询跟踪”的补偿策略。路由层在接收控制指令后，将任务提交给 \texttt{BackgroundTasks} 执行，并返回包含任务状态与追踪标识的响应结果；前端随后通过 \texttt{/admin/task/status} 查询任务进度。该机制避免将长时计算直接压入单次 HTTP 请求周期，有助于降低管理任务对在线业务接口的阻塞影响。
+
+\subsection{全局聚合鉴权与操作级细粒度溯源防线}
+
+在面向服务架构（SOA）的扩展场景中，传统的有状态会话机制会增加节点间状态同步成本。本平台采用基于共享密钥签名验证的 JSON Web Token（JWT, HS256）作为统一认证凭证，使请求可在不同服务节点之间以无状态方式完成身份校验。
+
+此外，令牌解码后的用户身份与权限等级会被注入路由依赖项，例如普通用户鉴权依赖与管理员鉴权依赖。该设计使接口访问控制、受限资源操作与审计记录能够围绕统一身份标识展开，便于形成细粒度的权限边界与操作追踪链路。
+
+\subsection{“感知-决策”核心通信协议字典}
+
+为呈现系统在管理调度、多模态分析与知识问答三类关键链路上的通信组织方式，表 \ref{tab:core_protocol_scheduler}、\ref{tab:core_protocol_fusion} 及 \ref{tab:core_protocol_rag} 对代表性接口进行了归纳。这些接口共同构成了系统从感知输入到决策输出的核心通信骨架。
+
+\begin{table}[ht]
+    \centering
+    \caption{控制面板多擎调度枢纽端点（MLOps 中枢）}
+    \begin{tabularx}{\textwidth}{l X}
+        \toprule
+        \textbf{架构落点/通信要素} & \textbf{部署参数与协议特性描述} \\
+        \midrule
+        \textbf{代表路由路径} & \texttt{/admin/data/upload}、\texttt{/admin/data/clinical/train}、\texttt{/admin/task/status} \\
+        \textbf{HTTP 载体动词} & \texttt{POST / GET} \\
+        \textbf{节点调度特性} & 管理侧请求用于触发数据导入、模型训练与任务状态查询，后台计算由 \texttt{BackgroundTasks} 或服务层逻辑异步承接 \\
+        \textbf{异步补偿方式} & 首次请求返回任务登记结果与状态描述，随后以前端轮询方式跟踪执行进度 \\
+        \textbf{学术架构意义} & 体现控制指令提交与长时任务执行的弱耦合设计，降低管理任务对在线业务链路的阻塞影响 \\
+        \bottomrule
+    \end{tabularx}
+    \label{tab:core_protocol_scheduler}
+\end{table}
+
+\begin{table}[ht]
+    \centering
+    \caption{多模态特征分析与三维贝叶斯融合网关}
+    \begin{tabularx}{\textwidth}{l X}
+        \toprule
+        \textbf{架构落点/通信要素} & \textbf{部署参数与协议特性描述} \\
+        \midrule
+        \textbf{统一路由路径} & \texttt{/analyze/comprehensive} \\
+        \textbf{HTTP 载体动词} & \texttt{POST} \\
+        \textbf{复合载荷流特征} & 支持请求体增量参数与数据库既有画像在服务层完成融合 \\
+        \textbf{非定型结构兼容} & 可同时处理体征、V10 生化指标、行为字段与缺省回退值，形成统一分析输入向量 \\
+        \textbf{学术架构意义} & 体现多源异构观测在统一分析入口处的聚合能力，为后续融合决策提供稳定输入边界 \\
+        \bottomrule
+    \end{tabularx}
+    \label{tab:core_protocol_fusion}
+\end{table}
+
+\begin{table}[ht]
+    \centering
+    \caption{RAG 临床循证极速问诊流式推演协议}
+    \begin{tabularx}{\textwidth}{l X}
+        \toprule
+        \textbf{架构落点/通信要素} & \textbf{部署参数与协议特性描述} \\
+        \midrule
+        \textbf{统一路由路径} & \texttt{/chat/send} \\
+        \textbf{HTTP 载体规范} & \texttt{POST}，请求体包含用户问题与可选的 \texttt{force\_refresh} 标记 \\
+        \textbf{响应组织方式} & 返回包含回复文本与来源列表的 JSON 结果，由服务层完成画像加载、知识检索与大模型生成 \\
+        \textbf{缓存控制特性} & 允许通过 \texttt{force\_refresh} 旁路缓存，以便在画像或知识更新后获取最新回答 \\
+        \textbf{学术架构意义} & 体现检索增强生成链路在接口层的可控性与可追溯性，而非简单文本生成调用 \\
+        \bottomrule
+    \end{tabularx}
+    \label{tab:core_protocol_rag}
+\end{table}

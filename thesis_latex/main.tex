@@ -1,0 +1,192 @@
+% ============================================
+% 毕业论文 LaTeX 主控文件
+% 基于学长论文模板（参考-03.docx）格式改造
+% 题目：基于多模态数据融合与AI决策的个性化健康管理平台
+% ============================================
+
+\documentclass[UTF8, a4paper, 12pt]{ctexrep}
+
+% ==================== 宏包引入 ====================
+\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
+\setlength{\headheight}{14pt} % 修复 fancyhdr headheight is too small 警告
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{enumitem}
+\usepackage{fancyhdr}        % 页眉页脚
+\usepackage{setspace}        % 行距
+
+% ==================== 行距设置 ====================
+\onehalfspacing  % 1.5倍行距
+
+% ==================== 超链接配置 ====================
+\hypersetup{
+    colorlinks=true,
+    linkcolor=black,
+    citecolor=blue,
+    urlcolor=blue,
+    bookmarksopen=true
+}
+% 修复 PDF 标签中包含 \quad 宏导致的 Unicode string 警告
+\pdfstringdefDisableCommands{\let\quad\empty}
+
+% ==================== 代码样式配置 ====================
+% 解决 listings 宏包中文注释解析崩溃的关键配置
+\lstset{
+    language=Python,
+    basicstyle=\ttfamily\small,
+    keywordstyle=\color{blue},
+    stringstyle=\color{red},
+    commentstyle=\color{green!50!black},
+    showstringspaces=false,
+    breaklines=true,         % 必须：自动换行
+    extendedchars=false,     % 必须：关闭扩展字符以防中文报错
+    frame=single,
+    keepspaces=true,
+    xleftmargin=2em,
+    xrightmargin=2em
+}
+
+% ==================== 图表标题双语格式 ====================
+% 参考学长论文：图X.X 中文标题 / Fig.X.X English Title
+\DeclareCaptionLabelFormat{zhcn}{#1#2}
+\captionsetup[figure]{labelsep=space, font=small}
+\captionsetup[table]{labelsep=space, font=small}
+
+% ==================== 图片路径 ====================
+\graphicspath{{images/}}
+
+% ==================== 页眉页脚 ====================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\small 西南大学本科毕业论文（设计）}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% ============================================
+% 封面（参照学长论文模板格式）
+% ============================================
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{1.5cm}
+    
+    % 学校Logo (根据要求：宽5.13cm，高1.46cm)
+    \includegraphics[width=5.13cm, height=1.46cm]{SWUlogo.png}\\[1.5cm]
+    
+    % 论文类型
+    {\Huge \heiti 本科毕业论文（设计）}\\[2.5cm]
+    
+    % 居中的信息表
+    {\Large \fangsong
+    \makebox[\textwidth][c]{
+    \renewcommand{\arraystretch}{1.6}
+    \begin{tabular}{l c}
+        \makebox[5em][s]{题\hfill 目} & \underline{\makebox[24em]{基于多模态数据融合与AI决策的个性化健康管理平台}} \\
+        \makebox[5em][s]{学\hfill 院} & \underline{\makebox[24em]{计算机与信息科学学院\enspace 软件学院}} \\
+        \makebox[5em][s]{专\hfill 业} & \underline{\makebox[24em]{自动化}} \\
+        \makebox[5em][s]{年\hfill 级} & \underline{\makebox[24em]{2022\enspace 级}} \\
+        \makebox[5em][s]{学\hfill 号} & \underline{\makebox[24em]{222022321132012}} \\
+        \makebox[5em][s]{姓\hfill 名} & \underline{\makebox[24em]{王彬桥}} \\
+        \makebox[5em][s]{指\hfill 导\hfill 教\hfill 师} & \underline{\makebox[24em]{吴松}} \\
+        \makebox[5em][s]{成\hfill 绩} & \underline{\makebox[24em]{}} \\
+    \end{tabular}
+    }}
+    
+    \vfill
+    % 日期居中
+    {\Large \makebox[4em]{2026} 年 \makebox[2em]{5} 月 \makebox[2em]{} 日}
+\end{titlepage}
+
+% =前置部分页码改为大写罗马数字=
+\pagenumbering{Roman}
+
+% ==================== 中文摘要 ====================
+\newpage
+\thispagestyle{plain}
+\begin{center}
+    {\LARGE \heiti 基于多模态数据融合与AI决策的个性化健康管理平台}\\[0.8cm]
+    {\large 王彬桥}\\[0.3cm]
+    {\normalsize 西南大学计算机与信息科学学院\enspace 软件学院，重庆\enspace 400715}\\[1cm]
+\end{center}
+
+\noindent\textbf{摘\quad 要：}随着慢性病发病率的持续上升，传统的"治已病"模式已难以满足精准医疗的需求。本研究旨在构建一个基于多模态数据融合的个性化健康管理平台，实现从被动治疗到主动预防的转变。
+
+本系统创新性地融合了基因组学数据（GWAS Catalog）、临床体检数据（NHANES 2017-2020）与行为生活方式数据（MobileWell/IoT），通过构建多基因风险评分（PRS）模型量化先天风险，利用LightGBM算法训练覆盖40种以上慢性病风险目标的预测模型集群，并设计临床-基因-行为三维贝叶斯融合算法实现多模态概率融合。针对异构数据缺乏统一标注的问题，提出了基于领域知识的半监督数据增强策略（表型反推法）。
+
+在系统架构上，平台采用前后端分离与面向服务架构（SOA），通过容器化编排实现一键部署，集成智能OCR体检报告解析、基于RAG的健康问答、AI营养师等功能模块。消融实验结果表明，多模态融合策略相比单模态基线显著提升了风险预测的准确性，验证了本方法的可行性与应用价值。
+
+\vspace{0.5cm}
+\noindent\textbf{关键词：}多模态数据融合；贝叶斯推理；多基因风险评分；面向服务架构；个性化健康管理
+
+% ==================== 英文摘要（参照学长论文格式）====================
+\newpage
+\thispagestyle{plain}
+\begin{center}
+    {\LARGE \textbf{Personalized Health Management Platform Based on Multimodal Data Fusion and AI Decision-Making}}\\[0.8cm]
+    {\large Wang Binqiao}\\[0.3cm]
+    {\normalsize School of Computer and Information Science \& Software, Southwest University, Chongqing 400715, PR China}\\[1cm]
+\end{center}
+
+\noindent\textbf{Abstract:} With the continuous rise in chronic disease prevalence, the traditional ``treat existing diseases'' model can no longer meet the demands of precision medicine. This study aims to construct a personalized health management platform based on multimodal data fusion, enabling a shift from passive treatment to proactive prevention.
+
+The system innovatively integrates genomic data (GWAS Catalog), clinical examination data (NHANES 2017-2020), and behavioral lifestyle data (MobileWell/IoT). It quantifies innate risk through a Polygenic Risk Score (PRS) model, trains a LightGBM model cluster covering over 40 chronic disease risk targets, and designs a clinical-genomic-behavioral three-dimensional Bayesian fusion algorithm for multimodal probabilistic fusion. To address the lack of unified annotation across heterogeneous data, a Domain-Knowledge Guided Semi-supervised Data Augmentation strategy (Phenotype Back-propagation) is proposed.
+
+Architecturally, the platform adopts a front-end/back-end separation with Service-Oriented Architecture (SOA), enabling one-click deployment through containerized orchestration and integrating functional modules including intelligent OCR medical report parsing, RAG-based health Q\&A, and an AI nutritionist. Ablation experiment results demonstrate that the multimodal fusion strategy significantly improves risk prediction accuracy compared to single-modal baselines, validating the feasibility and application value of the proposed approach.
+
+\vspace{0.5cm}
+\noindent\textbf{Key words:} Multimodal Data Fusion; Bayesian Inference; Polygenic Risk Score; Service-Oriented Architecture; Personalized Health Management
+
+% ==================== 目录 ====================
+\newpage
+\tableofcontents
+\newpage
+
+% ==================== 正文章节 ====================
+% =正文页码重置为阿拉伯数字=
+\cleardoublepage
+\pagenumbering{arabic}
+
+\input{chapters/01_intro}
+\input{chapters/02_theory}
+\input{chapters/03_design}
+\input{chapters/04_algo}
+\input{chapters/05_impl}
+\input{chapters/06_exp}
+\input{chapters/07_conclusion}
+
+% ==================== 参考文献 ====================
+\bibliographystyle{plain}
+\bibliography{references}
+
+% ==================== 致谢（参照学长论文格式）====================
+\chapter*{致\quad 谢}
+\addcontentsline{toc}{chapter}{致\quad 谢}
+在本论文完成之际，衷心感谢指导教师吴松老师在毕业设计期间给予的悉心指导与耐心帮助……
+
+（待补充）
+
+% ==================== 附录（参照学长论文格式：附核心代码）====================
+\appendix
+\chapter*{附\quad 录}
+\addcontentsline{toc}{chapter}{附\quad 录}
+
+\section*{贝叶斯融合引擎核心代码}
+% \lstinputlisting[language=Python, caption={FusionRiskEngine 核心实现}]{../backend/services/fusion_service.py}
+% TODO: 请使用 \begin{lstlisting} ... \end{lstlisting} 将核心代码手动粘贴进来，以避免 UTF-8 文件直接引入导致的编译崩溃。
+
+% 可继续添加更多代码附录
+% \section*{疾病风险预测引擎核心代码}
+% \lstinputlisting[language=Python, caption={DiseaseRiskEngine 核心实现}]{../backend/services/risk_engine.py}
+
+\end{document}

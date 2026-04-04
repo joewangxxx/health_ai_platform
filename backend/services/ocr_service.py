@@ -1,18 +1,66 @@
 import json
 import logging
-import time
 import re
 from typing import List, Dict, Any, Optional
-import fitz  # PyMuPDF
-import filetype
-from aip import AipOcr
 from openai import AsyncOpenAI, APIStatusError, RateLimitError
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, RetryError
 from backend.core.config import settings
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from backend.services.payload_normalization import has_structured_ocr_summary_data
+
 # Initialize Logger
 logger = logging.getLogger(__name__)
+
+try:
+    import fitz  # PyMuPDF
+    import filetype
+    OCR_RUNTIME_AVAILABLE = True
+except ImportError:
+    fitz = None
+    filetype = None
+    OCR_RUNTIME_AVAILABLE = False
+
+try:
+    from aip import AipOcr
+    BAIDU_OCR_AVAILABLE = True
+except ImportError:
+    AipOcr = None
+    BAIDU_OCR_AVAILABLE = False
+
+try:
+    from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type, RetryError
+    TENACITY_AVAILABLE = True
+except ImportError:
+    TENACITY_AVAILABLE = False
+
+    class RetryError(Exception):
+        pass
+
+    def retry(*args, **kwargs):
+        def decorator(func):
+            return func
+
+        return decorator
+
+    def stop_after_attempt(*args, **kwargs):
+        return None
+
+    def wait_exponential(*args, **kwargs):
+        return None
+
+    def retry_if_exception_type(*args, **kwargs):
+        return None
+
+_degraded_mode_warning_emitted = False
+
+
+def _emit_degraded_mode_warning():
+    global _degraded_mode_warning_emitted
+    if _degraded_mode_warning_emitted:
+        return
+    logger.warning("Baidu OCR unavailable; OCR will run in degraded mode.")
+    _degraded_mode_warning_emitted = True
+
 
 class MedicalOCRService:
     def __init__(self):
@@ -31,25 +79,56 @@ class MedicalOCRService:
             )
         else:
             self.client = None
-            logger.warning("OPENAI_API_KEY missing. LLM semantic parsing will be disabled.")
+            logger.debug("OPENAI_API_KEY missing. LLM semantic parsing will be disabled.")
             
         # Initialize Baidu OCR Client
         self.ocr_client = None
         self.ocr_ready = False
         try:
-            if settings.BAIDU_APP_ID and settings.BAIDU_API_KEY and settings.BAIDU_SECRET_KEY:
-                print("🚀 Initializing Baidu Cloud OCR Client...")
+            if not BAIDU_OCR_AVAILABLE or AipOcr is None:
+                _emit_degraded_mode_warning()
+            elif settings.BAIDU_APP_ID and settings.BAIDU_API_KEY and settings.BAIDU_SECRET_KEY:
                 self.ocr_client = AipOcr(
                     settings.BAIDU_APP_ID, 
                     settings.BAIDU_API_KEY, 
                     settings.BAIDU_SECRET_KEY
                 )
-                print("✅ Baidu OCR Client Init Success")
                 self.ocr_ready = True
             else:
-                logger.warning("⚠️ Baidu OCR Credentials missing in .env. OCR will fail.")
+                _emit_degraded_mode_warning()
         except Exception as e:
-            logger.error(f"❌ Baidu OCR Init Failed: {e}")
+            logger.warning("Baidu OCR init unavailable; OCR will run in degraded mode (%s).", e)
+
+    def _build_processing_status(
+        self,
+        *,
+        status: str,
+        reason: Optional[str],
+        structured_data_present: bool,
+        raw_text_present: bool,
+    ) -> Dict[str, Any]:
+        return {
+            "schema_version": "ocr_processing_status.v1",
+            "status": status,
+            "reason": reason,
+            "structured_data_present": structured_data_present,
+            "raw_text_present": raw_text_present,
+        }
+
+    def _build_stored_unprocessed_result(self, reason: str, message: str) -> Dict[str, Any]:
+        return {
+            "status": "stored_unprocessed",
+            "message": message,
+            "raw_text": None,
+            "extraction_method": None,
+            "data": None,
+            "ocr_processing_status": self._build_processing_status(
+                status="stored_unprocessed",
+                reason=reason,
+                structured_data_present=False,
+                raw_text_present=False,
+            ),
+        }
 
     def _pdf_to_images(self, pdf_bytes: bytes, max_pages: int = 5) -> List[bytes]:
         """
@@ -81,21 +160,19 @@ class MedicalOCRService:
         Run Baidu Cloud OCR on image bytes and return combined text.
         Handles PDF to Image conversion (multi-page).
         """
-        if not self.ocr_ready or not self.ocr_client:
-            logger.error("Baidu OCR client not ready.")
+        if not self.ocr_ready or not self.ocr_client or not OCR_RUNTIME_AVAILABLE:
+            logger.info("Baidu OCR client not ready; skipping OCR parse.")
             return ""
 
         try:
             # 1. Determine list of images to process
-            kind = filetype.guess(image_bytes)
+            kind = filetype.guess(image_bytes) if filetype else None
             images_to_process = []
 
             if kind and kind.mime == 'application/pdf':
-                print("📄 Detected PDF. Converting to Images (Max 5)...")
                 images = self._pdf_to_images(image_bytes)
                 if images:
                     images_to_process = images
-                    print(f"✅ PDF Converted: {len(images)} pages.")
                 else:
                     logger.warning("PDF conversion failed or empty. Trying raw bytes as fallback.")
                     images_to_process = [image_bytes]
@@ -134,7 +211,6 @@ class MedicalOCRService:
                         logger.error(f"Page {idx} generated an exception: {exc}")
             
             full_text = "\n\n".join(full_text_parts)
-            print(f"====== [DEBUG] RAW OCR TEXT START ======\n{full_text}\n====== [DEBUG] RAW OCR TEXT END ======")
             return full_text
 
         except Exception as e:
@@ -182,7 +258,6 @@ class MedicalOCRService:
             except:
                 pass
         
-        print(f"====== [DEBUG] REGEX EXTRACTED ======\n{json.dumps(result, ensure_ascii=False, indent=2)}\n=====================================")
         return result
 
     async def parse_medical_report(self, image_bytes: bytes) -> Dict[str, Any]:
@@ -191,14 +266,25 @@ class MedicalOCRService:
         With Regex Fallback if LLM fails (Task 64)
         """
         # 1. OCR Extraction
+        if not OCR_RUNTIME_AVAILABLE:
+            return self._build_stored_unprocessed_result(
+                "ocr_runtime_unavailable",
+                "Document saved, but OCR runtime is unavailable.",
+            )
+
+        if not self.ocr_ready or not self.ocr_client:
+            return self._build_stored_unprocessed_result(
+                "ocr_service_unavailable",
+                "Document saved, but OCR provider is unavailable.",
+            )
+
         raw_text = self._get_ocr_text(image_bytes)
         
         if not raw_text:
-            return {
-                "status": "error", 
-                "message": "OCR failed to identify text or API credentials invalid.",
-                "data": None
-            }
+            return self._build_stored_unprocessed_result(
+                "ocr_processing_failed",
+                "Document saved, but OCR did not produce usable text.",
+            )
         
         # 2. LLM Semantic Parsing with Fallback
         data = None
@@ -210,12 +296,10 @@ class MedicalOCRService:
                 data = await self._call_llm_for_parsing(raw_text)
                 extraction_method = "llm"
             except (RetryError, RateLimitError, APIStatusError) as e:
-                print(f"⚠️ LLM Failed after retries: {e}. Switching to Regex Fallback mode.")
                 logger.warning(f"LLM extraction failed: {e}. Using regex fallback.")
                 data = self._extract_by_regex(raw_text)
                 extraction_method = "regex_fallback"
             except Exception as e:
-                print(f"⚠️ LLM Unexpected Error: {e}. Switching to Regex Fallback mode.")
                 logger.error(f"LLM unexpected error: {e}. Using regex fallback.")
                 data = self._extract_by_regex(raw_text)
                 extraction_method = "regex_fallback"
@@ -226,13 +310,19 @@ class MedicalOCRService:
             extraction_method = "regex_only"
         
         # 3. Build Response
-        if data and len(data) > 0:
+        if data and has_structured_ocr_summary_data(data):
             return {
                 "status": "success",
                 "message": f"Medical record parsed successfully via {extraction_method}.",
                 "raw_text": raw_text,
                 "extraction_method": extraction_method,
-                "data": data
+                "data": data,
+                "ocr_processing_status": self._build_processing_status(
+                    status="success",
+                    reason=None,
+                    structured_data_present=True,
+                    raw_text_present=True,
+                ),
             }
         else:
             return {
@@ -240,7 +330,13 @@ class MedicalOCRService:
                 "message": "OCR completed but no structured data extracted.",
                 "raw_text": raw_text,
                 "extraction_method": extraction_method,
-                "data": {}
+                "data": data or {},
+                "ocr_processing_status": self._build_processing_status(
+                    status="partial_success",
+                    reason="structured_data_incomplete",
+                    structured_data_present=bool(data),
+                    raw_text_present=True,
+                ),
             }
 
     @retry(
@@ -320,7 +416,6 @@ class MedicalOCRService:
         )
 
         # [DEBUG] Print Full Prompt Context
-        print(f"====== [DEBUG] LLM PROMPT ======\nSystem:\n{system_prompt}\n\nUser:\n{ocr_text}\n==============================")
 
         response = await self.client.chat.completions.create(
             model=self.model,
@@ -334,7 +429,6 @@ class MedicalOCRService:
         content = response.choices[0].message.content.strip()
         
         # [DEBUG] Print Raw LLM Response
-        print(f"====== [DEBUG] RAW LLM RESPONSE ======\n{content}\n======================================")
 
         # Task 66: Clean <think>...</think> tags (Kimi k2.5 Thinking Mode)
         content_cleaned = re.sub(r'<think>.*?</think>', '', content, flags=re.DOTALL).strip()
@@ -359,8 +453,21 @@ class MedicalOCRService:
                  logger.error(f"No JSON found in LLM response: {cleaned_content}")
                  return {} # Return empty on failure
             
-        print(f"====== [DEBUG] KIMI EXTRACTED JSON ======\n{json.dumps(parsed_json, ensure_ascii=False, indent=2)}\n=======================================")
         return parsed_json
 
-# Singleton Instance
-medical_ocr_service = MedicalOCRService()
+_medical_ocr_service: Optional[MedicalOCRService] = None
+
+
+def get_medical_ocr_service() -> MedicalOCRService:
+    global _medical_ocr_service
+    if _medical_ocr_service is None:
+        _medical_ocr_service = MedicalOCRService()
+    return _medical_ocr_service
+
+
+class _MedicalOCRServiceProxy:
+    def __getattr__(self, item):
+        return getattr(get_medical_ocr_service(), item)
+
+
+medical_ocr_service = _MedicalOCRServiceProxy()

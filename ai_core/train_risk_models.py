@@ -13,6 +13,8 @@ from backend.config import PROJECT_ROOT, DATA_WAREHOUSE_DIR, MODELS_DIR
 
 # 数据路径 (Task 105: 直接读取 ETL 清洗后的 CSV，无需再读 .xpt)
 DATA_FILE = os.path.join(DATA_WAREHOUSE_DIR, "processed_data", "clinical_clean", "nhanes_integrated_data_v2.csv")
+# NHANES 原始营养数据目录（用于补充加载 DR1/DR2/VID/FOLATE）
+RAW_DIR = os.path.join(DATA_WAREHOUSE_DIR, "raw_data", "NHANES")
 
 # 模型输出路径
 os.makedirs(MODELS_DIR, exist_ok=True)

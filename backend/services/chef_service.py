@@ -44,12 +44,15 @@ class ChefService:
         """
         # Task 109: 生成缓存 Key
         ingredient_names = sorted([item.get("name", "") for item in ingredients])
-        cache_key = CacheManager.generate_key(
+        # Keep key layout aligned with invalidate_user_cache pattern:
+        # diet_plan:{user_id}:*
+        uid = str(user_id or "anonymous")
+        hash_part = CacheManager.generate_key(
             "diet_plan",
-            user_id or "anonymous",
             cuisine,
             *ingredient_names
-        )
+        ).split(":", 1)[1]
+        cache_key = f"diet_plan:{uid}:{hash_part}"
         
         # Task 111: 只有不强制刷新时才查缓存
         if not force_refresh:

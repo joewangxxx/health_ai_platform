@@ -1,5 +1,6 @@
 from typing import List, Union
 import secrets
+import logging
 from pydantic import field_validator, AnyHttpUrl
 from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
@@ -14,7 +15,10 @@ class Settings(BaseSettings):
     PROJECT_ROOT: str = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     
     # Database
-    SQLALCHEMY_DATABASE_URI: str = f"sqlite:///{os.path.join(PROJECT_ROOT, 'health_ai_v2.db')}"
+    SQLALCHEMY_DATABASE_URI: str = os.getenv(
+        "SQLALCHEMY_DATABASE_URI",
+        os.getenv("DATABASE_URL", f"sqlite:///{os.path.join(PROJECT_ROOT, 'health_ai_v2.db')}"),
+    )
     
     # CORS
     BACKEND_CORS_ORIGINS: List[str] = ["*"]
@@ -31,6 +35,12 @@ class Settings(BaseSettings):
     
     # Upload Directory (Task 56)
     UPLOAD_DIR: str = os.path.join(PROJECT_ROOT, "uploads")
+
+    # Vision Model (EfficientNet multi-task nutrition regression)
+    NUTRITION_MODEL_PATH: str = os.getenv(
+        "NUTRITION_MODEL_PATH",
+        os.path.join(os.path.dirname(PROJECT_ROOT), "models", "nutrition_efficientnet.pth")
+    )
     
     # Redis Cache (Task 108)
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
@@ -51,11 +61,12 @@ class Settings(BaseSettings):
         raise ValueError(v)
 
 settings = Settings()
+logger = logging.getLogger(__name__)
 
-# DEBUG: Check if Key is loaded
-print("="*60)
-masked_key = f"{settings.OPENAI_API_KEY[:5]}***" if settings.OPENAI_API_KEY else "NONE"
-print(f"🔧 CONFIG DEBUG: Loaded OpenAI API Key: {masked_key}")
-print(f"🔧 CONFIG DEBUG: Base URL: {settings.OPENAI_BASE_URL}")
-print(f"🔧 CONFIG DEBUG: Model: {settings.OPENAI_MODEL}")
-print("="*60)
+if os.getenv("HEALTHAI_DEBUG_CONFIG") == "1":
+    logger.debug("=" * 60)
+    masked_key = f"{settings.OPENAI_API_KEY[:5]}***" if settings.OPENAI_API_KEY else "NONE"
+    logger.debug("CONFIG DEBUG: Loaded OpenAI API Key: %s", masked_key)
+    logger.debug("CONFIG DEBUG: Base URL: %s", settings.OPENAI_BASE_URL)
+    logger.debug("CONFIG DEBUG: Model: %s", settings.OPENAI_MODEL)
+    logger.debug("=" * 60)

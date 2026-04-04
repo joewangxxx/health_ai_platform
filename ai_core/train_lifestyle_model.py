@@ -3,6 +3,8 @@ import xgboost as xgb
 import joblib
 import os
 import sys
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 # ================= 🔧 路径修正 =================
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -34,8 +36,15 @@ def train_lifestyle():
     model = xgb.XGBClassifier(use_label_encoder=False, eval_metric='logloss')
     model.fit(X_train, y_train)
     
-    acc = accuracy_score(y_test, model.predict(X_test))
-    print(f"✅ 模型训练完成！准确率: {acc:.2f}")
+    y_pred = model.predict(X_test)
+    acc = accuracy_score(y_test, y_pred)
+    precision = precision_score(y_test, y_pred, zero_division=0)
+    recall = recall_score(y_test, y_pred, zero_division=0)
+    f1 = f1_score(y_test, y_pred, zero_division=0)
+    print(
+        f"✅ 模型训练完成 | Acc: {acc:.3f} | "
+        f"Precision: {precision:.3f} | Recall: {recall:.3f} | F1: {f1:.3f}"
+    )
     
     joblib.dump(model, MODEL_PATH)
     print(f"💾 保存至: {MODEL_PATH}")

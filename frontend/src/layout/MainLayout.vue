@@ -1,7 +1,7 @@
 <template>
     <AuroraBackground>
-        <div class="common-layout w-full h-full absolute top-0 left-0 overflow-hidden">
-            <el-container class="h-full">
+        <div class="common-layout w-full min-h-screen">
+            <el-container class="min-h-screen">
 
                 <!-- Header -->
                 <el-header
@@ -21,11 +21,14 @@
                         </div>
 
                         <!-- User Popover Menu -->
-                        <Popover align="end" ref="userPopover">
+                        <Popover
+                            align="end"
+                            ref="userPopover"
+                            trigger-label="Open user menu"
+                            trigger-class="h-10 w-10 rounded-full border border-white/20 bg-white/20 backdrop-blur-md hover:bg-white/30"
+                        >
                             <template #trigger>
-                                <ShadcnButton variant="ghost" size="icon" class="rounded-full">
-                                    <Avatar :fallback="authStore.user?.username?.charAt(0).toUpperCase()" size="sm" />
-                                </ShadcnButton>
+                                <Avatar :fallback="authStore.user?.username?.charAt(0).toUpperCase()" size="sm" />
                             </template>
 
                             <!-- Popover Content -->
@@ -170,7 +173,7 @@
                     </el-aside>
 
                     <!-- Main Content -->
-                    <el-main class="p-0 relative overflow-hidden flex flex-col">
+                    <el-main class="p-0 relative overflow-auto flex flex-col min-h-0">
                         <router-view v-slot="{ Component }">
                             <transition name="fade" mode="out-in">
                                 <component :is="Component" />
@@ -194,7 +197,6 @@ import {
 import AuroraBackground from '../components/ui/AuroraBackground.vue'
 import Popover from '../components/ui/Popover.vue'
 import Avatar from '../components/ui/Avatar.vue'
-import ShadcnButton from '../components/ui/ShadcnButton.vue'
 import Separator from '../components/ui/Separator.vue'
 import { useHealthStore } from '../stores/healthStore'
 import { useAuthStore } from '../stores/authStore'

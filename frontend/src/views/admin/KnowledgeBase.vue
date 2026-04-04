@@ -109,7 +109,7 @@ const formatSize = (bytes) => {
 const fetchFiles = async () => {
     loading.value = true
     try {
-        const res = await axios.get('http://127.0.0.1:8000/admin/knowledge/files', {
+        const res = await axios.get('/admin/knowledge/files', {
             headers: getAuthHeaders()
         })
         fileList.value = res.data
@@ -135,7 +135,7 @@ const handleUpload = async (file) => {
     formData.append('file', file.raw)
 
     try {
-        await axios.post('http://127.0.0.1:8000/admin/knowledge/upload', formData, {
+        await axios.post('/admin/knowledge/upload', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
                 ...getAuthHeaders()
@@ -162,7 +162,7 @@ const confirmDelete = (filename) => {
         }
     ).then(async () => {
         try {
-            await axios.delete(`http://127.0.0.1:8000/admin/knowledge/files/${filename}`, {
+        await axios.delete(`/admin/knowledge/files/${filename}`, {
                 headers: getAuthHeaders()
             })
             showToast('文件已删除', 'success')
@@ -177,7 +177,7 @@ const confirmDelete = (filename) => {
 const rebuildIndex = async () => {
     rebuilding.value = true
     try {
-        const res = await axios.post('http://127.0.0.1:8000/admin/knowledge/rebuild', {}, {
+        const res = await axios.post('/admin/knowledge/rebuild', {}, {
             headers: getAuthHeaders()
         })
         showToast('索引重建任务已后台启动，请稍候...', 'success')

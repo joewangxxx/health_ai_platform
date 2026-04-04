@@ -235,7 +235,7 @@ const uploadClinicalFiles = async () => {
 
             try {
                 // Using generic upload endpoint assumption or sticking to what might be there
-                const res = await axios.post('http://127.0.0.1:8000/admin/data/upload_clinical', formData, {
+        const res = await axios.post('/admin/data/upload_clinical', formData, {
                     headers: { ...getAuthHeaders(), 'Content-Type': 'multipart/form-data' }
                 })
 
@@ -261,7 +261,7 @@ const triggerClinicalTrain = async () => {
     showToast('临床模型训练流水线已启动', 'success')
     
     try {
-        const res = await axios.post('http://127.0.0.1:8000/admin/train/clinical', {}, {
+        const res = await axios.post('/admin/train/clinical', {}, {
              headers: getAuthHeaders()
         })
         
@@ -286,8 +286,8 @@ const startPipeline = async (type) => {
     
     try {
         let url = ''
-        if (type === 'pharm') url = 'http://127.0.0.1:8000/admin/pipeline/pharm'
-        if (type === 'vision') url = 'http://127.0.0.1:8000/admin/pipeline/vision'
+        if (type === 'pharm') url = '/admin/pipeline/pharm'
+        if (type === 'vision') url = '/admin/pipeline/vision'
 
         const res = await axios.post(url, formData, {
              headers: { ...getAuthHeaders(), 'Content-Type': 'multipart/form-data' }
@@ -331,7 +331,7 @@ const startGwasPipeline = async () => {
             formData.append('disease', extraMeta.value)
 
             try {
-                const res = await axios.post('http://127.0.0.1:8000/admin/pipeline/gwas', formData, {
+        const res = await axios.post('/admin/pipeline/gwas', formData, {
                     headers: { ...getAuthHeaders(), 'Content-Type': 'multipart/form-data' }
                 })
 
@@ -365,7 +365,7 @@ const startPolling = () => {
 
 const checkTaskStatus = async () => {
     try {
-        const res = await axios.get('http://127.0.0.1:8000/admin/task/status', {
+        const res = await axios.get('/admin/task/status', {
             headers: getAuthHeaders()
         })
 

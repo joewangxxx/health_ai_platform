@@ -20,6 +20,8 @@ import pandas as pd
 import numpy as np
 import os
 import re
+import logging
+import warnings
 from backend.config import RISK_MODEL_PATH
 from backend.core.constants import (
     RISK_PROB_VERY_HIGH,
@@ -28,6 +30,20 @@ from backend.core.constants import (
     get_field_chinese_name,
     get_disease_chinese_name,
 )
+
+logger = logging.getLogger(__name__)
+_model_warning_emitted = False
+
+
+def _emit_model_unavailable_warning(reason: str):
+    global _model_warning_emitted
+    if _model_warning_emitted:
+        return
+    logger.warning(
+        "Risk model artifacts unavailable; continuing without disease risk models (%s).",
+        reason,
+    )
+    _model_warning_emitted = True
 
 # TODO: Update AI Model to use V10 features (WBC, GGT, ALP, Platelet, Creatinine)
 # Currently, these fields are passed through to assess_health() but only used
@@ -66,6 +82,29 @@ class DiseaseRiskEngine:
         """异步加载模型 (在 FastAPI lifespan 中调用)"""
         if self._loaded:
             return
+        if not os.path.exists(RISK_MODEL_PATH):
+            _emit_model_unavailable_warning("model file missing")
+            self._loaded = True
+            return
+
+        try:
+            with warnings.catch_warnings():
+                try:
+                    from sklearn.exceptions import InconsistentVersionWarning
+
+                    warnings.simplefilter("error", InconsistentVersionWarning)
+                except Exception:
+                    pass
+                self.bundle = joblib.load(RISK_MODEL_PATH)
+            self.models = self.bundle.get("models", {})
+            self.features_map = self.bundle.get("features_map", {})
+        except Exception as exc:
+            self.bundle = None
+            self.models = {}
+            self.features_map = {}
+            _emit_model_unavailable_warning(str(exc))
+        self._loaded = True
+        return
         print("🏥 初始化全科疾病风险引擎 (LightGBM Cluster)...")
         if os.path.exists(RISK_MODEL_PATH):
             self.bundle = joblib.load(RISK_MODEL_PATH)
@@ -77,6 +116,9 @@ class DiseaseRiskEngine:
         self._loaded = True
 
     def reload(self):
+        logger.info("Reloading disease risk models.")
+        self.__init__()
+        return
         """重新加载模型文件 (Hot Reload)"""
         print("🔄重新加载全科疾病风险引擎...")
         self.__init__()

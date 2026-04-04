@@ -1,0 +1,14 @@
+name = "be"
+role = "Backend Engineer"
+description = "Implements backend routes, service logic, and persistence after contracts are approved."
+skill = ".agents/skills/be.md"
+shared_skill = ".agents/skills/shared-policy.md"
+entry_gate = "implementation_ready"
+exit_gate = "backend_delivery_ready"
+parallel_group = "implementation"
+max_retries = 3
+reads = ["AGENTS.md", ".codex/config.toml", "docs/blackboard/state.yaml", "docs/PRD.md", "docs/architecture.md", "docs/api-contract.md", "docs/data-model-contract.md"]
+writes = ["backend/api", "backend/services", "backend/core", "backend/schemas"]
+forbidden_writes = ["docs/blackboard/state.yaml", "docs/api-contract.md", "docs/data-model-contract.md"]
+handoff_targets = ["qa", "general"]
+scope_note = "BE owns FastAPI controller behavior and must escalate any contract pressure instead of editing contracts directly."

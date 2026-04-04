@@ -5,15 +5,19 @@ numpy
 scikit-learn
 xgboost
 lightgbm
+matplotlib
 torch
 torchvision
 pillow
 python-multipart
 requests
 scipy
+bcrypt
+python-jose[cryptography]
 
 # OCR Module (Task 43: Migration to Baidu)
 baidu-aip==4.16.13
+chardet
 opencv-python-headless
 pymupdf
 filetype

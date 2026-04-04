@@ -1,4 +1,4 @@
-from typing import Any, List
+﻿from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from backend.database import get_session
@@ -6,8 +6,10 @@ from backend.auth import get_current_user
 from backend.models import User, IoTHealthData
 from pydantic import BaseModel
 from datetime import datetime
+import logging
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 class IoTDataCreate(BaseModel):
     device_type: str
@@ -54,7 +56,7 @@ async def sync_iot_batch(
         db.add_all(new_records)
         db.commit()
         
-        # ⚡ Trigger Fusion Engine (Real-time Bayesian Update)
+        # 鈿?Trigger Fusion Engine (Real-time Bayesian Update)
         fusion_result = None
         if hr_count > 0:
             try:
@@ -70,11 +72,11 @@ async def sync_iot_batch(
                      
                 if fusion_engine:
                     fusion_result = await fusion_engine.update_realtime_risk(
-                        user_profile=current_user.profile, 
-                        latest_hr=avg_hr
+                        user_profile=current_user.profile,
+                        latest_hr=avg_hr,
                     )
             except Exception as e:
-                print(f"Fusion Trigger Failed: {e}")
+                logger.warning("Fusion trigger failed: %s", e)
                 # Don't fail the upload just because fusion failed
         
         return {

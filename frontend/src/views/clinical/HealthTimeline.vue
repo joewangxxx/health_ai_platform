@@ -248,7 +248,10 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
-import * as echarts from 'echarts'
+import { LineChart } from 'echarts/charts'
+import { GridComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import { echarts, ensureEChartsModules } from '../../utils/echarts'
 import axios from 'axios'
 import { useAuthStore } from '../../stores/authStore'
 import GlassCard from '../../components/ui/GlassCard.vue'
@@ -256,6 +259,8 @@ import GlassButton from '../../components/ui/GlassButton.vue'
 import { Trophy, Back, InfoFilled, DataAnalysis, Bottom } from '@element-plus/icons-vue'
 import { Wand2, Play } from 'lucide-vue-next'
 import { useToast } from '../../composables/useToast'
+
+ensureEChartsModules([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
 
 const authStore = useAuthStore()
 const { showToast } = useToast()
@@ -285,8 +290,8 @@ const fetchHistory = async () => {
         const headers = { Authorization: `Bearer ${token}` }
 
         const [histRes, trendRes] = await Promise.all([
-            axios.get('http://127.0.0.1:8000/history/list', { headers }),
-            axios.get('http://127.0.0.1:8000/history/trends', { headers })
+        axios.get('/history/list', { headers }),
+        axios.get('/history/trends', { headers })
         ])
 
         historyList.value = histRes.data
@@ -432,7 +437,7 @@ const runSimulation = async () => {
         const headers = { Authorization: `Bearer ${authStore.token}` }
 
         // Step 1: Future Project (Natural)
-        const resFuture = await axios.post('http://127.0.0.1:8000/analysis/simulate/future', {
+        const resFuture = await axios.post('/analysis/simulate/future', {
             years: timeTravelYears.value
         }, { headers })
 
@@ -444,7 +449,7 @@ const runSimulation = async () => {
 
         if (enableIntervention.value) {
             // Step 2: Intervention
-            const resIntervention = await axios.post('http://127.0.0.1:8000/analysis/simulate/intervention', {
+        const resIntervention = await axios.post('/analysis/simulate/intervention', {
                 weight_loss_percent: 0.05
             }, { headers })
 

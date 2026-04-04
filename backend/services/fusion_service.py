@@ -157,44 +157,99 @@ class FusionRiskEngine:
     async def update_realtime_risk(self, user_profile, latest_hr: float):
         """
         实时贝叶斯风险更新 (IoT Triggered)
-        P(Risk|Data) = P(Data|Risk) * P(Risk) / P(Data)
-        
-        Simplified Logic:
-        - Prior (P(Risk)): Current calculated risk
-        - Likelihood (P(Data|Risk)): Probability of observing high HR given user has risk
+        P(Risk|Data) ∝ γ · P(Risk)
+
+        流程：
+        1. 根据心率 + BMI 确定贝叶斯因子 γ
+        2. 调用 calculate_composite_risk 获取当前静态先验 P_t
+        3. 对每种疾病施加 P_{t+1} = clip(γ · P_t) 并重新分级
         """
         print(f"⚡ [Fusion] Triggered Real-time Update for HR: {latest_hr} bpm")
-        
-        # 1. 获取静态 BMI
+
+        # 1. 基础参数
         bmi = user_profile.BMI if user_profile and user_profile.BMI else 24.0
-        
-        # 2. 模拟贝叶斯更新因子
-        bayes_modifier = 1.0
+
+        # 2. 事件分级 → 贝叶斯因子 γ
+        gamma = 1.0
         risk_event = "Normal"
-        
-        # 假设：如果患有心血管病，运动/静息心率偏高的概率较大
+
         if latest_hr > 100:
             if bmi > 28:
-                # 高BMI + 高心率 = 风险显著增加
-                bayes_modifier = 1.8  
+                gamma = 1.8
                 risk_event = "High HR + Obesity"
             else:
-                bayes_modifier = 1.3
+                gamma = 1.3
                 risk_event = "High HR"
         elif latest_hr < 50:
-             # 心动过缓
-             bayes_modifier = 1.2
-             risk_event = "Bradycardia"
-             
-        # 3. 针对 'CoronaryHeart' (冠心病) 进行更新
-        # 这里为了演示，我们只计算这一个指标的变动
-        # 在真实系统中，应该重新运行 calculate_composite_risk 并传入新的 modifiers
-        
+            gamma = 1.2
+            risk_event = "Bradycardia"
+
+        # 若心率正常，无需更新，直接返回
+        if gamma == 1.0:
+            return {
+                "event": risk_event,
+                "hr_read": latest_hr,
+                "bayes_factor": gamma,
+                "updated": False,
+                "message": "心率正常，无需实时更新"
+            }
+
+        # 3. 获取当前静态先验 P_t (调用 calculate_composite_risk)
+        import json
+        from backend.config import DEFAULT_DEVICE_STATE
+
+        clinical_data = user_profile.model_dump() if user_profile else {}
+        user_snps = {}
+        if user_profile and user_profile.genomic_data:
+            try:
+                user_snps = json.loads(user_profile.genomic_data)
+            except Exception:
+                pass
+
+        prior_report = self.calculate_composite_risk(
+            clinical_profile=clinical_data,
+            user_snps=user_snps,
+            iot_data=DEFAULT_DEVICE_STATE
+        )
+
+        if not prior_report or "error" in prior_report:
+            return {
+                "event": risk_event,
+                "hr_read": latest_hr,
+                "bayes_factor": gamma,
+                "updated": False,
+                "message": "无法获取先验风险，跳过实时更新"
+            }
+
+        # 4. 施加贝叶斯更新：P_{t+1} = clip(γ · P_t, 0.1, 99.9)
+        updated_report = {}
+        for disease, info in prior_report.items():
+            prior_risk = info.get("final_risk", 0)
+            posterior_risk = min(99.9, max(0.1, prior_risk * gamma))
+
+            # 重新分级
+            if posterior_risk > FUSION_RISK_VERY_HIGH:
+                level = "极高 (Very High)"
+            elif posterior_risk > FUSION_RISK_HIGH:
+                level = "高 (High)"
+            elif posterior_risk > FUSION_RISK_MEDIUM:
+                level = "中 (Medium)"
+            else:
+                level = "低 (Low)"
+
+            updated_report[disease] = {
+                "prior_risk": round(prior_risk, 1),
+                "posterior_risk": round(posterior_risk, 1),
+                "level": level,
+                "gamma_applied": gamma,
+            }
+
         return {
-            "target_disease": "CoronaryHeart",
             "event": risk_event,
             "hr_read": latest_hr,
             "bmi": bmi,
-            "bayes_factor": bayes_modifier,
-            "message": f"Real-time Bayesian update factor {bayes_modifier} applied due to {risk_event}"
+            "bayes_factor": gamma,
+            "updated": True,
+            "updated_report": updated_report,
+            "message": f"实时贝叶斯更新完成：γ={gamma}，触发事件={risk_event}"
         }

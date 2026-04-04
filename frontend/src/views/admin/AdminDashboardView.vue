@@ -41,7 +41,7 @@ const stats = ref({
 
 onMounted(async () => {
     try {
-        const res = await axios.get('http://127.0.0.1:8000/admin/stats')
+        const res = await axios.get('/admin/stats')
         stats.value = res.data
     } catch (e) {
         console.error("Failed to load admin stats", e)

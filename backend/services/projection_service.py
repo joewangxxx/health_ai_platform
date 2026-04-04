@@ -124,7 +124,13 @@ class ProjectionService:
         
         def get_max_prob(report):
             if not report: return 0
-            probs = [d.get('probability', 0) for d in report.values() if isinstance(d, dict)]
+            # FusionRiskEngine returns `final_risk`; keep backward compatibility
+            # for report shapes that may still expose `probability`.
+            probs = [
+                d.get('final_risk', d.get('probability', 0))
+                for d in report.values()
+                if isinstance(d, dict)
+            ]
             return max(probs) if probs else 0
             
         old_max = get_max_prob(base_risk)

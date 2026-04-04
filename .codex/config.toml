@@ -1,0 +1,92 @@
+version = 1
+
+[project]
+name = "Health AI Platform 2.0"
+mode = "orchestrated-multi-agent"
+orchestrator = "parent-thread"
+goal = "Coordinate product, architecture, frontend, backend, and AI/data work for the Health AI Platform without silent contract drift."
+
+[paths]
+blackboard = "docs/blackboard/state.yaml"
+docs = "docs"
+agent_configs = ".codex/agents"
+agent_skills = ".agents/skills"
+
+[platform]
+frontend = "Vue 3 with Vite"
+backend = "FastAPI service layer"
+database = "SQLite via SQLModel in the current repository"
+ai_data = "Model training, OCR, RAG, and ETL assets in ai_core, backend/etl, and data_warehouse"
+
+[policies]
+blackboard_writer = "orchestrator-only"
+prd_owner = "pm"
+feature_map_owner = "pm"
+architecture_owner = "architect"
+api_contract_owner = "architect"
+data_model_contract_owner = "architect"
+ui_guidance_owner = "fe"
+qa_report_owner = "qa"
+release_docs_owner = "general"
+require_contracts_before_parallel_implementation = true
+fe_may_edit_api_contract = false
+be_may_edit_api_contract = false
+ai_data_may_edit_contracts = false
+fe_max_retries = 3
+be_max_retries = 3
+ai_data_max_retries = 3
+allow_feature_implementation = true
+
+[docs]
+prd = "docs/PRD.md"
+feature_map = "docs/FEATURE_MAP.md"
+architecture = "docs/architecture.md"
+api_contract = "docs/api-contract.md"
+data_model_contract = "docs/data-model-contract.md"
+qa_report = "docs/qa-report.md"
+deployment = "docs/deployment.md"
+release = "docs/release.md"
+handoff = "docs/handoff.md"
+readme = "README.md"
+
+[workflow]
+stages = ["product", "architecture", "implementation", "integration", "qa", "release"]
+parallel_implementation_gate = "implementation_ready"
+implementation_agents = ["fe", "be", "ai-data"]
+qa_gate = "integration_ready"
+release_gate = "qa_passed"
+
+[[agents]]
+name = "pm"
+config = ".codex/agents/pm.toml"
+skill = ".agents/skills/pm.md"
+
+[[agents]]
+name = "architect"
+config = ".codex/agents/architect.toml"
+skill = ".agents/skills/architect.md"
+
+[[agents]]
+name = "fe"
+config = ".codex/agents/fe.toml"
+skill = ".agents/skills/fe.md"
+
+[[agents]]
+name = "be"
+config = ".codex/agents/be.toml"
+skill = ".agents/skills/be.md"
+
+[[agents]]
+name = "ai-data"
+config = ".codex/agents/ai-data.toml"
+skill = ".agents/skills/ai-data.md"
+
+[[agents]]
+name = "qa"
+config = ".codex/agents/qa.toml"
+skill = ".agents/skills/qa.md"
+
+[[agents]]
+name = "general"
+config = ".codex/agents/general.toml"
+skill = ".agents/skills/general.md"

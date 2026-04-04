@@ -107,7 +107,7 @@ const { showToast } = useToast()
 const uploadGeneFile = async (options) => {
     const formData = new FormData(); formData.append('file', options.file)
     try {
-        const res = await axios.post('http://127.0.0.1:8000/analyze/genetics_file', formData)
+        const res = await axios.post('/analyze/genetics_file', formData)
         console.log('Gene API Response:', res.data)
         if (res.data.status === 'success') {
             // Store snps_dict for risk calculation, preview_list for table display

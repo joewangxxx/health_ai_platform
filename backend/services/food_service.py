@@ -10,15 +10,11 @@ from PIL import Image
 import io
 import os
 import traceback
-from pathlib import Path
+from backend.core.config import settings
 
 # ================= 🔧 1. 动态路径计算 (最稳健的方式) =================
 # 获取当前文件所在位置: .../backend/services/food_service.py
-CURRENT_DIR = Path(__file__).resolve().parent
-# 回退两层找到 F:\health_ai_platform_2.0
-PROJECT_ROOT = CURRENT_DIR.parent.parent
-# 拼接模型路径
-MODEL_PATH = os.path.join(PROJECT_ROOT, "models", "nutrition_efficientnet.pth")
+MODEL_PATH = settings.NUTRITION_MODEL_PATH
 
 class FoodPredictor:
     def __init__(self):

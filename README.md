@@ -17,6 +17,17 @@
 
 ---
 
+## Governance Update
+
+- 审计责任记录新写入 schema：`agent_audit_responsibility.v2`
+- 当前运行时治理基线：`agent_runtime_governance.v1`
+- 当前写入审计的策略版本基线：`explicit_policy.v1`
+- `AgentAuditEvent` 现在是 backend internal-only 的责任记录，不会通过 `/chat/send`、`/chat/stream`、SSE status 或历史回放对外暴露
+- rollout 前需要先执行迁移：[20260401_add_agent_audit_responsibility_fields.py](./backend/alembic/versions/20260401_add_agent_audit_responsibility_fields.py)
+- 审计仍保持 metadata-only：不得持久化原始 query、原始 reply、原始 prompt、大段 RAG 文本、原始工具结果或未脱敏医疗 payload
+
+---
+
 ## 📂 Product Strategy & Management Artifacts
 
 > 本项目不仅是代码的实现，更是一个**完整产品生命周期**的推演。
@@ -76,6 +87,7 @@ HealthAI Platform 是一个基于**多模态数据融合**的智能医疗平台�
 
 ### 🤖 Dr. AI 健康顾问 (RAG)
 - **检索增强生成 (RAG)** 技术，基于 ChromaDB 向量检索
+- 当回答需要人工接管时，会额外显示后端 owned 的结构化接管提示，帮助用户理解下一步该做什么
 - 内置 9 大权威医学指南知识库：
   - 《中国居民膳食指南 2022》
   - 《中国高血压防治指南 2024》
@@ -314,7 +326,7 @@ health_ai_platform_2.0/
 │       ├── vector_store/         # ChromaDB 向量库
 │       └── guidelines/           # 医学指南文档
 ├── frontend/                     # Vue 3 前端
-│   └── src/  
+│   └── src/
 │       ├── views/                # 页面组件
 │       ├── stores/               # Pinia 状态
 │       └── components/           # UI 组件
@@ -325,7 +337,7 @@ health_ai_platform_2.0/
 │   ├── raw_data/                 # 原始数据 (gitignore)
 │   └── processed_data/           # ETL 处理后数据
 │── docs/                         # 产品经理报告输出
-│   ├── BUSINESS_AND_METRICS.md/  # 商业模型与数据指标体系             
+│   ├── BUSINESS_AND_METRICS.md/  # 商业模型与数据指标体系
 │   └── COMMERCIAL_VALIDATION.md/ # 商业化验证与增长实验计划
 │   └── COMPETITIVE_ANALYSIS.md/  # 竞品分析与行业洞察报告
 │   └── PRD.md/                   # 产品需求文档

@@ -193,8 +193,13 @@ import { useAuthStore } from '../../stores/authStore'
 import { storeToRefs } from 'pinia'
 import GlassCard from '../../components/ui/GlassCard.vue'
 import GlassButton from '../../components/ui/GlassButton.vue'
-import * as echarts from 'echarts'
+import { PieChart } from 'echarts/charts'
+import { LegendComponent, TooltipComponent } from 'echarts/components'
+import { CanvasRenderer } from 'echarts/renderers'
+import { echarts, ensureEChartsModules } from '../../utils/echarts'
 import { useToast } from '../../composables/useToast'
+
+ensureEChartsModules([PieChart, LegendComponent, TooltipComponent, CanvasRenderer])
 
 const store = useNutritionStore()
 const authStore = useAuthStore()

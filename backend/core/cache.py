@@ -16,7 +16,7 @@ try:
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
-    logger.warning("⚠️ redis 模块未安装，缓存功能将被禁用")
+    aioredis = None
 
 
 class CacheManager:
@@ -33,6 +33,7 @@ class CacheManager:
     _instance: Optional["CacheManager"] = None
     _redis: Optional[Any] = None
     _initialized: bool = False
+    _availability_warning_emitted: bool = False
     
     def __new__(cls):
         if cls._instance is None:
@@ -51,7 +52,9 @@ class CacheManager:
             bool: 是否成功连接
         """
         if not REDIS_AVAILABLE:
-            logger.warning("⚠️ Redis 不可用，跳过初始化")
+            if not cls._availability_warning_emitted:
+                logger.warning("Redis cache unavailable; continuing without cache.")
+                cls._availability_warning_emitted = True
             return False
         
         if cls._initialized:
@@ -69,11 +72,11 @@ class CacheManager:
             await cls._redis.ping()
             cls._initialized = True
             logger.info(f"✅ Redis 缓存连接成功: {redis_url}")
-            print(f"✅ Redis 缓存连接成功: {redis_url}")
             return True
         except Exception as e:
-            logger.warning(f"⚠️ Redis 连接失败: {e}")
-            print(f"⚠️ Redis 连接失败: {e} (缓存功能将被禁用)")
+            if not cls._availability_warning_emitted:
+                logger.warning("Redis cache unavailable; continuing without cache (%s).", e)
+                cls._availability_warning_emitted = True
             cls._redis = None
             cls._initialized = False
             return False
@@ -170,7 +173,6 @@ class CacheManager:
             if keys:
                 await cls._redis.delete(*keys)
                 logger.info(f"🗑️ Invalidated {len(keys)} cache keys for pattern: {pattern}")
-                print(f"🗑️ Invalidated {len(keys)} cache keys for pattern: {pattern}")
                 return len(keys)
             return 0
         except Exception as e:
@@ -204,7 +206,6 @@ class CacheManager:
         total = sum(results.values())
         if total > 0:
             logger.info(f"🗑️ User {user_id} cache invalidated: {results}")
-            print(f"🗑️ User {user_id} cache invalidated: {results}")
         
         return results
     
@@ -215,12 +216,12 @@ class CacheManager:
             try:
                 await cls._redis.close()
                 logger.info("✅ Redis 连接已关闭")
-                print("✅ Redis 连接已关闭")
             except Exception as e:
                 logger.error(f"Redis 关闭错误: {e}")
             finally:
                 cls._redis = None
                 cls._initialized = False
+                cls._availability_warning_emitted = False
     
     @staticmethod
     def generate_key(prefix: str, *args, **kwargs) -> str:
