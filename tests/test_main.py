@@ -464,6 +464,9 @@ def test_analyze_comprehensive_falls_back_when_fusion_engine_returns_error_repor
                 "Triglycerides": 1.2,
                 "Cholesterol_HDL": 1.5,
                 "Creatinine": 82.0,
+                "eGFR": 96.0,
+                "ALT": 21.0,
+                "ALP": 72.0,
                 "SBP": 118,
                 "DBP": 76,
             },
@@ -477,6 +480,64 @@ def test_analyze_comprehensive_falls_back_when_fusion_engine_returns_error_repor
     assert body["status"] == "success"
     assert body["risk_report"]["Hypertension"]["final_risk"] == 42.0
     assert body["analysis_context"]["analysis_mode"] == "final"
+
+    app.dependency_overrides.clear()
+
+
+def test_analyze_comprehensive_uses_rule_based_fallback_when_models_are_unavailable(client, session, monkeypatch):
+    user = User(
+        username="analysis_context_rule_fallback_user",
+        email="analysis_context_rule_fallback_user@example.com",
+        hashed_password="hashed",
+        is_superuser=False,
+    )
+    profile = UserProfile(user_id=1)
+    user.profile = profile
+    session.add(user)
+    session.add(profile)
+    session.commit()
+    session.refresh(user)
+    session.refresh(profile)
+
+    class UnavailableRiskEngine:
+        def assess_health(self, clinical_profile, include_breakdown=True):
+            return {"error": "models unavailable"}
+
+    def create_current_user():
+        return user
+
+    app.dependency_overrides[get_current_user] = create_current_user
+    monkeypatch.setattr(backend_main, "fusion_engine", None)
+    monkeypatch.setattr(backend_main, "risk_engine", UnavailableRiskEngine())
+
+    response = client.post(
+        "/analyze/comprehensive",
+        json={
+            "clinical": {
+                "Age": 52,
+                "Gender": 1,
+                "Height": 172,
+                "Weight": 75,
+                "BMI": 25.4,
+                "SBP": 138,
+                "DBP": 88,
+                "Glucose_Fasting": 6.1,
+                "Creatinine": 98.0,
+            },
+            "user_snps": {},
+        },
+    )
+
+    body = response.json()
+
+    assert response.status_code == 200
+    assert body["status"] == "success"
+    assert isinstance(body["risk_report"]["Hypertension"]["final_risk"], float)
+    assert body["risk_report"]["Hypertension"]["final_risk"] > 0
+    assert body["risk_report"]["Hypertension"]["breakdown"]["gene_modifier"] == "x1.0"
+    assert body["analysis_context"]["analysis_mode"] == "provisional"
+    assert "HbA1c" in body["analysis_context"]["field_state_summary"]["missing"]
+    assert "eGFR" in body["analysis_context"]["field_state_summary"]["derived"]
 
     app.dependency_overrides.clear()
 
@@ -523,6 +584,15 @@ def test_analyze_comprehensive_emits_analysis_context_for_complete_inputs(client
                 "Age": 49,
                 "Gender": 1,
                 "BMI": 26.0,
+                "Glucose_Fasting": 5.2,
+                "HbA1c": 5.3,
+                "Cholesterol_Total": 4.7,
+                "Triglycerides": 1.0,
+                "Cholesterol_HDL": 1.4,
+                "Creatinine": 78.0,
+                "eGFR": 99.0,
+                "ALT": 20.0,
+                "ALP": 70.0,
             },
             "user_snps": {"example": "value"},
         },

@@ -122,7 +122,7 @@ ETL 流程的最终产出是包含 30 余种疾病二分类标签的结构化数
     \label{eq:or_transform}
 \end{equation}
 
-经过上述清洗流程，每种疾病的最终产出为一个标准化权重文件（\texttt{GWAS\_\{Disease\}\_weights.csv}），包含 rsid、p\_value、weight 和 risk\_allele 四列，按 p 值升序排列并去重，供后续 PRS 引擎直接加载。
+经过上述清洗流程，每种疾病的最终产出为一个标准化权重文件。其文件名规范为 \texttt{GWAS\_\{Disease\}\_weights.csv}，包含 \texttt{rsid}、\texttt{p\_value}、\texttt{weight} 和 \texttt{risk\_allele} 四列，按 p 值升序排列并去重，供后续 PRS 引擎直接加载。
 
 \begin{figure}[htbp]
     \centering
@@ -378,7 +378,7 @@ PRS 引擎的完整计算流转分为三个阶段：
     \label{eq:realtime_update}
 \end{equation}
 
-其中，$P_t(Risk)$ 为当前时刻的先验风险概率（即最近一次静态评估结果），$P(HR_{abnormal}|Risk)$ 为似然函数，$P(HR_{abnormal})$ 为归一化常数。需要指出的是，该式用于给出在线更新的概率论依据；在工程实现中，系统并未对连续似然项进行实时估计，而是以离散 Bayes Factor 对似然比进行近似。
+其中，$P_t(Risk)$ 为当前时刻的先验风险概率，即最近一次静态评估结果；$P(HR_{abnormal}|Risk)$ 为似然函数，$P(HR_{abnormal})$ 为归一化常数。需要指出的是，该式用于给出在线更新的概率论依据；在工程实现中，系统并未对连续似然项进行实时估计，而是以离散 Bayes Factor 对似然比进行近似。
 
 在工程实践中，该模块围绕以下三个子机制展开：
 
@@ -502,3 +502,228 @@ PRS 引擎的完整计算流转分为三个阶段：
     \caption{干预推演双轨对比示意：自然老化轨迹 vs 干预后轨迹}
     \label{fig:intervention_compare}
 \end{figure}
+
+
+\section{面向医疗对话的 Agent 安全分流与多策略评估算法}
+
+在第 \ref{sec:theory} 节所述的受控生成理论框架中，我们提出了策略评估函数 $\pi(q)$ 以及相关的意图车道、策略探针与分段控制。本节将详细阐述这一框架底层的算法设计。与直接由提示词驱动的大型语言模型不同，本系统在调用底层模型前，引入了长达数百条细粒度规则的强制安全决策树。在此算法体系下，Agent 的一切意图识别、工具组合与回答模式决定均遵循严格的确定性约束。
+
+\subsection{基于多维探针的意图分流算法}
+
+传统大模型在接收到医疗查询时通常采取即时回答的闭环策略。本系统采用了独立意图车道（Lane）分流与策略压力探针（Pressure Probe）分离校验的设计架构。用户查询 $q$ 在进入生成环节前，必须映射到六条严格偏序的安全车道之一。
+
+系统内置了 8 组高敏感模式列表（Pattern Lists），主要涵盖：急症判断（Urgent)、诊断确认（Diagnosis）、药物相关（Medication）、趋势分析（Trend）、报告解读（Report）、用药干预（Medication\allowbreak Change）、急症豁免要求（Urgent\allowbreak Override）以及高危风险提及（Elevated\allowbreak Risk）。其典型的探针识别模式如表 \ref{tab:intent_patterns} 所示。
+
+\begin{table}[htbp]
+    \centering
+    \caption{多维意图探针词例与作用车道映射}
+    \label{tab:intent_patterns}
+    \begin{tabular}{p{3.2cm}p{5.5cm}p{5cm}}
+        \toprule
+        \textbf{模式组标识} & \textbf{探针词根（多语种匹配缩略）} & \textbf{触发规则与所属维度} \\
+        \midrule
+        \texttt{URGENT\_}\allowbreak\texttt{PATTERNS} & 呼吸困难, 晕厥, 严重过敏, suicidal & 触发 \texttt{urgent} 车道，启动急症拦截 \\
+        \texttt{DIAGNOSIS\_}\allowbreak\texttt{PATTERNS} & 确诊, 诊断, 排除, what disease & 触发 \texttt{diagnosis} 车道，限制诊断性断言 \\
+        \texttt{MEDICATION\_}\allowbreak\texttt{PATTERNS} & 用药, 处方, 剂量, pill, medication & 触发 \texttt{medication} 唤起药物库查询工具 \\
+        \texttt{TREND/REPORT\_}\allowbreak\texttt{PATTERNS} & 趋势, 化验单, 体检报告, test result & 触发 \texttt{trend} 或 \texttt{report} \\
+        \texttt{MEDICATION\_}\allowbreak\texttt{CHANGE} & 停药, 换药, 减量, start taking & 策略压力探针：捕捉高风险的药量修改诉求 \\
+        \texttt{ELEVATED\_}\allowbreak\texttt{RISK} & 恶化, 加重, worsening, 偏高 & 策略压力探针：评估当前健康场景危险等级 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+为了保证短路求值时的优先级控制，系统为上述 6 条主车道定义了优先级降序评估序列（Evaluation Order）：
+\begin{equation}
+    \texttt{urgent} \succ \texttt{diagnosis} \succ \texttt{medication} \succ \texttt{trend} \succ \texttt{report} \succ \texttt{general\_}\allowbreak\texttt{health}
+\end{equation}
+
+在意图分流阶段，系统执行贪婪探测：优先从高风险车道开始匹配，首次命中即锁定为本次提问的主判定车道 $\operatorname{Lane}(q)$。与此同时，执行全局的“策略压力”检测，提取 $\operatorname{Press}(q)$ 字典，用于记载用户是否提出换药、忽略急诊指征等激进行为。此分离设计使得即使用户的查询被归类为普通药物咨询（中等风险），一旦带有变更剂量的隐含企图，压力探针也能实时纠偏为“高压区”。这些数字路标直接决定了后续工具规划的安全剪枝。
+
+
+\subsection{基于分流约束的工具白名单规划算法}
+
+当前实现并非向大语言模型直接暴露全局工具注册表。系统首先由本地规划器依据提问所归属的车道生成极度受限的候选集合，随后仅向模型提供该集合对应的局部工具定义。该机制将候选工具规模限制在固定常数上界之内，并通过车道专属的白名单过滤，降低了非相关查询触发高敏感工具的潜在风险。
+
+该规划算法在内部被划分为首尾相连的三个推导与过滤阶段：
+
+首先，系统执行阶段一：\textbf{特定车道的默认种子集加载（Lane-conditioned Default Seed Set）}：
+\begin{equation}
+    L = \operatorname{Lane}(q),\quad \mathcal{T}_{seed}(L) = \text{lane\_defaults}(L)
+\end{equation}
+不同车道拥有差异化的基础种子。例如 $\texttt{diagnosis\_}\allowbreak\texttt{sensitive}$ 车道的默认种子集并非单一工具，而是包含画像摘要（\texttt{get\_user\_profile\_summary}）与分析快照检索（\texttt{latest\_analysis\_snapshot\_lookup}）的复合集合。
+
+其次，阶段二执行：\textbf{基于车道条件的关键词包含式探测（Keyword Inclusion Probe）}：
+\begin{equation}
+    \mathcal{T}_{cand}(q,L) = \mathcal{T}_{seed}(L) \cup \text{KeywordProbe}(q,L)
+\end{equation}
+在此流程中，系统依据当前车道独有的词法哈希表对查询语句 $q$ 展开包含式判定。以 $\texttt{report\_}\allowbreak\texttt{interpretation}$ 车道为例，若语句探测到形如 \textsf{compare/\allowbreak comparison/\allowbreak difference/\allowbreak versus} 等特征串，系统则即刻将报告对比工具（\texttt{report\_comparison\_}\allowbreak\texttt{lookup}）追加至候选集合；在 $\texttt{general\_}\allowbreak\texttt{health}$ 车道中，出现 \textsf{risk / result} 标识符则追加 \texttt{get\_latest\_}\allowbreak\texttt{risk\_report}。
+
+最后，进入阶段三：\textbf{白名单求交与状态截断（Whitelist Intersection \& Truncation）}：
+\begin{equation}
+    \mathcal{T}_{plan}(q) = \operatorname{Head}_4\left(\operatorname{Dedup}\left(\mathcal{T}_{cand}(q,L) \cap \mathcal{W}_L\right)\right)
+\end{equation}
+式中 $\mathcal{W}_L$ 代表车道约束矩阵，负责对模型越界探索进行硬阻断。$\operatorname{Dedup}$ 保障集合元素唯一性以节约 Token 消耗，最终 $\operatorname{Head}_4$ 将取回的工具规模强行截断，即无条件保留首次出现顺序后的前 $4$ 项。需要说明的是，此上限为本地分流器选取的工具定义总量，这区别于执行层中每次受控调用的最高并发执行工具数量限制（后者将在后文予以专题阐释）。车道级的完整约束集合列于表 \ref{tab:lane_tool_whitelist}。
+
+\begin{table}[htbp]
+    \centering
+    \caption{Agent 车道工具白名单约束矩阵}
+    \label{tab:lane_tool_whitelist}
+    \begin{tabular}{p{4cm}p{10cm}}
+        \toprule
+        \textbf{意图车道 ($L$)} & \textbf{准入工具白名单 ($\mathcal{W}_L$)} \\
+        \midrule
+        \texttt{urgent\_}\allowbreak\texttt{symptom} & \textbf{空集合}。急症车道不分配工具，随后由上层安全分流直接短路到紧急就医响应。 \\
+        \texttt{general\_}\allowbreak\texttt{health} & 画像摘要、最新风险报告、异常指标查询、医学指南检索 \\
+        \texttt{report\_}\allowbreak\texttt{interpretation} & 报告摘要读取、报告差异比对、已上传文档摘要、医学指南检索 \\
+        \texttt{trend\_}\allowbreak\texttt{review} & 历史趋势提取、异常指标查询、分析快照检索、医学指南检索 \\
+        \texttt{medication\_}\allowbreak\texttt{related} & 药物摘要读取、报告摘要读取、医学指南检索 \\
+        \texttt{diagnosis\_}\allowbreak\texttt{sensitive} & 画像摘要、报告摘要读取、分析快照检索、医学指南检索 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+
+\subsection{多级证据门控与冲突校验算法}
+
+在规划工具被调用完毕后，Agent 不立即进入生成阶段，而是先对结构化工具结果、用户画像证据与检索文本进行后置充分性评估（Evidence Gating）。该评估模块采用两阶段级联架构：首先由基础门控函数 $\mathcal{G}_{base}$ 综合车道门槛与冲突校验输出初始证据状态 $E_0$，随后由 RAG 质量修正函数 $\mathcal{G}_{qual}$ 对 $E_0$ 进行保守修正，输出最终证据状态 $\mathcal{E}$：
+\begin{equation}
+    E_0 = \mathcal{G}_{base}(L, \mathcal{T}_{out}, p_u, R_{retr})
+\end{equation}
+\begin{equation}
+    \mathcal{E} = \mathcal{G}_{qual}(E_0, Q_{rag}) \in \{\text{sufficient}, \text{limited}, \text{insufficient}\}
+\end{equation}
+其中 $L$ 为意图车道，$\mathcal{T}_{out}$ 为工具执行结果集合，$p_u$ 为患者结构化画像，$R_{retr}$ 为检索增强文本，$Q_{rag}$ 为 RAG 质量摘要向量。该证据状态将直接约束下游策略评估阶段（\S 4.5.4）可选的回答模式上界。
+
+\subsubsection{基础门控：车道门槛与冲突校验}
+
+基础门控函数 $\mathcal{G}_{base}$ 按严格优先级顺序执行以下判定链：
+
+\textbf{（1）急症短路。}若当前车道为 \texttt{urgent\_symptom}，直接返回 $E_0 = \text{insufficient}$，不执行后续任何判定。
+
+\textbf{（2）空结果兜底。}若所有工具均已返回但无一包含有效证据（即工具返回空结果或被阻断），则返回 $E_0 = \text{insufficient}$。
+
+\textbf{（3）跨来源状态冲突校验。}这是本门控机制的核心安全特性。系统围绕 4 项强约束量化体征指标构建跨源冲突探针：空腹血糖（\texttt{glucose\_fasting}）、收缩压（\texttt{sbp}）、舒张压（\texttt{dbp}）、体质指数（\texttt{bmi}）。对于每项指标 $m$，系统首先通过分段函数将原始数值映射为离散状态码：
+\begin{equation}
+    \sigma_m(x) = \begin{cases} \text{high}, & x > \theta_m \\ \text{normal}, & \text{otherwise} \end{cases}
+\end{equation}
+其中各指标的医学判定阈值 $\theta_m$ 如表 \ref{tab:metric_thresholds} 所示。
+
+\begin{table}[htbp]
+    \centering
+    \caption{状态映射函数的医学判定阈值}
+    \label{tab:metric_thresholds}
+    \begin{tabular}{llll}
+        \toprule
+        \textbf{指标 ($m$)} & \textbf{阈值 ($\theta_m$)} & \textbf{单位} & \textbf{临床依据} \\
+        \midrule
+        \texttt{glucose\_fasting} & 6.1 & mmol/L & WHO 空腹血糖受损标准 \\
+        \texttt{sbp} & 140 & mmHg & 高血压诊断界值 \\
+        \texttt{dbp} & 90 & mmHg & 高血压诊断界值 \\
+        \texttt{bmi} & 24 & kg/m$^2$ & 中国成人超重界值 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+系统分别从体检报告工具、历史趋势工具和个人画像中提取指标记录集合 $\operatorname{Met}_A$ 与 $\operatorname{Met}_B$，执行三组比对路径：报告数据与趋势历史之间、报告数据与个人画像之间、以及检索文本与个体事实之间。当同名指标在不同来源中的状态码出现不一致时，即判定为跨来源状态冲突：
+\begin{equation}
+    \exists m \in (\operatorname{Met}_A \cap \operatorname{Met}_B),\ \sigma_m(v_A) \neq \sigma_m(v_B) \implies \text{Conflict}_{data} = \text{True}
+\end{equation}
+
+此外，系统基于预定义正常/异常提示词表对检索文本与个体异常状态之间的显式语义错配进行轻量检验：若患者存在异常标识但检索文本含 \textsf{healthy adult} 等正常态指示词，或患者无异常标识但检索文本含 \textsf{high fasting glucose} 等异常态指示词，则判定为检索冲突 $\text{Conflict}_{rag}$。命中任何冲突类别后，系统\textbf{一律直接将 $E_0$ 降为 \texttt{insufficient}}，不经过后续门槛判定。
+
+\textbf{（4）车道最低证据门槛判定。}在通过冲突校验后，系统根据当前车道评估工具证据是否满足最低门槛（$\text{floor\_met}$）或部分支撑条件（$\text{partial\_support}$），如表 \ref{tab:lane_evidence_floor} 所示。
+
+\begin{table}[htbp]
+    \centering
+    \caption{各车道最低证据门槛与部分支撑条件}
+    \label{tab:lane_evidence_floor}
+    \begin{tabular}{p{3cm}p{5.2cm}p{5.3cm}}
+        \toprule
+        \textbf{意图车道} & \textbf{完整门槛} & \textbf{部分支撑} \\
+        \midrule
+        \texttt{general\_}\allowbreak\texttt{health} & 画像完整 $\land$ 指南命中 & 画像部分可用 $\lor$ 指南 $\lor$ 异常指标 \\
+        \texttt{report\_}\allowbreak\texttt{interpretation} & 报告摘要完整 $\lor$ 对比完整 & 文档 $\lor$ 指南 $\lor$ 摘要部分 $\lor$ 对比部分 \\
+        \texttt{trend\_}\allowbreak\texttt{review} & 趋势记录 $\geq 2$ 条且完整 & 趋势 1 条 $\lor$ 异常 $\lor$ 快照 $\lor$ 指南 \\
+        \texttt{medication\_}\allowbreak\texttt{related} & 药物事实项完整 & 药物部分 $\lor$ 摘要部分 $\lor$ 指南 \\
+        \texttt{diagnosis\_}\allowbreak\texttt{sensitive} & 画像 $\lor$ 报告摘要 $\lor$ 分析快照 & 指南 $\lor$ 画像部分 $\lor$ 摘要部分 $\lor$ 快照部分 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+当完整门槛满足时，输出 $E_0 = \text{sufficient}$；仅部分支撑满足时，输出 $E_0 = \text{limited}$；两者均不满足时，输出 $E_0 = \text{insufficient}$。
+
+\subsubsection{RAG 质量保守修正}
+
+基础门控输出 $E_0$ 后，系统接入 RAG 质量摘要向量 $Q_{rag}$（详见 \S 2.3.1）进行保守修正。该修正遵循\textbf{只降不升}原则：即使 $E_0$ 已被判定为 \texttt{sufficient}，若检索分块质量未达标，系统仍将其强制拉回。具体规则为：当检索状态为不可用、分块质量为空或薄弱、或命中数为零时，$\mathcal{E}$ 被强制降为 \texttt{insufficient}；当文本密度不足或数据溯源状态为部分缺失时，$\mathcal{E}$ 被降为 \texttt{limited}；否则保持 $E_0$ 不变。最终输出的 $\mathcal{E}$ 将与车道信号一并投入终端策略评估判定树。
+
+\subsection{基于决策树的终端策略评估算法}
+
+前述三节已依次输出意图车道 $L$ 与策略压力 $\operatorname{Press}(q)$（\S 4.5.1）、受限工具候选集 $\mathcal{T}_{plan}(q)$（\S 4.5.2）、以及经两阶段门控后的证据状态 $\mathcal{E}$（\S 4.5.3）。本节阐述 Agent 决策管线的终端汇聚点。策略评估函数消费上述全部中间产物，输出核心决策子元组：
+\begin{equation}
+\begin{split}
+    \pi_{core}(q) &= \text{PolicyEval}\big(L, \operatorname{Press}(q), \mathcal{E}\big) \\
+           &= \big(\text{answer\_mode},\ \text{disclaimer\_mode},\ \text{risk\_level},\ \text{degrade\_reason}\big)
+\end{split}
+\end{equation}
+该子元组直接约束大语言模型在生成阶段的行为边界与免责声明级别。此外，实现层还同步输出策略版本号（\texttt{policy\_version}）、所选规则标识（\texttt{selected\_rule}）、证据状态与工具可用性等可追溯元数据，供责任审计层消费。
+
+\subsubsection{判定分支结构}
+
+策略评估函数内部采用优先级递降的判定树结构，包含 3 条硬编码短路分支与 1 条证据驱动的默认分支。前三条分支的回答模式不受证据状态 $\mathcal{E}$ 控制，但诊断与药物变更分支仍沿用后置检查输出的证据状态与工具可用性，将其写入策略输出记录以供审计。
+
+\textbf{分支 1：急症短路。}若 $L = \texttt{urgent\_symptom}$，立即输出紧急就医引导模式，$\texttt{risk\_level} = \texttt{high}$，证据状态固定为 \texttt{insufficient}。该模式下系统短路到紧急就医引导响应，不进入后续证据评估流程。
+
+\textbf{分支 2：诊断类拒答。}若 $L = \texttt{diagnosis\_sensitive}$，无论证据是否充分，一律输出 $\texttt{answer\_mode}$ $=$ $\texttt{refusal\_with\_}$\allowbreak$\texttt{disclaimer}$，$\texttt{disclaimer\_mode}$ $=$ $\texttt{diagnosis\_}$\allowbreak$\texttt{guardrail}$。此分支体现了系统对诊断行为的合规性红线：任何涉及"确诊""排除"等诊断性断言的意图均被拦截。
+
+\textbf{分支 3：用药变更拒答。}若 $L = \texttt{medication\_related}$ 且策略压力探针检测到用户存在用药变更意图（即压力字典中药量修改标记为真），则输出拒答模式并附加保守免责声明。该分支拦截用户试图让系统开药、停药或调整剂量的请求。
+
+\textbf{分支 4：证据驱动的默认路径。}当查询未命中上述三条短路规则时，回答模式由证据状态 $\mathcal{E}$ 决定，其映射关系如表 \ref{tab:policy_decision} 所示。
+
+\begin{table}[htbp]
+    \centering
+    \caption{终端策略评估判定表}
+    \label{tab:policy_decision}
+    \begin{tabular}{p{4.2cm}p{3.8cm}p{3.2cm}p{2cm}}
+        \toprule
+        \textbf{条件组合} & \textbf{回答模式} & \textbf{免责模式} & \textbf{风险} \\
+        \midrule
+        $L{=}\texttt{urgent}$ & urgent\_care\_\allowbreak disclaimer & urgent\_care & high \\
+        $L{=}\texttt{diagnosis}$ & refusal\_with\_\allowbreak disclaimer & diagnosis\_\allowbreak guardrail & high \\
+        $L{=}\texttt{medication}$ $\land$ $\text{Change}$ & refusal\_with\_\allowbreak disclaimer & conservative & high \\
+        $\mathcal{E}{=}\text{suff.}$ $\land$ $L{=}\texttt{general}$ & direct\_answer & none & low \\
+        $\mathcal{E}{=}\text{suff.}$ $\land$ $L{=}\texttt{med.}$ & bounded\_answer & conservative & medium \\
+        $\mathcal{E}{=}\text{suff.}$ $\land$ 其他 $L$ & bounded\_answer & none & medium \\
+        $\mathcal{E}{=}\text{limited}$ & bounded\_answer & conservative & 分级函数 \\
+        $\mathcal{E}{=}\text{insuff.}$ & clarify\_missing\_\allowbreak context & conservative & 分级函数 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+表中有两个值得特别关注的约束：其一，完全无约束的直接回答仅在一般健康车道且证据充分时才被释放，这是系统中唯一不附加免责声明的输出路径；其二，药物相关车道即使证据充分，仍然强制附加保守免责声明，体现了对用药安全的持续审慎。
+
+\subsubsection{回答模式语义定义}
+
+为明确各输出模式的行为边界，表 \ref{tab:answer_modes} 给出了 5 种回答模式的完整语义定义。
+
+\begin{table}[htbp]
+    \centering
+    \caption{Agent 回答模式语义定义}
+    \label{tab:answer_modes}
+    \begin{tabular}{p{3.8cm}p{9.5cm}}
+        \toprule
+        \textbf{回答模式} & \textbf{语义描述与行为边界} \\
+        \midrule
+        \texttt{direct\_answer} & 无附加约束的常规回复，仅在一般健康咨询且证据充分时释放 \\
+        \texttt{bounded\_answer} & 带安全边界的受限回复，回答内容受证据范围约束，不得外推 \\
+        \texttt{clarify\_missing\_}\allowbreak\texttt{context} & 不回答用户问题，引导用户补充缺失的数据或上下文 \\
+        \texttt{refusal\_with\_}\allowbreak\texttt{disclaimer} & 拒绝回答并附加免责声明与就医建议 \\
+        \texttt{urgent\_care\_}\allowbreak\texttt{disclaimer} & 强制输出紧急就医引导，不生成任何医学内容 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsubsection{风险分级与下游传导}
+
+需要注意的是，本系统存在两套独立的风险标签体系。上游安全分类函数输出的是查询级安全态标签（$\texttt{urgent}$ / $\texttt{elevated}$ / $\texttt{normal}$），用于决定查询进入哪条处理管线；而策略评估函数输出的 $\texttt{risk\_level}$ 为策略层风险等级（$\texttt{high}$ / $\texttt{medium}$ / $\texttt{low}$），由独立的分级函数根据车道与压力探针推断。急症与诊断车道固定为高风险；药物车道在存在变更压力时升级为高风险，否则为中等风险；报告和趋势车道为中等风险；一般健康车道在无高危提及时为低风险。该等级不影响回答模式选择，而是为责任审计层（\S\ref{sec:audit_replay_impl}）提供风险标签。
+
+策略输出被下游业务层消费时，系统追加派生标记 $\texttt{must\_refuse}$：当 $\texttt{answer\_mode}$ $=$ $\texttt{refusal\_with\_}$\allowbreak$\texttt{disclaimer}$ 时该标记为真，用于显式标注拒答型策略。需要说明的是，实际的生成短路并非由该布尔值单独驱动，而是由上游急症分流路径与车道专属的直接回复生成分支共同实现。至此，从意图分流、工具规划、证据门控到终端策略评估的完整 Agent 决策管线构成了一个确定性闭环：每一次用户交互的决策路径均可通过策略版本号、车道标识、证据状态与核心决策子元组进行完整追溯与事后审计。

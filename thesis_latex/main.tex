@@ -1,4 +1,4 @@
-% ============================================
+﻿% ============================================
 % 毕业论文 LaTeX 主控文件
 % 基于学长论文模板（参考-03.docx）格式改造
 % 题目：基于多模态数据融合与AI决策的个性化健康管理平台
@@ -120,14 +120,14 @@
     {\normalsize 西南大学计算机与信息科学学院\enspace 软件学院，重庆\enspace 400715}\\[1cm]
 \end{center}
 
-\noindent\textbf{摘\quad 要：}随着慢性病发病率的持续上升，传统的"治已病"模式已难以满足精准医疗的需求。本研究旨在构建一个基于多模态数据融合的个性化健康管理平台，实现从被动治疗到主动预防的转变。
+\noindent\textbf{摘\quad 要：}随着慢性病负担持续上升，传统以“治已病”为主的健康服务模式已难以满足个体化、连续化和前瞻性健康管理需求。本文面向主动健康管理场景，研究并实现了一个基于多模态数据融合与 AI 决策的个性化健康管理平台，旨在打通健康感知、风险评估、干预推演、医疗问答治理与行为验证等关键环节，推动健康管理由被动治疗向主动预防转变。
 
-本系统创新性地融合了基因组学数据（GWAS Catalog）、临床体检数据（NHANES 2017-2020）与行为生活方式数据（MobileWell/IoT），通过构建多基因风险评分（PRS）模型量化先天风险，利用LightGBM算法训练覆盖40种以上慢性病风险目标的预测模型集群，并设计临床-基因-行为三维贝叶斯融合算法实现多模态概率融合。针对异构数据缺乏统一标注的问题，提出了基于领域知识的半监督数据增强策略（表型反推法）。
+在方法层面，本文围绕结构化体检指标、基因信息、OCR 医疗文档、IoT 时序观测和医学知识文本等异构来源构建统一证据入口，融合 GWAS Catalog、NHANES 2017--2020 以及 MobileWell/IoT 等数据资源，建立多基因风险评分与临床--基因--行为三维贝叶斯融合风险引擎，并训练覆盖多种慢病风险目标的预测模型集群。针对异构数据监督稀缺与语义不一致问题，本文提出基于领域知识的半监督数据增强策略；进一步地，引入反事实推理机制，对体重、饮食和活动等可干预变量进行情景推演，使系统由静态风险识别扩展到面向干预收益评估的决策支持。
 
-在系统架构上，平台采用前后端分离与面向服务架构（SOA），通过容器化编排实现一键部署，集成智能OCR体检报告解析、基于RAG的健康问答、AI营养师等功能模块。消融实验结果表明，多模态融合策略相比单模态基线显著提升了风险预测的准确性，验证了本方法的可行性与应用价值。
+在系统实现与验证层面，平台采用前后端分离和容器化部署方式，构建了融合 OCR 报告解析、检索增强医疗问答与健康建议生成的服务化原型；同时，针对医疗问答场景设计了包含六车道意图分流、工具白名单约束、证据门控、终端策略评估、责任审计与答案回放的 Agent 治理链。实验结果表明，多模态融合策略能够有效提升风险预测性能；系统功能测试与 Harness 行为评测进一步验证了该平台在主动健康管理场景下具备可运行、可治理和可回归验证的原型能力。
 
 \vspace{0.5cm}
-\noindent\textbf{关键词：}多模态数据融合；贝叶斯推理；多基因风险评分；面向服务架构；个性化健康管理
+\noindent\textbf{关键词：}多模态数据融合；贝叶斯推理；多基因风险评分；反事实推理；医疗Agent治理；个性化健康管理
 
 % ==================== 英文摘要（参照学长论文格式）====================
 \newpage
@@ -138,14 +138,14 @@
     {\normalsize School of Computer and Information Science \& Software, Southwest University, Chongqing 400715, PR China}\\[1cm]
 \end{center}
 
-\noindent\textbf{Abstract:} With the continuous rise in chronic disease prevalence, the traditional ``treat existing diseases'' model can no longer meet the demands of precision medicine. This study aims to construct a personalized health management platform based on multimodal data fusion, enabling a shift from passive treatment to proactive prevention.
+\noindent\textbf{Abstract:} With the growing burden of chronic diseases, treatment-oriented health services are no longer sufficient for individualized and proactive health management. This thesis develops a personalized health management platform based on multimodal data fusion and AI-driven decision-making, aiming to connect health sensing, risk assessment, intervention simulation, medical dialogue governance, and behavioral validation within a unified framework.
 
-The system innovatively integrates genomic data (GWAS Catalog), clinical examination data (NHANES 2017-2020), and behavioral lifestyle data (MobileWell/IoT). It quantifies innate risk through a Polygenic Risk Score (PRS) model, trains a LightGBM model cluster covering over 40 chronic disease risk targets, and designs a clinical-genomic-behavioral three-dimensional Bayesian fusion algorithm for multimodal probabilistic fusion. To address the lack of unified annotation across heterogeneous data, a Domain-Knowledge Guided Semi-supervised Data Augmentation strategy (Phenotype Back-propagation) is proposed.
+The platform organizes heterogeneous evidence from structured examination indicators, genomic information, OCR-derived medical documents, IoT time-series observations, and medical knowledge texts. By integrating resources such as GWAS Catalog, NHANES 2017--2020, and MobileWell/IoT, the study constructs a Polygenic Risk Score (PRS) module, a clinical-genomic-behavioral Bayesian fusion engine, and a model cluster for chronic disease risk prediction. To address label scarcity and semantic inconsistency across modalities, a domain-knowledge-guided semi-supervised augmentation strategy is introduced. A counterfactual reasoning mechanism is further designed to simulate interventions on controllable variables such as body weight, diet, and physical activity, extending the system from static risk identification to intervention-oriented decision support.
 
-Architecturally, the platform adopts a front-end/back-end separation with Service-Oriented Architecture (SOA), enabling one-click deployment through containerized orchestration and integrating functional modules including intelligent OCR medical report parsing, RAG-based health Q\&A, and an AI nutritionist. Ablation experiment results demonstrate that the multimodal fusion strategy significantly improves risk prediction accuracy compared to single-modal baselines, validating the feasibility and application value of the proposed approach.
+At the system level, the platform adopts a front-end/back-end separated and containerized architecture, and implements a governance pipeline for medical dialogue agents, including six-lane intent routing, tool whitelist constraints, evidence gating, terminal policy evaluation, responsibility auditing, and answer replay. Experimental results indicate that multimodal fusion improves risk prediction performance, while system functional testing and harness-based behavioral evaluation further show that the platform provides a runnable, governable, and regression-verifiable prototype for proactive health management.
 
 \vspace{0.5cm}
-\noindent\textbf{Key words:} Multimodal Data Fusion; Bayesian Inference; Polygenic Risk Score; Service-Oriented Architecture; Personalized Health Management
+\noindent\textbf{Key words:} Multimodal Data Fusion; Bayesian Inference; Polygenic Risk Score; Counterfactual Reasoning; Medical Agent Governance; Personalized Health Management
 
 % ==================== 目录 ====================
 \newpage

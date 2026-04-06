@@ -372,6 +372,11 @@ const isGuidedMissing = (fieldName) => {
     return Array.isArray(summary.missing) && summary.missing.includes(fieldName)
 }
 
+const refreshBackendAnalysisContext = async () => {
+    store.updateProfile(profile.value)
+    return store.fetchLatestRiskReport(profile.value)
+}
+
 // ============================================
 // Task 128: eGFR 鏅鸿兘濉厖绛栫暐 (CKD-EPI 2021)
 // ============================================
@@ -514,17 +519,26 @@ const runAnomalyDetection = async () => {
 }
 
 // 馃敟 Task 59: Check for imported data on mount
-onMounted(() => {
-    if (importData.value && typeof importData.value === 'object') {
+onMounted(async () => {
+    const importedContext = importData.value
+    if (importedContext && typeof importedContext === 'object') {
         console.log("馃摜 Detected importData, auto-filling form...")
-        if (importData.value.ocr_summary) {
-            applyOcrDataToProfile(importData.value.ocr_summary)
+        const preserveAnalysisContext = Boolean(importedContext.analysis_context)
+        store.clearImportData(preserveAnalysisContext)  // Prevent re-load on refresh
+
+        if (importedContext.ocr_summary) {
+            applyOcrDataToProfile(importedContext.ocr_summary)
+
+            if (!preserveAnalysisContext) {
+                await refreshBackendAnalysisContext()
+            }
+
             ElNotification.success({
                 title: '历史数据已载入',
                 message: '已自动回填可识别字段，请核对后再继续分析。',
                 duration: 5000
             })
-        } else if (importData.value.ocr_processing_status) {
+        } else if (importedContext.ocr_processing_status) {
             ElNotification({
                 title: '文档已保存，待识别',
                 message: '当前文档还没有可用的结构化 OCR 数据，请稍后重试或继续手动补全。',
@@ -532,7 +546,6 @@ onMounted(() => {
                 duration: 5000
             })
         }
-        store.clearImportData()  // Prevent re-load on refresh
     }
 })
 
@@ -755,7 +768,7 @@ const handleOcrUpload = async (uploadFile) => {
 
             if (filledCount > 0) {
                 try {
-                    store.updateProfile(profile.value)
+                    const refreshedAnalysis = await refreshBackendAnalysisContext()
                     const saveSuccess = await store.saveProfileToCloud()
 
                     if (saveSuccess) {
@@ -772,6 +785,13 @@ const handleOcrUpload = async (uploadFile) => {
                             ]),
                             type: 'success',
                             duration: 8000,
+                        })
+                    } else if (refreshedAnalysis) {
+                        ElNotification({
+                            title: status === 'partial_success' ? '已部分识别' : '识别完成',
+                            message: `已回填 ${filledCount} 项数据，但自动保存失败。当前缺失字段引导已按最新分析结果更新，请手动点击"保存到云端"。`,
+                            type: 'warning',
+                            duration: 6000,
                         })
                     } else {
                         ElNotification({

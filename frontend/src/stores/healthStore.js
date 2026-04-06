@@ -262,9 +262,11 @@ export const useHealthStore = defineStore('health', () => {
         console.log('📥 Import data set:', data)
     }
 
-    function clearImportData() {
+    function clearImportData(preserveAnalysisContext = false) {
         importData.value = null
-        analysisContext.value = null
+        if (!preserveAnalysisContext) {
+            analysisContext.value = null
+        }
     }
 
     return {

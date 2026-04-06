@@ -224,6 +224,116 @@ test.describe('OCR and guided completion', () => {
     await expect(page.getByText('估算')).toHaveCount(0)
   })
 
+  test('clinical upload refreshes backend analysis context after OCR autofill when upload response omits it', async ({ page }) => {
+    let analyzeCallCount = 0
+
+    await mockAuthenticatedBootstrap(page, {
+      ocrUploadResponse: {
+        status: 'success',
+        message: 'ocr complete',
+        ocr_processing_status: {
+          schema_version: 'ocr_processing_status.v1',
+          status: 'success',
+          reason: null,
+          structured_data_present: true,
+          raw_text_present: true,
+        },
+        ocr_summary: {
+          schema_version: 'ocr_summary.v1',
+          patient_context: {
+            Age: 52,
+            Gender: 1,
+            Height: 172,
+            Weight: 75,
+          },
+          metrics: {
+            BMI: { value: 25.4 },
+          },
+          extra_findings: {},
+        },
+      },
+      analysisResponse: {
+        status: 'success',
+        risk_report: {
+          Diabetes: {
+            final_risk: 0.31,
+            level: 'Low',
+            breakdown: {
+              base_clinical: '31.0%',
+              gene_modifier: 'x1.0',
+              lifestyle_modifier: 'x1.0',
+            },
+          },
+        },
+        analysis_context: {
+          schema_version: 'analysis_context.v1',
+          analysis_mode: 'provisional',
+          provisional_reasons: [
+            { code: 'missing_labs', fields: ['Glucose_Fasting'] },
+          ],
+          blocking_fields: ['Glucose_Fasting'],
+          field_state_summary: {
+            recognized: ['Age', 'Gender', 'Height', 'Weight'],
+            derived: ['BMI'],
+            missing: ['Glucose_Fasting'],
+            user_confirmed: [],
+            user_entered: [],
+          },
+        },
+      },
+    })
+
+    await page.route('**/analyze/comprehensive', async (route) => {
+      analyzeCallCount += 1
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'success',
+          risk_report: {
+            Diabetes: {
+              final_risk: 0.31,
+              level: 'Low',
+              breakdown: {
+                base_clinical: '31.0%',
+                gene_modifier: 'x1.0',
+                lifestyle_modifier: 'x1.0',
+              },
+            },
+          },
+          analysis_context: {
+            schema_version: 'analysis_context.v1',
+            analysis_mode: 'provisional',
+            provisional_reasons: [
+              { code: 'missing_labs', fields: ['Glucose_Fasting'] },
+            ],
+            blocking_fields: ['Glucose_Fasting'],
+            field_state_summary: {
+              recognized: ['Age', 'Gender', 'Height', 'Weight'],
+              derived: ['BMI'],
+              missing: ['Glucose_Fasting'],
+              user_confirmed: [],
+              user_entered: [],
+            },
+          },
+        }),
+      })
+    })
+
+    await page.goto('/clinical')
+    await page.locator('[data-testid="ocr-upload"] input[type="file"]').setInputFiles({
+      name: '体检表.pdf',
+      mimeType: 'application/pdf',
+      buffer: Buffer.from('%PDF-1.4\n%test\n'),
+    })
+
+    await expect(page.getByTestId('analysis-context-banner')).toBeVisible()
+    await expect(page.getByTestId('analysis-context-mode')).toContainText('临时分析')
+    await expect(page.getByText('已识别 4 项，已推导 1 项，待补充 1 项。')).toBeVisible()
+    await expect(page.locator('.guided-missing')).toHaveCount(1)
+    expect(analyzeCallCount).toBeGreaterThan(0)
+  })
+
   test('major pages remain smoke-loadable and admin stays permission-bound', async ({ page }) => {
     await mockAuthenticatedBootstrap(page)
 

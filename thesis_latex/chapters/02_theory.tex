@@ -1,4 +1,4 @@
-﻿% !TeX root = ../main.tex
+% !TeX root = ../main.tex
 % ============================================
 % 第二章 相关理论与技术基础
 % ============================================
@@ -78,10 +78,10 @@
 \toprule
 理论表达 & 代码落点 & 接口链路 & 功能作用 \\
 \midrule
-式~\eqref{eq:fusion_21} & \texttt{fusion\_service.py}\\\texttt{calculate\_composite\_risk} & \texttt{/analyze/}\\\texttt{comprehensive} & 静态融合决策 \\
-式~\eqref{eq:online_update_21} & \texttt{fusion\_service.py}\\\texttt{update\_realtime\_risk} & \texttt{/api/v1/iot/}\\\texttt{sync/batch} & 实时后验更新 \\
-式~\eqref{eq:potential_rule_21} & \texttt{gene\_mod>=1.2}\\\texttt{\& risk<=20} 分支判定 & 融合引擎内部规则 & 漏检抑制 \\
-式~\eqref{eq:measurement_model_21} & Profile/OCR/IoT 三通道观测汇聚 & \texttt{/user/profile}\\\texttt{/api/v1/ocr/upload} & 观测重建 \\
+式~\eqref{eq:fusion_21} & \texttt{fusion\_service.py}\newline\texttt{calculate\_composite\_risk} & \texttt{/analyze/}\newline\texttt{comprehensive} & 静态融合决策 \\
+式~\eqref{eq:online_update_21} & \texttt{fusion\_service.py}\newline\texttt{update\_realtime\_risk} & \texttt{/api/v1/iot/}\newline\texttt{sync/batch} & 实时后验更新 \\
+式~\eqref{eq:potential_rule_21} & \texttt{gene\_mod>=1.2}\newline\texttt{\& risk<=20} 分支判定 & 融合引擎内部规则 & 漏检抑制 \\
+式~\eqref{eq:measurement_model_21} & Profile/OCR/IoT 三通道观测汇聚 & \texttt{/user/profile}\newline\texttt{/api/v1/ocr/upload} & 观测重建 \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -156,7 +156,7 @@ $\mathcal{G}=(\mathcal{V},\mathcal{E})$，通过对干预节点执行结构赋�
 在工程实现中，\texttt{projection\_service.py} 提供两类推演：
 \begin{itemize}
 \item 自然演化推演：按年递增年龄并对 SBP、空腹血糖、BMI 施加固定漂移。
-\item 干预推演：对体重施加 \texttt{weight\_loss\_percent}，并联动更新 BMI、SBP、\texttt{Glucose\_Fasting}。
+\item 干预推演：对体重施加 \texttt{weight\_loss\_percent}。并联动更新 BMI、SBP 与空腹血糖（\texttt{Glucose\_Fasting}）。
 \end{itemize}
 干预后的状态修改可表示为：
 \begin{equation}
@@ -192,29 +192,78 @@ G\leftarrow G-0.5
 \section{自然语言处理与知识增强}
 
 \subsection{检索增强生成的知识索引与向量检索机制}
-本系统采用“离线索引构建 + 在线语义检索”的两阶段知识增强流程。离线阶段将指南类 PDF 文档加载为页面文本，随后执行递归分块，分块参数为 \texttt{chunk\_size=500}、\texttt{chunk\_overlap=50}；在线阶段对用户查询执行 Top-$k$ 相似检索并返回证据片段。
+本系统采用“离线索引构建 + 在线语义检索”的两阶段知识增强流程。离线阶段将指南类 PDF 文档加载为页面文本，随后执行基于中文语义优先分隔符链的递归分块，核心参数为 \texttt{chunk\_size=800}、\texttt{chunk\_overlap=120}，以在中文医疗指南文献的段落完整性与知识粒度之间取得经验平衡。
 
-知识分块可表示为：
+分块策略采用八级优先分隔符序列：
 \begin{equation}
-    \mathcal{C}=\operatorname{Split}(\mathcal{D};L=500,o=50),
+    \mathcal{S} = \langle \texttt{"\textbackslash n\textbackslash n"},\;\texttt{"\textbackslash n"},\;\text{"。"},\;\text{"；"},\;\text{"："},\;\text{"，"},\;\text{" "},\;\varepsilon \rangle,
+\end{equation}
+其中 $\varepsilon$ 表示空字符串（用作字符级滑动窗口回退）。该序列按中文句法粒度从段落级别到字符级别递降排列，并在切分时结合贪心合并机制优先保留语义完整性。每个分块在切分后自动附加 $\{source, page, chunk\_index, section\_title, page\_range\}$ 五维元数据，为后续的证据溯源与质量评估提供结构化支撑。此外，系统在文档加载阶段集成了 OCR 回退机制：当页面提取的有效字符数不超过 15 时，自动触发百度 OCR 识别补偿，以应对扫描件或图片型 PDF 的文本提取失真或残缺问题。
+
+知识分块可形式化表示为：
+\begin{equation}
+    \mathcal{C}=\operatorname{Split}(\mathcal{D};\,L=800,\,o=120,\,\mathcal{S}),
     \label{eq:rag_chunk_23}
 \end{equation}
-其中 $\mathcal{D}$ 为文档集合，$\mathcal{C}$ 为分块集合，$L$ 与 $o$ 分别为块长与重叠长度。向量检索定义为：
+其中 $\mathcal{D}$ 为文档集合，$\mathcal{C}$ 为分块集合，$L$ 与 $o$ 分别为块长与重叠长度，$\mathcal{S}$ 为按优先级排列的分隔符序列。在线阶段对用户查询执行 Top-$k$ 相似检索并返回证据片段，向量检索定义为：
 \begin{equation}
     \mathcal{R}(q)=\operatorname{TopK}_{c_i\in\mathcal{C}}\,\operatorname{sim}(e(q),e(c_i)),\quad K=3,
     \label{eq:rag_retrieve_23}
 \end{equation}
-其中 $e(\cdot)$ 为嵌入映射，\(\operatorname{sim}(\cdot)\) 为相似度函数。系统实现采用 \texttt{HuggingFaceEmbeddings(text2vec-base-chinese)} 与 \texttt{Chroma} 持久化向量库。
+其中 $e(\cdot)$ 为嵌入映射，\(\operatorname{sim}(\cdot)\) 为相似度函数。系统实现采用 \texttt{HuggingFaceEmbeddings}\allowbreak\texttt{(text2vec-base-chinese)} 与 \texttt{Chroma} 持久化向量库。
 
-\subsection{用户画像约束下的受控生成机制}
-对话模块并非纯生成流程，而是由“查询语义 + 检索证据 + 用户画像”共同约束的受控生成。其形式化表达为：
+\subsection{Agent 决策管线驱动的受控生成机制}
+对话模块并非开环的纯生成流程，而是依托 Agent 决策管线的受控生成。最终回复由查询语义、检索证据、用户画像、工具执行结果、策略评估输出以及上下文预算共同约束。其形式化表达为：
 \begin{equation}
-    a=\mathcal{G}\!\left(q,\mathcal{R}(q),p_u\right),
+    a = \mathcal{G}\!\left(q,\;\mathcal{R}(q),\;p_u,\;
+    \mathcal{T}_{out}(q),\;\pi(q),\;B_{ctx}\right),
     \label{eq:chat_controlled_23}
 \end{equation}
-其中 $q$ 为用户问题，$\mathcal{R}(q)$ 为检索证据，$p_u$ 为用户画像，$a$ 为最终回答。
+其中 $q$ 为用户问题，$\mathcal{R}(q)$ 为检索证据（§2.3.1），$p_u$ 为用户画像，$\mathcal{T}_{out}(q)$ 为经动态规划与执行后的工具结果集合，$\pi(q)$ 为策略评估输出（含回答模式与安全拦截指令），$B_{ctx}$ 为上下文 Token 预算向量，$a$ 为系统回复。
 
-工程实现中，\texttt{chat\_service} 先生成 \texttt{profile\_summary}，再调用 \texttt{rag\_service.search\_context(query, k=3)}，并将两者拼接至提示词后提交 LLM 生成。该链路保证回答在医学知识约束下兼顾个体差异，同时返回 \texttt{sources} 作为证据追溯接口。
+为避免长上下文导致的证据稀释效应，工程实现中摈弃了单一截断，而是采用分段预算与独立裁剪相结合的控制机制：
+\begin{equation}
+    B_{ctx} = (B_{profile},\,B_{rag},\,B_{tools},\,B_{history},\,B_{query})
+    = (500,\,1500,\,800,\,320,\,300),
+    \label{eq:ctx_budget_23}
+\end{equation}
+其中知识检索区段分配最大预算（占总预算约 44\%），以保障证据召回的覆盖度。该受控生成机制的完整决策算法与工程实现将分别在第四章与第五章中系统展开。
+
+\subsection{面向医疗对话的 Agent 决策理论框架}
+\label{sec:agent_theory_framework}
+\label{sec:theory}
+前节受控生成公式中引入了策略评估输出 $\pi(q)$ 与工具结果集 $\mathcal{T}_{out}(q)$，二者共同将传统 RAG 问答从“检索$\to$生成”的开环模式提升为具备安全分流、证据评估与责任追溯能力的闭环决策管线。本节给出该管线的理论框架定义。
+
+策略评估函数定义为：
+\begin{equation}
+    \pi(q) = \operatorname{PolicyEval}\!\big(
+    \operatorname{Lane}(q),\;
+    \operatorname{Press}(q),\;
+    \mathcal{T}_{plan}(q),\;
+    \mathcal{E}_{gate}(\mathcal{T}_{out}, p_u, Q_{rag})\big),
+    \label{eq:policy_eval_23}
+\end{equation}
+其中 $\operatorname{Lane}(q)\in\{L_1,...,L_6\}$ 为意图分流函数，将查询路由至六条安全车道之一；$\operatorname{Press}(q)$ 为策略压力探针，直接捕捉查询中潜藏的高风险动机（如请求变更处方用药）；$\mathcal{T}_{plan}(q)$ 为基于车道约束的工具规划函数，输出候选工具集合；$\mathcal{E}_{gate}(\cdot)$ 为证据门控函数，以工具执行结果为主输入，并辅以画像事实 ($p_u$) 与检索质量 ($Q_{rag}$) 进行多维冲突校验，最终输出充分性评估状态。
+
+六条车道按安全优先级构成严格偏序：
+\begin{equation}
+    L_1\text{(急症)} \succ L_2\text{(诊断)} \succ L_3\text{(药物)}
+    \succ L_4\text{(趋势)} \succ L_5\text{(报告)} \succ L_6\text{(一般)}.
+    \label{eq:lane_order_23}
+\end{equation}
+分流函数按该偏序从高到低进行模式匹配，首次命中即确定车道归属。该设计使高风险意图始终获得优先处置，避免被低优先级规则误拦。
+
+证据门控函数输出三级充分性判定：
+\begin{equation}
+    \mathcal{E}_{gate}(\mathcal{T}_{out}, p_u, Q_{rag}) =
+    \begin{cases}
+        \text{sufficient},   & \text{必要证据类别齐备且无冲突},\\
+        \text{limited},      & \text{部分证据可用但存在缺失},\\
+        \text{insufficient}, & \text{关键证据缺失或存在矛盾}.
+    \end{cases}
+    \label{eq:evidence_gate_23}
+\end{equation}
+该三级评估决定了下游策略的行为分界：$\text{sufficient}$ 允许系统给出直接回答，$\text{limited}$ 触发有界回答并附加保守免责声明，$\text{insufficient}$ 触发拒答或引导用户补充数据。上述框架的完整决策算法（含分流伪代码、工具规划约束与策略决策树）将在第四章中系统推导，工程实现见第五章。
 
 \subsection{多级置信度验证架构（Multi-stage Confidence-based Verification）}
 医疗文档解析采用“OCR 感知—LLM 结构化—规则校验兜底”的多级验证架构，而非单一模型直出。其目的在于提升事实一致性并降低解析失真风险。
@@ -279,7 +328,7 @@ $\varepsilon_{obs}=\|\hat{x}_t-x_t\|$ 与决策误差 $\varepsilon_{dec}$ 存在
 
 该理论在工程中体现为以下三类机制：
 \begin{itemize}
-\item 运行态注入：后端接口普遍通过 \texttt{Depends(get\_session)}、\texttt{Depends(get\_current\_user)} 等方式接收数据库会话与认证上下文，而非在函数内部直接实例化依赖。
+\item 运行态注入：后端接口普遍通过 \texttt{Depends}\allowbreak\texttt{(get\_session)}、\allowbreak\texttt{Depends}\allowbreak\texttt{(get\_current\_user)} 等方式接收数据库会话与认证上下文，而非在函数内部直接实例化依赖。
 \item 生命周期解耦：核心模型与缓存连接在 \texttt{lifespan} 阶段统一初始化，由此实现请求处理路径与底层资源加载过程的分离。
 \item 测试态替换：测试环境采用 \texttt{dependency\_overrides} 覆盖真实会话提供器，并结合内存 SQLite 与 \texttt{StaticPool} 构造隔离数据库；对重型模型服务，则通过模块级 Mock 抑制无关基础设施对接口测试的干扰。
 \end{itemize}

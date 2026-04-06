@@ -701,36 +701,136 @@ class ComprehensiveRequest(BaseModel):
 def _build_degraded_composite_risk_report(clinical_profile: dict) -> dict | None:
     """Fallback composite risk report when the fusion engine is unavailable."""
     if not risk_engine or not hasattr(risk_engine, "assess_health"):
-        return None
-
-    base_report = risk_engine.assess_health(clinical_profile)
-    if not isinstance(base_report, dict) or base_report.get("error"):
-        return None
-
-    degraded_report = {}
-    for disease, info in base_report.items():
-        if not isinstance(info, dict):
-            continue
-
-        base_prob = info.get("final_risk", info.get("probability", info.get("risk", 0)))
+        base_report = None
+    else:
         try:
-            normalized_prob = round(float(base_prob), 1)
-        except (TypeError, ValueError):
-            normalized_prob = 0.0
+            base_report = risk_engine.assess_health(clinical_profile)
+        except Exception:
+            logger.exception("Risk engine degraded fallback failed; attempting rule-based fallback.")
+            base_report = None
 
-        breakdown = info.get("breakdown") if isinstance(info.get("breakdown"), dict) else {}
-        degraded_report[disease] = {
-            **info,
-            "final_risk": normalized_prob,
-            "level": info.get("level", info.get("risk_level", "Low")),
+    if isinstance(base_report, dict) and not base_report.get("error"):
+        degraded_report = {}
+        for disease, info in base_report.items():
+            if not isinstance(info, dict):
+                continue
+
+            base_prob = info.get("final_risk", info.get("probability", info.get("risk", 0)))
+            try:
+                normalized_prob = round(float(base_prob), 1)
+            except (TypeError, ValueError):
+                normalized_prob = 0.0
+
+            breakdown = info.get("breakdown") if isinstance(info.get("breakdown"), dict) else {}
+            degraded_report[disease] = {
+                **info,
+                "final_risk": normalized_prob,
+                "level": info.get("level", info.get("risk_level", "Low")),
+                "breakdown": {
+                    "base_clinical": breakdown.get("base_clinical", f"{normalized_prob}%"),
+                    "gene_modifier": breakdown.get("gene_modifier", "x1.0"),
+                    "lifestyle_modifier": breakdown.get("lifestyle_modifier", "x1.0"),
+                },
+            }
+
+        if degraded_report:
+            return degraded_report
+
+    def _safe_number(value):
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return None
+
+    def _risk_level(probability: float) -> str:
+        if probability >= 75:
+            return "Very High"
+        if probability >= 50:
+            return "High"
+        if probability >= 25:
+            return "Medium"
+        return "Low"
+
+    def _normalized_report(probability: float, drivers: list[str]) -> dict:
+        clipped = max(5.0, min(round(probability, 1), 95.0))
+        return {
+            "final_risk": clipped,
+            "level": _risk_level(clipped),
             "breakdown": {
-                "base_clinical": breakdown.get("base_clinical", f"{normalized_prob}%"),
-                "gene_modifier": breakdown.get("gene_modifier", "x1.0"),
-                "lifestyle_modifier": breakdown.get("lifestyle_modifier", "x1.0"),
+                "base_clinical": f"{clipped}%",
+                "gene_modifier": "x1.0",
+                "lifestyle_modifier": "x1.0",
             },
+            "drivers": drivers,
         }
 
-    return degraded_report or None
+    age = _safe_number(clinical_profile.get("Age")) or 45.0
+    bmi = _safe_number(clinical_profile.get("BMI"))
+    sbp = _safe_number(clinical_profile.get("SBP"))
+    dbp = _safe_number(clinical_profile.get("DBP"))
+    glucose = _safe_number(clinical_profile.get("Glucose_Fasting"))
+    hba1c = _safe_number(clinical_profile.get("HbA1c"))
+    creatinine = _safe_number(clinical_profile.get("Creatinine"))
+    egfr = _safe_number(clinical_profile.get("eGFR"))
+    triglycerides = _safe_number(clinical_profile.get("Triglycerides"))
+    hdl = _safe_number(clinical_profile.get("Cholesterol_HDL"))
+
+    hypertension_drivers = []
+    hypertension_risk = 8.0 + min(age / 6.0, 14.0)
+    if bmi is not None and bmi >= 24:
+        hypertension_risk += 10.0
+        hypertension_drivers.append("BMI")
+    if sbp is not None:
+        hypertension_risk += max(0.0, min((sbp - 120) * 0.9, 24.0))
+        if sbp >= 130:
+            hypertension_drivers.append("SBP")
+    if dbp is not None:
+        hypertension_risk += max(0.0, min((dbp - 80) * 0.7, 16.0))
+        if dbp >= 85:
+            hypertension_drivers.append("DBP")
+
+    diabetes_drivers = []
+    diabetes_risk = 6.0 + min(age / 8.0, 12.0)
+    if bmi is not None and bmi >= 24:
+        diabetes_risk += 10.0
+        diabetes_drivers.append("BMI")
+    if glucose is not None:
+        diabetes_risk += max(0.0, min((glucose - 5.2) * 18.0, 34.0))
+        if glucose >= 5.6:
+            diabetes_drivers.append("Glucose_Fasting")
+    if hba1c is not None:
+        diabetes_risk += max(0.0, min((hba1c - 5.4) * 20.0, 30.0))
+        if hba1c >= 5.7:
+            diabetes_drivers.append("HbA1c")
+    if triglycerides is not None and triglycerides >= 1.7:
+        diabetes_risk += 8.0
+        diabetes_drivers.append("Triglycerides")
+    if hdl is not None and hdl < 1.0:
+        diabetes_risk += 6.0
+        diabetes_drivers.append("Cholesterol_HDL")
+
+    ckd_drivers = []
+    ckd_risk = 5.0 + min(age / 10.0, 10.0)
+    if creatinine is not None:
+        ckd_risk += max(0.0, min((creatinine - 80.0) * 0.35, 20.0))
+        if creatinine >= 90:
+            ckd_drivers.append("Creatinine")
+    if egfr is not None:
+        ckd_risk += max(0.0, min((90.0 - egfr) * 0.9, 28.0))
+        if egfr < 90:
+            ckd_drivers.append("eGFR")
+    if sbp is not None and sbp >= 130:
+        ckd_risk += 6.0
+        ckd_drivers.append("SBP")
+    if glucose is not None and glucose >= 5.6:
+        ckd_risk += 4.0
+        ckd_drivers.append("Glucose_Fasting")
+
+    return {
+        "Hypertension": _normalized_report(hypertension_risk, sorted(set(hypertension_drivers))),
+        "Diabetes": _normalized_report(diabetes_risk, sorted(set(diabetes_drivers))),
+        "CKD": _normalized_report(ckd_risk, sorted(set(ckd_drivers))),
+    }
 
 
 def _calculate_composite_risk_report(clinical_profile: dict, user_snps: dict, iot_data: dict) -> tuple[dict | None, str]:
@@ -790,15 +890,52 @@ def _build_analysis_context(
             },
         }
 
+    derived_fields = []
+    if clinical_profile.get("BMI") is None and clinical_profile.get("Height") is not None and clinical_profile.get("Weight") is not None:
+        derived_fields.append("BMI")
+    if (
+        clinical_profile.get("eGFR") is None
+        and clinical_profile.get("Creatinine") is not None
+        and clinical_profile.get("Age") is not None
+        and clinical_profile.get("Gender") is not None
+    ):
+        derived_fields.append("eGFR")
+
+    missing_fields = []
+    for field_name in (
+        "Glucose_Fasting",
+        "HbA1c",
+        "Cholesterol_Total",
+        "Triglycerides",
+        "Cholesterol_HDL",
+        "Creatinine",
+        "ALT",
+        "ALP",
+    ):
+        if clinical_profile.get(field_name) is None:
+            missing_fields.append(field_name)
+
+    provisional_reasons = []
+    if derived_fields:
+        provisional_reasons.append({
+            "code": "derived_field_present",
+            "fields": sorted(derived_fields),
+        })
+    if missing_fields:
+        provisional_reasons.append({
+            "code": "missing_labs",
+            "fields": sorted(missing_fields),
+        })
+
     return {
         "schema_version": "analysis_context.v1",
-        "analysis_mode": "final",
-        "provisional_reasons": [],
+        "analysis_mode": "provisional" if provisional_reasons else "final",
+        "provisional_reasons": provisional_reasons,
         "blocking_fields": [],
         "field_state_summary": {
             "recognized": recognized_fields,
-            "derived": [],
-            "missing": [],
+            "derived": sorted(derived_fields),
+            "missing": sorted(missing_fields),
             "user_confirmed": [],
             "user_entered": entered_fields,
         },

@@ -1,4 +1,4 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{10}
 
 \bibitem{ambalavanan2025ecosystem}
 Radha Ambalavanan, R~Sterling Snead, Julia Marczika, Gideon Towett, Alex
@@ -16,6 +16,24 @@ Alexis~B Carter, Lynne~V Abruzzo, Julie~W Hirschhorn, Dan Jones, Danielle~C
   interoperability for clinical genomics data working group.
 \newblock {\em The Journal of Molecular Diagnostics}, 24(1):1--17, 2022.
 
+\bibitem{chen2025medsentry}
+Kai Chen, Taihang Zhen, Hewei Wang, Kailai Liu, Xinfeng Li, Jing Huo, Tianpei
+  Yang, Jinfeng Xu, Wei Dong, and Yang Gao.
+\newblock Medsentry: Understanding and mitigating safety risks in medical llm
+  multi-agent systems.
+\newblock {\em arXiv preprint arXiv:2505.20824}, 2025.
+
+\bibitem{chen2016xgboost}
+Tianqi Chen and Carlos Guestrin.
+\newblock Xgboost: A scalable tree boosting system.
+\newblock In {\em Proceedings of the 22nd ACM SIGKDD International Conference
+  on Knowledge Discovery and Data Mining}, pages 785--794, 2016.
+
+\bibitem{choi2019prsice2}
+Shing~Wan Choi and Paul~F. O'Reilly.
+\newblock Prsice-2: Polygenic risk score software for biobank-scale data.
+\newblock {\em GigaScience}, 8(7):giz082, 2019.
+
 \bibitem{epstein2023ehrwearable}
 Crystal~Modde Epstein and Thomas~P McCoy.
 \newblock Linking electronic health records with wearable technology from the
@@ -30,11 +48,34 @@ Crystal~Modde Epstein and Thomas~P McCoy.
   disease study 2019.
 \newblock {\em The Lancet}, 396(10258):1204--1222, 2020.
 
+\bibitem{hochreiter1997lstm}
+Sepp Hochreiter and J{\"u}rgen Schmidhuber.
+\newblock Long short-term memory.
+\newblock {\em Neural Computation}, 9(8):1735--1780, 1997.
+
+\bibitem{ke2017lightgbm}
+Guolin Ke, Qi~Meng, Thomas Finley, Taifeng Wang, Wei Chen, Weidong Ma, Qiwei
+  Ye, and Tie-Yan Liu.
+\newblock Lightgbm: A highly efficient gradient boosting decision tree.
+\newblock {\em Advances in Neural Information Processing Systems}, 30, 2017.
+
+\bibitem{schick2023toolformer}
+Timo Schick, Jane Dwivedi-Yu, Roberto Dessi, Roberta Raileanu, Maria Lomeli,
+  Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom.
+\newblock Toolformer: Language models can teach themselves to use tools.
+\newblock {\em arXiv preprint arXiv:2302.04761}, 2023.
+
 \bibitem{sockolow2021mhealth}
 Paulina~S Sockolow, Harleah~G Buck, and Efrat Shadmi.
 \newblock An integrative review of chronic illness mhealth self-care
   interventions: Mapping technology features to patient outcomes.
 \newblock {\em Health Informatics Journal}, 27(3):14604582211043914, 2021.
+
+\bibitem{yao2023react}
+Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan,
+  and Yuan Cao.
+\newblock React: Synergizing reasoning and acting in language models.
+\newblock {\em arXiv preprint arXiv:2210.03629}, 2023.
 
 \bibitem{zahedani2023digital}
 Ashkan~Dehghani Zahedani, Tracey McLaughlin, Arvind Veluvali, Nima Aghaeepour,

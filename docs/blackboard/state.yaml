@@ -21,7 +21,7 @@ orchestrator:
 
 workflow:
   phase: "validation"
-  status: "post_qa_host_ocr_success_chain_browser_verified"
+  status: "live_ocr_guided_completion_end_to_end_verified"
   next_owner: "orchestrator"
   gates:
     orchestrator_initialized: true
@@ -566,6 +566,13 @@ workflow:
     - "Fresh parent-thread verification for the BE follow-up passed: `python -m pytest tests/test_main.py -q -k \"analysis_context or analyze_comprehensive or risk_engine_degrades or inference_service_imports or lifestyle_service\"` completed at `8 passed, 13 deselected`, `python -m pytest tests/test_v10_pipeline.py -q` completed at `6 passed`, and `python -m pytest tests/test_main.py tests/test_v10_pipeline.py -q` completed at `27 passed`."
     - "No new architecture change request was needed during the BE retry because the implementation stayed additive to the frozen contract: `risk_report` remains unchanged in shape and `analysis_context` uses the already-approved `analysis_context.v1` envelope and enums."
     - "FE is now re-opened as the next owner for the remaining post-QA work: render backend-owned OCR document states in Profile/Clinical, consume backend-owned `analysis_context` for guided completion and provisional/final messaging, remove legacy OCR-not-found ambiguity, and add the missing browser regression coverage for OCR/documents/guided-completion/major-page smoke."
+    - "On 2026-04-04 the orchestrator re-triaged the remaining live OCR gap after host-side provider recovery proved that successful OCR upload now auto-fills fields but still leaves guided-missing highlights dormant in the immediate Clinical flow."
+    - "No new architecture change request is required for this follow-up. The frozen contract already provides backend-owned `analysis_context` on `/analyze/comprehensive`; the missing behavior is that FE does not yet refresh that route after a successful OCR auto-fill/save cycle."
+    - "This slice is therefore routed only to FE: after OCR upload succeeds and structured data is merged, FE must refresh the backend-owned comprehensive analysis, consume the returned `analysis_context`, and light up guided completion / provisional messaging in the real page flow without inventing new API semantics."
+    - "FE follow-up is now complete on 2026-04-04: `frontend/src/views/ClinicalView.vue` refreshes backend-owned `/analyze/comprehensive` after OCR auto-fill and Profile import, while `frontend/src/stores/healthStore.js` no longer clears `analysisContext` during import cleanup when that metadata should persist."
+    - "Real host-browser evidence then exposed one more runtime-only blocker rather than a frontend contract gap: the refreshed `/analyze/comprehensive` request was being made correctly, but the host runtime still returned `status=\"error\"` because model artifacts were unavailable and the existing degraded path stopped at `risk_engine.assess_health()`."
+    - "BE retry 2 is now complete on 2026-04-04 without contract drift: `backend/main.py` adds a backend-owned rule-based comprehensive-analysis fallback when model-backed risk engines are unavailable, and `analysis_context` now marks approved derived/missing clinical fields on degraded paths so guided completion remains available in real local runs."
+    - "Fresh verification is now end to end: `python -m pytest tests/test_main.py tests/test_v10_pipeline.py -q` passed at `28 passed`, `npm.cmd run build` in `frontend` passed, `npx.cmd playwright test tests/ocr-guided-completion.spec.js --reporter=line` passed at `12 passed`, and real browser validation against host frontend/backend plus the real PDF confirmed `status=\"success\"`, `analysis_mode=\"provisional\"`, and `guidedMissingCount=6` both immediately after OCR upload and again after Profile -> 导入到分析."
   dependencies:
     fe:
       requires:
@@ -598,12 +605,12 @@ agents:
       - "docs/api-contract.md"
       - "docs/data-model-contract.md"
   fe:
-    status: "completed_post_qa_guided_completion_and_browser_coverage_followup"
+    status: "completed_live_ocr_guided_completion_followup"
     retries_used: 0
     max_retries: 3
   be:
-    status: "completed_post_qa_analysis_context_and_runtime_followup"
-    retries_used: 1
+    status: "completed_live_ocr_rule_based_runtime_fallback_followup"
+    retries_used: 2
     max_retries: 3
   ai-data:
     status: "idle"
