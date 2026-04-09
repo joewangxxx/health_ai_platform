@@ -1,373 +1,48 @@
 % !TeX root = ../main.tex
 % ============================================
-% 第二章 相关理论与技术基础
+% 第二章 相关理论与关键技术
 % ============================================
 
-\chapter{相关理论与技术基础}
-
-\section{多模态数据融合理论}
-
-\subsection{非完全观测下的健康状态估计（Observer）}
-自动化健康管理系统的控制对象是个体健康状态 $x_t$。该状态无法被直接完整测量，只能通过多源传感器与业务接口形成观测量 $y_t$。因此，本研究将健康评估建模为非完全观测系统（Partial Observability），并采用状态方程与观测方程描述闭环过程：
-\begin{equation}
-    x_{t+1}=f(x_t,u_t,w_t),
-    \label{eq:state_transition_21}
-\end{equation}
-\begin{equation}
-    y_t=h(x_t)+v_t,
-    \label{eq:measurement_model_21}
-\end{equation}
-其中，$u_t$ 为干预输入，$w_t$ 与 $v_t$ 分别表示过程噪声和观测噪声。该建模解释了采用贝叶斯推断的必要性：系统目标是依据不完整观测估计潜在状态及其风险分布，而非对原始观测做直接映射。
-
-系统当前观测通道由以下四类组成：
-\begin{itemize}
-\item 结构化画像观测：\texttt{/user/profile}。
-\item 文档观测：\texttt{/api/v1/ocr/upload} 将体检单解析为结构化字段。
-\item 流式生理观测：\texttt{/api/v1/iot/sync/batch} 提供高频心率等实时信号。
-\item 决策入口观测融合：\texttt{/analyze/comprehensive} 对数据库画像与请求增量做合并。
-\end{itemize}
-
-\subsection{证据强度与时间尺度分层的贝叶斯融合}
-在风险决策层，临床先验 $P_c$、基因修正系数 $\alpha_t$、行为修正系数 $\beta_t$ 按乘性方式完成融合：
-\begin{equation}
-    P_t=\operatorname{clip}(P_c \cdot \alpha_t \cdot \beta_t,\;0.1,\;99.9).
-    \label{eq:fusion_21}
-\end{equation}
-在后续章节中，当前时刻的融合风险也记作 $P_{fusion}$；对于单次静态决策时刻，二者含义等价。进一步地，$\alpha_t$ 与 $\beta_t$ 被定义为证据调节因子（Evidence Modifiers）。代码实现中，$\alpha_t\in[0.8,1.5]$，$\beta_t\in[0.8,1.3]$，分别对应遗传证据与行为证据对临床先验的调节强度。
-
-为刻画证据贡献的可解释性，引入未截断风险 $\tilde{P}_t=P_c\alpha_t\beta_t$，可写为：
-\begin{equation}
-    \log \tilde{P}_t=\log P_c+\log \alpha_t+\log \beta_t.
-    \label{eq:evidence_strength_21}
-\end{equation}
-该表达表明，融合贡献在对数域可加，便于比较不同证据通道的边际作用。时间尺度上，基因证据属于慢变量，行为证据属于快变量，两者与临床先验形成多时间尺度层级耦合。
-
-\subsection{安全约束与后验更新机制}
-系统在静态融合后引入实时后验修正，以事件因子 $\gamma_t$ 表达短时扰动：
-\begin{equation}
-    P_{t+1}=\operatorname{clip}(\gamma_t\cdot P_t,\;0.1,\;99.9).
-    \label{eq:online_update_21}
-\end{equation}
-实时更新规则可形式化为：
-\begin{equation}
-\gamma_t=
-\begin{cases}
-1.8, & HR_t>100 \land BMI>28, \\
-1.3, & HR_t>100 \land BMI\leq 28, \\
-1.2, & HR_t<50, \\
-1.0, & \text{otherwise}.
-\end{cases}
-\label{eq:gamma_rule_21}
-\end{equation}
-此外，为降低高遗传易感个体漏检风险，系统引入潜在风险拦截规则：
-\begin{equation}
-\text{Level}=\text{Potential},\quad
-\text{if }\alpha_t\geq 1.2\;\land\;P_t\leq 20.
-\label{eq:potential_rule_21}
-\end{equation}
-上述截断与拦截共同构成安全约束层，分别用于保障概率可解释边界与高危亚群识别敏感性。
-
-\subsection{理论-工程映射与闭环一致性}
-本节公式与工程实现保持一一对应关系。本节式~\eqref{eq:fusion_21} 与第四章核心融合式~\eqref{eq:fusion}同构，均对应 \texttt{fusion\_service.py} 的主融合路径。映射关系如表~\ref{tab:theory_code_mapping_21} 所示。
-
-\begin{table}[htbp]
-\centering
-\caption{理论公式与工程实现映射关系}
-\label{tab:theory_code_mapping_21}
-\begin{tabular}{p{2.6cm}p{4.2cm}p{3.4cm}p{2.4cm}}
-\toprule
-理论表达 & 代码落点 & 接口链路 & 功能作用 \\
-\midrule
-式~\eqref{eq:fusion_21} & \texttt{fusion\_service.py}\newline\texttt{calculate\_composite\_risk} & \texttt{/analyze/}\newline\texttt{comprehensive} & 静态融合决策 \\
-式~\eqref{eq:online_update_21} & \texttt{fusion\_service.py}\newline\texttt{update\_realtime\_risk} & \texttt{/api/v1/iot/}\newline\texttt{sync/batch} & 实时后验更新 \\
-式~\eqref{eq:potential_rule_21} & \texttt{gene\_mod>=1.2}\newline\texttt{\& risk<=20} 分支判定 & 融合引擎内部规则 & 漏检抑制 \\
-式~\eqref{eq:measurement_model_21} & Profile/OCR/IoT 三通道观测汇聚 & \texttt{/user/profile}\newline\texttt{/api/v1/ocr/upload} & 观测重建 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-从闭环控制角度看，系统形成了“观测（Profile/OCR/IoT）-决策（贝叶斯融合）-控制（干预建议）-反馈（实时更新）”的结构化链路，为第四章算法推导、第五章实现细节和第六章实验分析提供统一理论前提。
-
-\section{机器学习与深度学习算法}
-
-\subsection{临床风险预测模型（LightGBM）}
-本系统将慢病风险预测建模为“多病种并行二分类”任务。训练脚本以每个 \texttt{Target\_*} 标签为独立学习目标，形成模型集群，并在推理阶段输出临床先验风险 $P_c$。
-
-模型采用梯度提升树的加法框架：
-\begin{equation}
-    F_M(\mathbf{x})=\sum_{m=1}^{M} \eta h_m(\mathbf{x}),
-    \label{eq:lgb_additive_22}
-\end{equation}
-\begin{equation}
-    P_c=\sigma\!\left(F_M(\mathbf{x})\right)\times 100\%.
-    \label{eq:clinical_prior_22}
-\end{equation}
-其中，$\eta$ 为学习率，$h_m$ 为第 $m$ 棵基学习树。该表达对应 \texttt{train\_risk\_models.py} 的训练与概率输出流程。
-
-工程实现中，数据划分采用分层抽样
-\texttt{train\_test\_split(..., test\_size=0.2, stratify=y)}，并启用
-\texttt{is\_unbalance=True} 处理类别不均衡。为抑制标签泄漏，针对病种 $d$ 的训练特征集合定义为：
-\begin{equation}
-    \mathcal{X}_d = \mathcal{X}_{all} \setminus \mathcal{L}_d,
-    \label{eq:leakage_control_22}
-\end{equation}
-其中 $\mathcal{L}_d$ 由 \texttt{LEAKAGE\_MAPPING} 动态给出。该机制保证“诊断同义特征”不直接进入模型输入。
-
-\subsection{行为风险分类与证据调节因子（XGBoost）}
-行为侧模型以 \texttt{sum}、\texttt{count} 两个统计特征预测 \texttt{Lifestyle\_Risk}，并以 Accuracy、Precision、Recall、F1 作为分类评估指标。该模型在系统中的角色不是独立终判，而是生成融合引擎的行为证据调节因子 $\beta$。
-
-在线推理时，\texttt{lifestyle\_service.py} 先将步数映射到训练域：
-\begin{equation}
-    c_{sim}=C_0,\qquad s_{sim}=\frac{steps}{S_0}\,C_0,
-    \label{eq:steps_mapping_22}
-\end{equation}
-其中 $S_0=10000$、$C_0=1000$。随后由分类器输出高风险概率 $p_{life}$，并映射为行为修正系数：
-\begin{equation}
-    \beta = b_0 + b_1 p_{life},\quad b_0=0.8,\; b_1=0.5,
-    \label{eq:beta_mapping_22}
-\end{equation}
-即 $\beta\in[0.8,1.3]$。该定义与融合引擎的乘性证据结构保持一致。
-
-\subsection{视觉多任务营养回归模型（EfficientNet）}
-视觉模型采用 EfficientNet-B0 作为骨干网络，并将分类头替换为四维回归输出，直接预测
-\{Calories, Carbs, Protein, Fat\}。该选型理由在于 Compound Scaling 同时调节网络深度、宽度和输入分辨率，在精度与计算开销之间取得可控折中：
-\begin{equation}
-    d=\alpha^{\phi},\qquad w=\beta^{\phi},\qquad r=\gamma^{\phi},
-    \label{eq:compound_scaling_22}
-\end{equation}
-其中满足约束 $\alpha\beta^2\gamma^2\approx 2$。该性质使模型更适合实时交互场景下的营养估计任务。
-
-训练目标采用多任务 L1 损失：
-\begin{equation}
-    \mathcal{L}_{\mathrm{L1}}=\frac{1}{4}\sum_{k=1}^{4}\left|\hat{y}_k-y_k\right|,
-    \label{eq:vision_l1_22}
-\end{equation}
-并在服务端推理阶段执行非负约束
-\begin{equation}
-    \hat{y}_k^{+}=\max(0,\hat{y}_k),
-    \label{eq:vision_nonneg_22}
-\end{equation}
-保证营养值物理可解释。模型路径由配置项 \texttt{NUTRITION\_MODEL\_PATH} 统一管理，默认指向 \texttt{nutrition\_efficientnet.pth}。
-
-\subsection{基于反事实推理的干预决策支持（Counterfactual Reasoning）}
-本系统的“平行宇宙推演”采用反事实推理范式。理论上，可将健康系统抽象为因果图
-$\mathcal{G}=(\mathcal{V},\mathcal{E})$，通过对干预节点执行结构赋值，比较事实世界与干预世界的风险差异，而非仅做相关性外推。
-
-在工程实现中，\texttt{projection\_service.py} 提供两类推演：
-\begin{itemize}
-\item 自然演化推演：按年递增年龄并对 SBP、空腹血糖、BMI 施加固定漂移。
-\item 干预推演：对体重施加 \texttt{weight\_loss\_percent}。并联动更新 BMI、SBP 与空腹血糖（\texttt{Glucose\_Fasting}）。
-\end{itemize}
-干预后的状态修改可表示为：
-\begin{equation}
-\mathbf{x}^{cf}=\mathrm{do}\!\left(
-W\leftarrow(1-\lambda)W,\;
-SBP\leftarrow SBP-5,\;
-G\leftarrow G-0.5
-\right),
-\label{eq:cf_intervention_22}
-\end{equation}
-其中 $\lambda$ 为减重比例，$G$ 表示空腹血糖。事实世界与反事实世界均复用同一融合引擎计算风险，收益定义为：
-\begin{equation}
-    \Delta_{risk}=\frac{P^{base}_{max}-P^{new}_{max}}{P^{base}_{max}}\times 100\%.
-    \label{eq:delta_risk_22}
-\end{equation}
-
-\subsection{算法与数据流映射（Data Flow Graph）}
-为连接第 2 章理论与第 5/6 章工程验证，本节给出统一数据流主线：
-\begin{equation}
-    P_c \xrightarrow[\text{gene/lifestyle}]{\alpha,\beta}
-    P_{fusion} \xrightarrow[\text{counterfactual}]{\mathcal{I}}
-    \Delta_{risk}.
-    \label{eq:dataflow_22}
-\end{equation}
-其中 $\mathcal{I}$ 表示干预算子集合。对应实现路径如下：
-\begin{itemize}
-\item \texttt{train\_risk\_models.py} 与 \texttt{risk\_engine.py} 生成并调用临床先验 $P_c$。
-\item \texttt{gene\_service.py} 与 \texttt{lifestyle\_service.py} 分别提供 $\alpha$ 与 $\beta$。
-\item \texttt{fusion\_service.py} 执行概率连乘与安全截断，输出 $P_{fusion}$。
-\item \texttt{projection\_service.py} 在事实/反事实双路径上计算 $\Delta_{risk}$。
-\end{itemize}
-该映射使算法链路与控制闭环保持统一：感知输入经融合决策形成风险状态，再通过干预算子生成可量化收益。
-\section{自然语言处理与知识增强}
-
-\subsection{检索增强生成的知识索引与向量检索机制}
-本系统采用“离线索引构建 + 在线语义检索”的两阶段知识增强流程。离线阶段将指南类 PDF 文档加载为页面文本，随后执行基于中文语义优先分隔符链的递归分块，核心参数为 \texttt{chunk\_size=800}、\texttt{chunk\_overlap=120}，以在中文医疗指南文献的段落完整性与知识粒度之间取得经验平衡。
-
-分块策略采用八级优先分隔符序列：
-\begin{equation}
-    \mathcal{S} = \langle \texttt{"\textbackslash n\textbackslash n"},\;\texttt{"\textbackslash n"},\;\text{"。"},\;\text{"；"},\;\text{"："},\;\text{"，"},\;\text{" "},\;\varepsilon \rangle,
-\end{equation}
-其中 $\varepsilon$ 表示空字符串（用作字符级滑动窗口回退）。该序列按中文句法粒度从段落级别到字符级别递降排列，并在切分时结合贪心合并机制优先保留语义完整性。每个分块在切分后自动附加 $\{source, page, chunk\_index, section\_title, page\_range\}$ 五维元数据，为后续的证据溯源与质量评估提供结构化支撑。此外，系统在文档加载阶段集成了 OCR 回退机制：当页面提取的有效字符数不超过 15 时，自动触发百度 OCR 识别补偿，以应对扫描件或图片型 PDF 的文本提取失真或残缺问题。
-
-知识分块可形式化表示为：
-\begin{equation}
-    \mathcal{C}=\operatorname{Split}(\mathcal{D};\,L=800,\,o=120,\,\mathcal{S}),
-    \label{eq:rag_chunk_23}
-\end{equation}
-其中 $\mathcal{D}$ 为文档集合，$\mathcal{C}$ 为分块集合，$L$ 与 $o$ 分别为块长与重叠长度，$\mathcal{S}$ 为按优先级排列的分隔符序列。在线阶段对用户查询执行 Top-$k$ 相似检索并返回证据片段，向量检索定义为：
-\begin{equation}
-    \mathcal{R}(q)=\operatorname{TopK}_{c_i\in\mathcal{C}}\,\operatorname{sim}(e(q),e(c_i)),\quad K=3,
-    \label{eq:rag_retrieve_23}
-\end{equation}
-其中 $e(\cdot)$ 为嵌入映射，\(\operatorname{sim}(\cdot)\) 为相似度函数。系统实现采用 \texttt{HuggingFaceEmbeddings}\allowbreak\texttt{(text2vec-base-chinese)} 与 \texttt{Chroma} 持久化向量库。
-
-\subsection{Agent 决策管线驱动的受控生成机制}
-对话模块并非开环的纯生成流程，而是依托 Agent 决策管线的受控生成。最终回复由查询语义、检索证据、用户画像、工具执行结果、策略评估输出以及上下文预算共同约束。其形式化表达为：
-\begin{equation}
-    a = \mathcal{G}\!\left(q,\;\mathcal{R}(q),\;p_u,\;
-    \mathcal{T}_{out}(q),\;\pi(q),\;B_{ctx}\right),
-    \label{eq:chat_controlled_23}
-\end{equation}
-其中 $q$ 为用户问题，$\mathcal{R}(q)$ 为检索证据（§2.3.1），$p_u$ 为用户画像，$\mathcal{T}_{out}(q)$ 为经动态规划与执行后的工具结果集合，$\pi(q)$ 为策略评估输出（含回答模式与安全拦截指令），$B_{ctx}$ 为上下文 Token 预算向量，$a$ 为系统回复。
-
-为避免长上下文导致的证据稀释效应，工程实现中摈弃了单一截断，而是采用分段预算与独立裁剪相结合的控制机制：
-\begin{equation}
-    B_{ctx} = (B_{profile},\,B_{rag},\,B_{tools},\,B_{history},\,B_{query})
-    = (500,\,1500,\,800,\,320,\,300),
-    \label{eq:ctx_budget_23}
-\end{equation}
-其中知识检索区段分配最大预算（占总预算约 44\%），以保障证据召回的覆盖度。该受控生成机制的完整决策算法与工程实现将分别在第四章与第五章中系统展开。
-
-\subsection{面向医疗对话的 Agent 决策理论框架}
-\label{sec:agent_theory_framework}
+\chapter{相关理论与关键技术}
 \label{sec:theory}
-前节受控生成公式中引入了策略评估输出 $\pi(q)$ 与工具结果集 $\mathcal{T}_{out}(q)$，二者共同将传统 RAG 问答从“检索$\to$生成”的开环模式提升为具备安全分流、证据评估与责任追溯能力的闭环决策管线。本节给出该管线的理论框架定义。
 
-策略评估函数定义为：
+本章围绕本文后续研究所依赖的最小理论背景展开，重点说明多模态健康数据融合、疾病风险预测与情景推演，以及 OCR、RAG 与 Agent 问答等关键技术的基本思想。与第 4 章的算法设计和第 5 章的系统实现不同，本章不再展开过细的工程细节、部署机制或测试方法，而是为后文的方法建模与系统落地提供统一概念基础。
+
+\section{多模态健康数据融合基础}
+\subsection{健康数据的多源异构性}
+健康管理场景中的数据通常具有明显的异构特征。临床指标反映个体在当前时间点的体征与检验状态，基因数据描述较稳定的遗传易感性，行为与 IoT 数据则体现短时变化的生活方式和生理波动。三类数据在时间尺度、观测粒度和噪声特性上均不相同，因此单一数据源往往难以完整刻画个体风险水平。本文平台正是在这一背景下，将结构化画像、体检报告解析结果、基因信息和行为观测组织为互补证据，用于构建更适合主动健康管理的综合风险表示。
+
+\subsection{风险融合的基本思想}
+在平台的工程实现中，临床风险评估结果作为基础先验，遗传与行为信息作为修正因子参与综合风险计算。其核心思想可以概括为
 \begin{equation}
-    \pi(q) = \operatorname{PolicyEval}\!\big(
-    \operatorname{Lane}(q),\;
-    \operatorname{Press}(q),\;
-    \mathcal{T}_{plan}(q),\;
-    \mathcal{E}_{gate}(\mathcal{T}_{out}, p_u, Q_{rag})\big),
-    \label{eq:policy_eval_23}
+    P_{\mathrm{fusion}}=\operatorname{clip}(P_c\cdot \alpha \cdot \beta,\;0.1,\;99.9),
+    \label{eq:fusion_theory_compact}
 \end{equation}
-其中 $\operatorname{Lane}(q)\in\{L_1,...,L_6\}$ 为意图分流函数，将查询路由至六条安全车道之一；$\operatorname{Press}(q)$ 为策略压力探针，直接捕捉查询中潜藏的高风险动机（如请求变更处方用药）；$\mathcal{T}_{plan}(q)$ 为基于车道约束的工具规划函数，输出候选工具集合；$\mathcal{E}_{gate}(\cdot)$ 为证据门控函数，以工具执行结果为主输入，并辅以画像事实 ($p_u$) 与检索质量 ($Q_{rag}$) 进行多维冲突校验，最终输出充分性评估状态。
+其中 \(P_c\) 表示基于结构化健康指标得到的临床风险先验，\(\alpha\) 表示遗传风险修正因子，\(\beta\) 表示行为风险修正因子。需要说明的是，上式更适合作为受贝叶斯思想启发的工程化融合表达，而非严格意义上的概率图模型后验推断。与之对应的代码实现位于 \texttt{backend/services/fusion\_service.py} 的 \texttt{calculate\_composite\_risk()} 中，其作用是将不同证据源组织为统一的综合风险输出。
 
-六条车道按安全优先级构成严格偏序：
-\begin{equation}
-    L_1\text{(急症)} \succ L_2\text{(诊断)} \succ L_3\text{(药物)}
-    \succ L_4\text{(趋势)} \succ L_5\text{(报告)} \succ L_6\text{(一般)}.
-    \label{eq:lane_order_23}
-\end{equation}
-分流函数按该偏序从高到低进行模式匹配，首次命中即确定车道归属。该设计使高风险意图始终获得优先处置，避免被低优先级规则误拦。
+除静态融合外，平台还允许将实时心率等短时信号作为事件触发信息，对当前风险快照进行有限度更新。这种机制使融合结果不仅能够描述“当前风险水平”，也能够对短时异常状态作出反馈，但其本质仍是基于规则的工程更新，而不是连续时间医学状态空间估计。
 
-证据门控函数输出三级充分性判定：
-\begin{equation}
-    \mathcal{E}_{gate}(\mathcal{T}_{out}, p_u, Q_{rag}) =
-    \begin{cases}
-        \text{sufficient},   & \text{必要证据类别齐备且无冲突},\\
-        \text{limited},      & \text{部分证据可用但存在缺失},\\
-        \text{insufficient}, & \text{关键证据缺失或存在矛盾}.
-    \end{cases}
-    \label{eq:evidence_gate_23}
-\end{equation}
-该三级评估决定了下游策略的行为分界：$\text{sufficient}$ 允许系统给出直接回答，$\text{limited}$ 触发有界回答并附加保守免责声明，$\text{insufficient}$ 触发拒答或引导用户补充数据。上述框架的完整决策算法（含分流伪代码、工具规划约束与策略决策树）将在第四章中系统推导，工程实现见第五章。
+\section{疾病风险预测与情景推演基础}
+\subsection{结构化健康风险预测}
+疾病风险预测是本文平台的基础分析能力。对于结构化健康数据，集成学习模型能够较好处理非线性特征关系、缺失值和类别不均衡问题，因此本文采用 LightGBM 作为临床风险预测的主要建模工具。训练脚本 \texttt{ai\_core/train\_risk\_models.py} 对不同目标病种分别构建二分类模型，并通过分层抽样与泄漏特征剔除机制，避免将与诊断定义高度重叠的变量直接带入模型，从而提高风险评估结果的可信度。
 
-\subsection{多级置信度验证架构（Multi-stage Confidence-based Verification）}
-医疗文档解析采用“OCR 感知—LLM 结构化—规则校验兜底”的多级验证架构，而非单一模型直出。其目的在于提升事实一致性并降低解析失真风险。
+在此基础上，遗传风险评分用于补充长期易感性信息，行为风险模型和营养视觉模型则用于提供辅助修正证据。它们在系统中的角色并非独立终判，而是帮助平台在临床主风险之外吸收更多维度的信息。因此，从论文主线看，本节的重点是“如何形成稳定的临床主风险输入”，而不是对每一个辅助模型分别展开完整算法论证。
 
-对输入医学文档 $x$，定义 OCR 输出为 $z_{ocr}=f_{ocr}(x)$，结构化结果为：
-\begin{equation}
-\hat{z}=
-\begin{cases}
-    f_{llm}(z_{ocr}), & s_{llm}=1,\\
-    f_{regex}(z_{ocr}), & s_{llm}=0,
-\end{cases}
-\label{eq:multi_stage_verify_23}
-\end{equation}
-其中 $s_{llm}$ 表示 LLM 路径可用性（含 API 成功、JSON 可解析等判据）。
+\subsection{面向干预的情景推演}
+健康管理平台不仅需要识别当前风险，还需要支持对未来风险变化的辅助分析。基于这一需求，本文在风险评估基础上引入情景推演思路：一方面模拟年龄增长、体重变化、血压和血糖波动对未来风险的影响，另一方面评估生活方式调整后风险可能出现的变化方向。其核心目标不是给出严格的临床因果结论，而是提供可比较的风险差异，用于辅助用户理解不同干预方案的潜在收益。
 
-系统实现包含三项关键鲁棒机制：
-\begin{itemize}
-\item PDF 预处理：单次任务最多处理前 5 页（\texttt{max\_pages=5}），并将页面渲染为高分辨率图像。
-\item 并发 OCR：采用 \texttt{ThreadPoolExecutor(max\_workers=5)} 并发识别多页文本。
-\item 重试与回退：LLM 路径使用 \texttt{tenacity} 指数退避重试（最多 3 次）；失败后自动切换正则抽取。
-\end{itemize}
-重试等待时间可抽象为：
-\begin{equation}
-    \Delta t_n=\min\left(10,\max\left(2,2^{n-1}\right)\right),\quad n=1,2,3.
-    \label{eq:retry_wait_23}
-\end{equation}
+对应到实现层，\texttt{backend/services/projection\_service.py} 通过复用融合风险引擎，对“当前状态”和“调整后状态”分别计算风险结果，并输出风险变化幅度。由此可见，本文所谓的“反事实”或“干预推演”，更适合理解为基于规则扰动与同一风险引擎复算的情景分析机制，而不是完整的结构因果模型求解。
 
-\subsection{事件驱动的数据一致性保障机制}
-本系统将缓存层定义为一致性控制组件，而非仅用于性能优化。缓存键采用用户粒度命名规范，核心模式包括
-\texttt{chat\_response:\{user\_id\}:*}、\texttt{diet\_plan:\{user\_id\}:*} 与
-\texttt{risk\_assessment:\{user\_id\}:*}。
+\section{OCR、RAG与Agent关键技术}
+\subsection{OCR与知识增强问答}
+在真实健康管理场景中，用户提供的信息并不总是完全结构化。体检报告、检验单和其他医疗文档通常以 PDF 或图像形式存在，因此需要先通过 OCR 将关键信息提取为可计算字段，再与用户画像共同进入后续分析链路。本文平台中的 OCR 服务由 \texttt{backend/services/ocr\_service.py} 实现，核心作用是把半结构化医学文档转化为后续可利用的结构化摘要，而不是替代人工完成完整临床解释。
 
-当发生关键状态事件（如 \texttt{/user/profile} 更新或 \texttt{/api/v1/ocr/upload} 导入新报告）时，系统触发 \texttt{invalidate\_user\_cache(user\_id)} 执行模式删除。其一致性规则可表示为：
-\begin{equation}
-    E_t(u)=1\Rightarrow \mathcal{K}_{t+1}(u)=\varnothing,
-    \label{eq:event_consistency_23}
-\end{equation}
-其中 $E_t(u)$ 为用户 $u$ 的状态变更事件，$\mathcal{K}_{t+1}(u)$ 为变更后保留缓存集合。对话链路额外提供 \texttt{force\_refresh} 旁路控制，以显式跳过缓存并回源生成。
+对于医学知识问答，平台采用检索增强生成思路。其基本过程是：先从知识库中检索与当前问题相关的文本证据，再将检索结果与用户画像、报告摘要等信息共同送入回答生成链路。对应实现位于 \texttt{backend/services/rag\_service.py}，其 \texttt{search\_context\_with\_quality()} 不仅返回检索文本，也返回检索状态和质量摘要。这说明平台中的 RAG 不只是简单的“向量检索 + 文本拼接”，而是带有证据质量约束的知识增强问答支撑机制。
 
-\subsection{感知层质量边界与闭环控制映射}
-在自动化闭环中，NLP 与 OCR 模块承担“状态变量生成器”的角色。其输出质量直接影响决策层风险估计与控制层干预建议。
+\subsection{面向医疗场景的Agent基本机制}
+与通用开放式问答不同，医疗健康场景对回答边界、风险提示和工具使用约束更加敏感。基于这一特点，本文平台中的 Agent 不采用完全开放的自由生成方式，而是在回答前增加安全分流、工具约束和证据充分性判断等步骤。相关能力主要由 \texttt{backend/services/agent\_safety.py}、\texttt{backend/services/chat\_service.py} 和 \texttt{backend/services/agent\_tools.py} 协同实现，其基本流程包括：先判断问题所属风险车道，再限定可用工具集合，随后结合画像、检索证据和工具输出判断当前证据是否足以支持回答，最后生成受约束的回复结果。
 
-设真实状态为 $x_t$，感知估计为 $\hat{x}_t$，则感知误差
-$\varepsilon_{obs}=\|\hat{x}_t-x_t\|$ 与决策误差 $\varepsilon_{dec}$ 存在单调耦合关系：
-\begin{equation}
-    \varepsilon_{dec}=g(\varepsilon_{obs}),\quad g'(\cdot)>0.
-    \label{eq:gigo_23}
-\end{equation}
-该关系给出本节的系统学意义：通过 RAG 证据约束、OCR 多级验证与事件驱动一致性控制，感知层对下游决策层形成“误差抑制闸门”，以降低 GIGO（Garbage In, Garbage Out）效应。
-\section{系统关键技术栈}
+需要强调的是，本章仅讨论 Agent 的基本技术思想与医疗场景适配性，不在此处展开完整的运行链和治理细节。相关实现将在第 5 章集中说明。这样的安排有助于避免理论章与实现章重复铺陈，也使 Agent 在全文中既保留为亮点，又不脱离当前代码的真实能力边界。
 
-\subsection{服务化架构、控制反转与可测试性}
-本系统的工程实现不以单体脚本直接堆叠算法模块，而是采用“接口适配层--业务服务层--数据持久层”的服务化分层。路由层负责 HTTP 协议适配、鉴权校验与输入输出规范化；服务层封装风险评估、OCR 解析、RAG 问答与干预推演等业务算子；数据层通过统一会话接口完成状态读写。该结构使感知、决策与反馈模块能够在稳定接口约束下协同运行。
-
-控制反转的核心在于：业务函数不直接创建其依赖，而是在运行时接收数据库会话、用户上下文或服务实例。若将业务函数记为 $f$，则可测试性可抽象为：
-\begin{equation}
-    y=f(x;d_1,\ldots,d_n),\qquad
-    \hat{y}=f(x;\hat{d}_1,\ldots,\hat{d}_n),
-    \label{eq:testability_24}
-\end{equation}
-其中 $d_i$ 为运行态依赖，$\hat{d}_i$ 为测试态替代依赖。当输入 $x$ 保持不变时，输出变化可主要归因于依赖替换而非业务逻辑本体，从而提高系统的可观测性与可验证性。
-
-该理论在工程中体现为以下三类机制：
-\begin{itemize}
-\item 运行态注入：后端接口普遍通过 \texttt{Depends}\allowbreak\texttt{(get\_session)}、\allowbreak\texttt{Depends}\allowbreak\texttt{(get\_current\_user)} 等方式接收数据库会话与认证上下文，而非在函数内部直接实例化依赖。
-\item 生命周期解耦：核心模型与缓存连接在 \texttt{lifespan} 阶段统一初始化，由此实现请求处理路径与底层资源加载过程的分离。
-\item 测试态替换：测试环境采用 \texttt{dependency\_overrides} 覆盖真实会话提供器，并结合内存 SQLite 与 \texttt{StaticPool} 构造隔离数据库；对重型模型服务，则通过模块级 Mock 抑制无关基础设施对接口测试的干扰。
-\end{itemize}
-因此，控制反转在本系统中不仅是软件解耦手段，也是一种面向系统测试的工程组织原则。第六章中接口隔离测试与端到端场景验证，均以前述可测试性结构为实现前提。
-
-\subsection{异步非阻塞I/O、排队稳定性与缓存一致性}
-个性化健康管理平台同时面向 OCR 上传、RAG 问答、IoT 数据同步与风险更新等多类异构请求。此类请求的共同特征在于：计算负载与外部 I/O 等待交替出现，若采用同步阻塞式处理，请求队列长度将随并发上升而快速累积。为分析该问题，可引入 Little 定律：
-\begin{equation}
-    L=\lambda W,
-    \label{eq:little_24}
-\end{equation}
-其中 $L$ 为系统内平均请求数，$\lambda$ 为平均到达率，$W$ 为平均逗留时间。在到达率既定时，保持系统稳态的关键在于抑制 $W$ 的增长。
-
-对单次请求而言，其平均逗留时间可进一步分解为：
-\begin{equation}
-    W=t_{queue}+t_{io}+t_{compute},
-    \label{eq:latency_24}
-\end{equation}
-其中 $t_{queue}$ 表示排队等待时间，$t_{io}$ 表示外部模型调用、文件读取与缓存访问等 I/O 等待时间，$t_{compute}$ 表示本地推理与规则计算时间。异步非阻塞 I/O 的作用并非消除服务需求，而是在 I/O 等待阶段释放执行上下文，从而降低等效排队长度并抑制系统拥塞。
-
-本系统中与式（\ref{eq:little_24}）对应的实现主要包括：
-\begin{itemize}
-\item 对话与 OCR 服务均采用异步客户端调用外部大模型接口，减少长时网络等待对主请求链路的占用。
-\item 知识库重建与部分管理任务通过 \texttt{BackgroundTasks} 后台调度执行，将高耗时作业从实时响应路径中分离。
-\item 医疗文档解析在异步主流程之外引入 \texttt{ThreadPoolExecutor} 并发 OCR 与指数退避重试，以降低多页文档处理中的等待放大效应。
-\end{itemize}
-
-缓存层则承担一致性控制功能，而非单纯的性能加速角色。系统通过 \texttt{CacheManager} 提供异步读写、模式匹配删除与用户粒度失效机制；当用户档案更新或新体检报告导入后，系统立即触发 \texttt{invalidate\_user\_cache}，使缓存状态与用户健康状态保持同步。该机制与式（\ref{eq:event_consistency_23}）共同构成事件驱动的一致性控制链路；同时，对话接口保留 \texttt{force\_refresh} 旁路，以支持在高敏感场景下显式回源计算。
-
-\subsection{基础设施即代码与实验可复现性}
-对于涉及多模型推理、文件存储与缓存协同的系统而言，实验结果不仅受算法参数影响，也受运行环境差异影响。为抑制环境扰动，本系统采用容器化方式固定关键基础设施，并将服务拓扑、镜像版本、网络与卷映射纳入统一编排。实验环境可抽象为：
-\begin{equation}
-    \mathcal{E}=(\mathcal{I},\mathcal{S},\mathcal{V},\mathcal{N},\mathcal{C}),
-    \label{eq:repro_24}
-\end{equation}
-其中 $\mathcal{I}$ 为镜像集合，$\mathcal{S}$ 为服务集合，$\mathcal{V}$ 为持久化卷映射，$\mathcal{N}$ 为网络拓扑，$\mathcal{C}$ 为关键配置项。通过固定 $\mathcal{E}$，可将实验误差中由基础设施变化引入的非目标扰动压缩至可控范围。
-
-本系统的容器编排采用 \texttt{docker-compose.yml} 统一定义后端 API、前端 SPA 与 Redis 缓存三类服务；后端镜像基于 \texttt{python:3.11-slim}，前端采用 \texttt{node:20-alpine} 构建并以 \texttt{nginx:alpine} 提供静态资源服务。编排文件进一步固定了桥接网络、健康检查与卷挂载策略，并通过环境变量显式注入 \texttt{REDIS\_URL} 等关键运行参数；视觉模型路径则由配置项 \texttt{NUTRITION\_MODEL\_PATH} 统一管理。
-
-需要指出的是，当前容器化方案的主要目标是实验环境复现与依赖封装，而非生产级弹性调度。应用启动入口仍保留开发态热重载设置，且数据库路径由应用配置统一管理。因此，本节讨论的基础设施即代码应理解为“最小可复现实验部署”，其作用在于为第五章实现验证与第六章实验复现提供稳定环境边界。
-
-
+\section{本章小结}
+本章从多模态健康数据融合、疾病风险预测与情景推演，以及 OCR、RAG 与 Agent 关键技术三个方面，概述了本文后续研究所依赖的基础理论与技术背景。总体而言，平台以结构化临床风险为基础，结合遗传、行为和文档证据形成综合风险表示，并在此基础上扩展到受控问答与干预推演。上述内容为第 4 章的关键算法设计和第 5 章的系统实现提供了统一的概念支撑。

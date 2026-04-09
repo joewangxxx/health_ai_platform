@@ -1,88 +1,117 @@
-\begin{thebibliography}{10}
+\begin{thebibliography}{12}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{#1}
+\expandafter\ifx\csname urlstyle\endcsname\relax\else
+  \urlstyle{same}\fi
+\expandafter\ifx\csname href\endcsname\relax
+  \DeclareUrlCommand\doi{\urlstyle{rm}}
+  \def\eprint#1#2{#2}
+\else
+  \def\doi#1{\href{https://doi.org/#1}{\nolinkurl{#1}}}
+  \let\eprint\href
+\fi
 
-\bibitem{ambalavanan2025ecosystem}
-Radha Ambalavanan, R~Sterling Snead, Julia Marczika, Gideon Towett, Alex
-  Malioukis, and Mercy Mbogori-Kairichi.
-\newblock Challenges and strategies in building a foundational digital health
-  data integration ecosystem: a systematic review and thematic synthesis.
-\newblock {\em Frontiers in Health Services}, 5:1600689, 2025.
-
-\bibitem{carter2022ehrgenomics}
-Alexis~B Carter, Lynne~V Abruzzo, Julie~W Hirschhorn, Dan Jones, Danielle~C
-  Jordan, Mehdi Nassiri, Shuji Ogino, Nimesh~R Patel, Christopher~G Suciu,
-  Robyn~L Temple-Smolkin, Ahmet Zehir, and Somak Roy.
-\newblock Electronic health records and genomics: Perspectives from the
-  association for molecular pathology electronic health record (ehr)
-  interoperability for clinical genomics data working group.
-\newblock {\em The Journal of Molecular Diagnostics}, 24(1):1--17, 2022.
-
-\bibitem{chen2025medsentry}
-Kai Chen, Taihang Zhen, Hewei Wang, Kailai Liu, Xinfeng Li, Jing Huo, Tianpei
-  Yang, Jinfeng Xu, Wei Dong, and Yang Gao.
-\newblock Medsentry: Understanding and mitigating safety risks in medical llm
-  multi-agent systems.
-\newblock {\em arXiv preprint arXiv:2505.20824}, 2025.
-
-\bibitem{chen2016xgboost}
-Tianqi Chen and Carlos Guestrin.
-\newblock Xgboost: A scalable tree boosting system.
-\newblock In {\em Proceedings of the 22nd ACM SIGKDD International Conference
-  on Knowledge Discovery and Data Mining}, pages 785--794, 2016.
-
-\bibitem{choi2019prsice2}
-Shing~Wan Choi and Paul~F. O'Reilly.
-\newblock Prsice-2: Polygenic risk score software for biobank-scale data.
-\newblock {\em GigaScience}, 8(7):giz082, 2019.
-
-\bibitem{epstein2023ehrwearable}
-Crystal~Modde Epstein and Thomas~P McCoy.
-\newblock Linking electronic health records with wearable technology from the
-  all of us research program.
-\newblock {\em Journal of Obstetric, Gynecologic \& Neonatal Nursing},
-  52(2):139--149, 2023.
-
-\bibitem{gbd2019global}
+\bibitem[{GBD 2019 Diseases and Injuries Collaborators}(2020)]{gbd2019global}
 {GBD 2019 Diseases and Injuries Collaborators}.
 \newblock Global burden of 369 diseases and injuries in 204 countries and
   territories, 1990--2019: a systematic analysis for the global burden of
-  disease study 2019.
-\newblock {\em The Lancet}, 396(10258):1204--1222, 2020.
+  disease study 2019\allowbreak[J/OL].
+\newblock The Lancet, 2020, 396\allowbreak (10258): 1204-1222.
+\newblock DOI: \doi{10.1016/S0140-6736(20)30925-9}.
 
-\bibitem{hochreiter1997lstm}
-Sepp Hochreiter and J{\"u}rgen Schmidhuber.
-\newblock Long short-term memory.
-\newblock {\em Neural Computation}, 9(8):1735--1780, 1997.
+\bibitem[Sockolow et~al.(2021)Sockolow, Buck, and Shadmi]{sockolow2021mhealth}
+SOCKOLOW P~S, BUCK H~G, SHADMI E.
+\newblock An integrative review of chronic illness mHealth self-care
+  interventions: mapping technology features to patient
+  outcomes\allowbreak[J/OL].
+\newblock Health Informatics Journal, 2021, 27\allowbreak (3):
+  14604582211043914.
+\newblock DOI: \doi{10.1177/14604582211043914}.
 
-\bibitem{ke2017lightgbm}
-Guolin Ke, Qi~Meng, Thomas Finley, Taifeng Wang, Wei Chen, Weidong Ma, Qiwei
-  Ye, and Tie-Yan Liu.
-\newblock Lightgbm: A highly efficient gradient boosting decision tree.
-\newblock {\em Advances in Neural Information Processing Systems}, 30, 2017.
-
-\bibitem{schick2023toolformer}
-Timo Schick, Jane Dwivedi-Yu, Roberto Dessi, Roberta Raileanu, Maria Lomeli,
-  Luke Zettlemoyer, Nicola Cancedda, and Thomas Scialom.
-\newblock Toolformer: Language models can teach themselves to use tools.
-\newblock {\em arXiv preprint arXiv:2302.04761}, 2023.
-
-\bibitem{sockolow2021mhealth}
-Paulina~S Sockolow, Harleah~G Buck, and Efrat Shadmi.
-\newblock An integrative review of chronic illness mhealth self-care
-  interventions: Mapping technology features to patient outcomes.
-\newblock {\em Health Informatics Journal}, 27(3):14604582211043914, 2021.
-
-\bibitem{yao2023react}
-Shunyu Yao, Jeffrey Zhao, Dian Yu, Nan Du, Izhak Shafran, Karthik Narasimhan,
-  and Yuan Cao.
-\newblock React: Synergizing reasoning and acting in language models.
-\newblock {\em arXiv preprint arXiv:2210.03629}, 2023.
-
-\bibitem{zahedani2023digital}
-Ashkan~Dehghani Zahedani, Tracey McLaughlin, Arvind Veluvali, Nima Aghaeepour,
-  Amir Hosseinian, Saransh Agarwal, Jingyi Ruan, Shital Tripathi, Mark
-  Woodward, Noosheen Hashemi, and Michael Snyder.
+\bibitem[Zahedani et~al.(2023)Zahedani, McLaughlin, Veluvali, Aghaeepour,
+  Hosseinian, Agarwal, Ruan, Tripathi, Woodward, Hashemi, and
+  Snyder]{zahedani2023digital}
+ZAHEDANI A~D, MCLAUGHLIN T, VELUVALI A, et~al.
 \newblock Digital health application integrating wearable data and behavioral
-  patterns improves metabolic health.
-\newblock {\em npj Digital Medicine}, 6(1):216, 2023.
+  patterns improves metabolic health\allowbreak[J/OL].
+\newblock npj Digital Medicine, 2023, 6\allowbreak (1): 216.
+\newblock DOI: \doi{10.1038/s41746-023-00956-y}.
+
+\bibitem[Ambalavanan et~al.(2025)Ambalavanan, Snead, Marczika, Towett,
+  Malioukis, and Mbogori-Kairichi]{ambalavanan2025ecosystem}
+AMBALAVANAN R, SNEAD R~S, MARCZIKA J, et~al.
+\newblock Challenges and strategies in building a foundational digital health
+  data integration ecosystem: a systematic review and thematic
+  synthesis\allowbreak[J/OL].
+\newblock Frontiers in Health Services, 2025, 5: 1600689.
+\newblock DOI: \doi{10.3389/frhs.2025.1600689}.
+
+\bibitem[Carter et~al.(2022)Carter, Abruzzo, Hirschhorn, Jones, Jordan,
+  Nassiri, Ogino, Patel, Suciu, Temple-Smolkin, Zehir, and
+  Roy]{carter2022ehrgenomics}
+CARTER A~B, ABRUZZO L~V, HIRSCHHORN J~W, et~al.
+\newblock Electronic health records and genomics: perspectives from the
+  association for molecular pathology electronic health record (EHR)
+  interoperability for clinical genomics data working group\allowbreak[J/OL].
+\newblock The Journal of Molecular Diagnostics, 2022, 24\allowbreak (1): 1-17.
+\newblock DOI: \doi{10.1016/j.jmoldx.2021.09.009}.
+
+\bibitem[Epstein et~al.(2023)Epstein and McCoy]{epstein2023ehrwearable}
+EPSTEIN C~M, MCCOY T~P.
+\newblock Linking electronic health records with wearable technology from the
+  all of us research program\allowbreak[J/OL].
+\newblock Journal of Obstetric, Gynecologic \& Neonatal Nursing, 2023,
+  52\allowbreak (2): 139-149.
+\newblock DOI: \doi{10.1016/j.jogn.2022.12.003}.
+
+\bibitem[Ke et~al.(2017)Ke, Meng, Finley, Wang, Chen, Ma, Ye, and
+  Liu]{ke2017lightgbm}
+KE G, MENG Q, FINLEY T, et~al.
+\newblock LightGBM: a highly efficient gradient boosting decision
+  tree\allowbreak[J].
+\newblock Advances in Neural Information Processing Systems, 2017, 30.
+
+\bibitem[Chen et~al.(2016)Chen and Guestrin]{chen2016xgboost}
+CHEN T, GUESTRIN C.
+\newblock XGBoost: a scalable tree boosting
+  system\allowbreak[C/OL]//\allowbreak
+Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge
+  Discovery and Data Mining.
+\newblock 2016: 785-794.
+\newblock DOI: \doi{10.1145/2939672.2939785}.
+
+\bibitem[Choi et~al.(2019)Choi and O'Reilly]{choi2019prsice2}
+CHOI S~W, O'REILLY P~F.
+\newblock PRSice-2: polygenic risk score software for biobank-scale
+  data\allowbreak[J/OL].
+\newblock GigaScience, 2019, 8\allowbreak (7): giz082.
+\newblock DOI: \doi{10.1093/gigascience/giz082}.
+
+\bibitem[Yao et~al.(2023)Yao, Zhao, Yu, Du, Shafran, Narasimhan, and
+  Cao]{yao2023react}
+YAO S, ZHAO J, YU D, et~al.
+\newblock ReAct: synergizing reasoning and acting in language
+  models\allowbreak[A/OL].
+\newblock arXiv (2023).
+\newblock \url{https://arxiv.org/abs/2210.03629}.
+\newblock DOI: \doi{10.48550/arXiv.2210.03629}.
+
+\bibitem[Schick et~al.(2023)Schick, Dwivedi-Yu, Dessi, Raileanu, Lomeli,
+  Zettlemoyer, Cancedda, and Scialom]{schick2023toolformer}
+SCHICK T, DWIVEDI-YU J, DESSI R, et~al.
+\newblock Toolformer: language models can teach themselves to use
+  tools\allowbreak[A/OL].
+\newblock arXiv (2023).
+\newblock \url{https://arxiv.org/abs/2302.04761}.
+\newblock DOI: \doi{10.48550/arXiv.2302.04761}.
+
+\bibitem[Chen et~al.(2025)Chen, Zhen, Wang, Liu, Li, Huo, Yang, Xu, Dong, and
+  Gao]{chen2025medsentry}
+CHEN K, ZHEN T, WANG H, et~al.
+\newblock MedSentry: understanding and mitigating safety risks in medical LLM
+  multi-agent systems\allowbreak[A/OL].
+\newblock arXiv (2025).
+\newblock \url{https://arxiv.org/abs/2505.20824}.
+\newblock DOI: \doi{10.48550/arXiv.2505.20824}.
 
 \end{thebibliography}

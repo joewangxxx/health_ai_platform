@@ -5,331 +5,109 @@
 
 \chapter{系统需求分析与总体设计}
 
-\section{需求分析}
+本章在前述理论基础之上，进一步说明平台面向的核心需求、总体架构、数据模型与关键模块设计。与第4章侧重算法方法、第5章侧重工程实现不同，本章主要回答“系统为何这样划分模块、各模块之间如何协同”这一设计问题，从而为后续的实现与实验分析提供结构化支撑。
 
-在构建基于多模态数据融合的个性化健康管理平台过程中，需求分析不仅涵盖了对业务逻辑的梳理，更需从系统架构层面界定其在处理高维医疗隐私数据与异步计算任务时的硬性约束。
+\section{系统需求分析}
 
-\subsection{功能性需求分析}
+\subsection{功能需求分析}
 
-本系统基于“感知-决策-控制”的闭环理念进行设计，将功能性需求抽象为面向不同角色的核心能力圈。
+结合平台的目标用户与实际业务链路，系统功能需求可以归纳为三个方面。
 
-\subsubsection{普通终端用户需求}
+第一，系统需要支持多模态健康数据的采集、整理与管理。用户既可以直接录入临床指标与基本画像，也可以上传体检报告，由 OCR 模块辅助提取关键字段；对于可持续采集的行为数据与设备数据，系统还应支持按时间维度持续更新用户健康画像。该需求对应前端健康档案、报告上传与时间线展示等功能，也是后续风险分析的输入基础。
 
-终端用户的核心需求围绕个人全生命周期的健康管理展开，具体包括：
-\begin{itemize}
-    \item \textbf{多模态健康感知接入}：系统需支持异构源数据的协同输入，涵盖结构化临床生化指标（30项以上）、高频流式 IoT 时序数据（心率、步数）以及基于 OCR 技术的非结构化体检报告扫描件。
-    \item \textbf{智能化干预推演与问询}：要求系统能够提供针对特定干预策略（如饮食调节或减重）的“反事实”风险预测，量化评估干预对 40 余种潜在疾病风险目标的削减效应；同时需提供由临床指南支撑的循证医学问询服务。
-    \item \textbf{亲情群落关联管理}：鉴于医疗场景的社会属性，系统需支持“FamilyLink”亲情账户关联机制，要求实现主账户对关联账户（如高龄父母）的代理数据录入与风险监控，并具备细粒度的隐私授权边界。
-\end{itemize}
+第二，系统需要提供面向个体的风险评估与干预推演能力。平台应能够在统一分析入口下整合临床、遗传与行为信息，输出结构化风险结果，并进一步支持未来风险模拟与干预情景比较，帮助用户理解不同生活方式调整对风险变化的影响。
 
-\subsubsection{系统管理人员需求}
+第三，系统需要提供可解释的智能健康问答能力。问答模块不仅要支持连续对话，还要能够在回答中结合用户画像、历史分析结果与检索到的医学资料，输出带有证据标记和必要提示信息的响应；对于家庭协同场景，系统还应支持家庭账户关联，便于在授权前提下完成代录入与健康关注。
 
-管理端的职能在于维持系统算力引擎的高效运作与数据的合规流转：
-\begin{itemize}
-    \item \textbf{合规治理与脱敏审计}：系统必须提供规范化的科研数据导出管道，要求在数据离开受控环境前实施 PII（个人可识别信息）的剥离，并具备哈希映射的溯源验证能力。
-    \item \textbf{算力中枢操纵与监控}：要求提供统一的 MLOps 管理面板，支持对底层 GWAS、PharmGKB 等异构引擎的事件驱动级调优，并提供计算全过程的可观测性。
-\end{itemize}
+除面向普通用户的核心功能外，系统还需要提供基础管理能力，用于数据导入、模型训练任务触发、知识库维护和系统状态查看。这些功能主要服务于平台运行维护，不作为正文中的主叙事重点，但在架构设计中仍需预留对应接口与角色边界。
 
-\begin{figure}[ht]
-    \centering
-    % [图 3-1 系统整体功能用例图 (UML)]
-    \caption{个性化健康管理平台系统用例分析图}
-    \label{fig:usecase}
-\end{figure}
+\subsection{非功能需求分析}
 
-\subsection{非功能性需求分析与架构约束}
+在非功能层面，平台主要面临安全隐私、交互响应与可维护性三方面约束。
 
-为保障系统在医疗严苛场景下的稳定性与安全性，本文设定了以下四个维度的非功能性约束指标：
+首先，平台处理的健康档案、体检文档和遗传数据均具有较高敏感性，因此系统需要具备用户鉴权、权限隔离与敏感字段保护能力。结合现有实现，用户访问依赖登录令牌进行校验，遗传信息采用加密存储方式保存，问答链路中的治理摘要与审计留痕则以结构化形式写入数据库，以便后续追踪与回放。
 
-\begin{enumerate}
-    \item \textbf{性能响应约束}：面对脉冲式 IoT 数据上报与大型语言模型（LLM）的推理穿透压力，核心 API 的响应延迟（P99）要求低于 200ms。这从需求层面规定系统必须具备高效的内存缓存机制与低延迟的资源寻址能力。
-    \item \textbf{医疗级隐私防线}：受保护健康信息（PHI）需达到最高密级。要求身份认证证书具备强抗暴力破解的盐化哈希机制，且针对高敏个人遗传变异片段必须实施物理级的字段级认证加密（AEAD），确保存储层的绝对隔离性。
-    \item \textbf{架构水平伸缩性}：规定计算节点与应用逻辑层必须保持无状态（Stateless），支持在多任务重训练负载激增时，能够通过容器化集群实现算力的平滑扩容。
-    \item \textbf{长时计算任务的容错性}：针对耗时较长的机器学习模型迭代过程，要求系统具备状态探针监控，并在网络波动的异常场景下具备数据链一致性的保护策略。
-\end{enumerate}
+其次，平台需要兼顾分析任务与日常交互的响应体验。风险评估、文档解析与问答服务均通过统一接口向前端提供结果，而较长时间的数据导入或训练任务则采用后台异步方式执行，以避免阻塞在线交互流程。
 
-\subsection{多模态数据需求分析}
-
-平台需处理高维度、异构的医疗级数据，按模态与时效性将其归类为以下三类需求：
-
-\begin{itemize}
-    \item \textbf{群体基线与先验图谱数据（宏观维度）}：需集成 NHANES 流行病学大样本数据集、GWAS Catalog 提供的 SNP 突变位点序列，以及 PharmGKB 指引的药物代谢规则，用于构建系统初始的决策基准。
-    \item \textbf{个体动态体征时序流（微观维度）}：由客户端传感器输入的连续健康特征波段，表征用户在真实生活场景下的实时生理变动。
-    \item \textbf{多维非结构化语料数据}：涵盖用于支撑视觉诊断算法训练的膳食营养图像矩阵，以及作为对话系统核心依据的高时效性临床指南 PDF 集合。
-\end{itemize}
-
-\begin{table}[ht]
-    \centering
-    \caption{多模态数据集特征汇总表}
-    \begin{tabularx}{\textwidth}{l X X}
-        \toprule
-        \textbf{维度分类} & \textbf{典型数据源} & \textbf{核心特征描述} \\
-        \midrule
-        人口学与临床 & NHANES, OCR 解析结果 & 静态/半动态均值，包含30+核心生化指标 \\
-        基因组学 & GWAS Catalog, 个人 TSV 序列 & 高维特征稀疏矩阵，包含百万级 SNP 位点 \\
-        药代动力学 & PharmGKB, 指南库 & 结构化规则树与 XML 文献关联 \\
-        个体动态 & IoT 传感器流 & 高频时序数据，包含心率、步数、睡眠周期 \\
-        医学辅助语料 & 临床 PDF, 视觉图像库 & 语义向量嵌入、像素级特征标记 \\
-        \bottomrule
-    \end{tabularx}
-    \label{tab:data_summary}
-\end{table}
+最后，平台需要具备一定的扩展性与可维护性。考虑到健康指标字段、知识资料和问答治理逻辑会随着平台迭代而逐步扩展，系统设计上采用前后端分离、服务分层与半结构化数据存储的组合方式，以降低后续功能增量对整体架构的扰动。
 
 \section{系统总体架构设计}
 
-\subsection{系统逻辑分层架构}
+\subsection{平台总体架构}
 
-为应对海量多模态医疗数据的异构性、模型推理的高计算开销以及医疗对话场景中的安全治理需求，本系统未采用传统单体架构（Monolithic Architecture），而是沿数据与控制信号的流向进行自下而上（Bottom-Up）的结构拆分，将系统抽象为高内聚、低耦合的六层逻辑拓扑：
+结合仓库中的前端、后端与部署配置，平台总体上采用“前端交互层、后端服务层、数据与模型支撑层”三层结构。
 
-\begin{enumerate}
-    \item \textbf{数据持久与缓存层（Data Storage Layer）}：作为系统的底层状态承载空间，负责结构化健康记录、对话记录与治理元数据的持久化存储，并通过 Redis 缓存承担高频结果复用与用户级失效控制。
-    \item \textbf{多源感知与治理层（Data Perception \& ETL Layer）}：负责异构数据的采集、清洗与语义归一化。该层涵盖穿戴设备 IoT 时序数据接入、体检报告 OCR 解析，以及 NHANES、GWAS Catalog、Nutrition5k 与 USDA 等多源数据集的 ETL 处理流程。
-    \item \textbf{智能计算层（Intelligent Compute Layer）}：作为系统的核心分析引擎，负责疾病风险预测、多基因风险评分（PRS）、贝叶斯融合推理与干预推演等计算任务，向上提供结构化风险结果与候选医学结论。
-    \item \textbf{Agent 决策治理层（Agent Governance Layer）}：作为智能计算层与业务编排层之间的策略中枢，负责对话意图的安全分流、只读工具集的动态规划与执行、证据充分性门控、终端回答策略评估，以及贯穿决策全过程的责任审计与答案回放。该层对应后端中的策略评估链、工具白名单约束与审计回放机制，其核心控制逻辑由策略版本 \texttt{explicit\_policy.v1} 与六车道优先级评估链共同约束，具体算法见\S 4.5，工程上由对话服务、治理服务与审计回放模块共同支撑。
-    \item \textbf{业务编排与服务层（Service Orchestration Layer）}：负责 HTTP 接口暴露、会话依赖注入、身份鉴权、服务编排与异步任务调度，将上层前端请求路由至 OCR、分析、对话、趋势检索等后端服务模块，并组织跨模块的数据交互。
-    \item \textbf{多维表现与交互层（Presentation Layer）}：作为系统的用户交互终端，负责以 Vue 前端承载仪表盘、临床视图、Dr. AI 对话、时间轴回顾与管理端界面等多类可视化入口，实现健康状态展示、对话交互与人工接管提示的统一呈现。
-\end{enumerate}
+前端交互层基于 Vue 构建，负责健康档案录入、风险结果展示、时间线浏览以及 Dr.~AI 问答等界面组织，并通过统一路由区分普通用户与管理员入口。后端服务层基于 FastAPI 构建，承担用户认证、综合分析、文档解析、会话管理、问答治理与后台任务调度等职责，是整个平台的核心业务承载层。数据与模型支撑层则由关系型数据存储、Redis 缓存以及风险评估、OCR、知识检索等运行时组件共同组成，用于支撑分析结果生成与状态持久化。
+
+在这一结构中，Agent 健康问答模块不作为独立系统存在，而是位于后端服务层内部，与用户画像、风险分析结果、知识检索和审计记录协同工作。这样既能复用平台已有的健康数据上下文，也便于将问答响应与风险评估结果放在统一交互入口下展示。
 
 \begin{figure}[ht]
     \centering
-    % [图 3-2 系统自下而上六层逻辑架构拓扑图]
-    \caption{基于数据流向驱动的六层系统逻辑架构图}
-    \label{fig:layered_architecture}
+    % [图 3-1 平台总体架构图]
+    \caption{多模态健康管理平台总体架构示意}
+    \label{fig:overall_architecture}
 \end{figure}
 
-\subsection{面向主动健康的“感知-决策-控制-反馈”闭环设计}
+\subsection{核心业务流程设计}
 
-系统架构将个人健康状态的时序演进抽象为负反馈闭环系统（Negative Feedback Loop）。其核心工作流由四个环节构成：
+从核心业务流程看，平台的运行链路可以概括为“数据输入、统一分析、结果反馈、持续问答”四个环节。
 
-\begin{itemize}
-    \item \textbf{感知（Sensing）}：通过穿戴设备、基因报告与体检指标等多模态通道采集个体状态变量，在系统内部形成可持续更新的健康画像。
-    \item \textbf{决策（Decision Making）}：将结构化生理指标、遗传证据与行为特征送入融合风险引擎，输出面向多疾病风险目标的后验概率估计。
-    \item \textbf{控制与干预（Actuation/Control）}：系统基于反事实推理构建干预推演模块，评估改变体重、步数、饮食结构等控制变量时的风险变化幅度，并生成可执行的干预建议。
-    \item \textbf{反馈调节（Feedback）}：用户执行干预后，新增观测再次进入感知层并触发后验更新，从而形成持续修正的闭环调节过程。
-\end{itemize}
+首先，用户通过健康档案页面填写临床画像，或上传体检报告触发 OCR 解析；必要时，系统还可以补充遗传数据与行为数据，形成较为完整的分析输入。随后，后端在统一分析入口下对多源数据进行整理与融合，生成结构化风险结果、分析上下文及可供后续展示的解释信息。分析完成后，前端以仪表盘、风险卡片、时间线等方式呈现结果，并在需要时继续调用未来风险模拟或干预模拟接口，向用户展示不同场景下的变化趋势。
+
+在反馈环节中，Dr.~AI 问答模块进一步利用当前用户画像、历史会话与知识检索结果组织回答。当用户提出健康咨询、报告解读或趋势回顾类问题时，系统根据问题类型选择受限工具与证据来源，输出包含回答文本、证据标签和必要提示的结构化结果，从而形成“分析结果驱动问答、问答反过来解释分析结果”的协同流程。
 
 \begin{figure}[ht]
     \centering
-    % [图 3-3 面向主动健康的“感知-决策-控制-反馈”闭环业务流程图]
-    \caption{系统“感知-决策-控制-反馈”动态闭环及反事实推理机制}
-    \label{fig:closed_loop}
+    % [图 3-2 核心业务流程图]
+    \caption{平台核心业务流程示意}
+    \label{fig:core_flow}
 \end{figure}
 
-\subsection{面向服务架构（SOA）的系统逻辑解耦}
+\section{核心数据模型设计}
 
-在多模态健康管理场景中，AI 模型加载、基因解析与贝叶斯推演属于典型的 CPU 密集型（CPU-bound）负载；前端状态同步、日志查询与知识问答调用则具有明显的 I/O 密集型（I/O-bound）特征。若全部功能集中于单体服务内部，不同类型任务之间容易形成资源竞争，进而影响在线接口的稳定性。
+\subsection{关键实体与关系}
 
-基于上述约束，系统采用面向服务架构（Service-Oriented Architecture, SOA）组织主要业务域。前端交互、后端计算与缓存能力通过统一 API 入口进行编排，不同业务模块在容器与服务层面保持相对独立。该设计有助于降低模型推理、数据处理与会话访问之间的耦合度，并通过无状态接口与缓存机制改善系统在并发场景下的可扩展性。
+平台的数据模型围绕用户主体、健康观测、问答会话与治理留痕四类对象展开。用户账户由 \texttt{User} 实体负责认证与角色标识，\texttt{UserProfile} 与之构成一对一关系，用于保存临床画像、遗传信息摘要和扩展健康字段。围绕用户主体，\texttt{HealthRecord} 用于保存历史观测快照，\texttt{MedicalDocument} 用于保存上传文档及其 OCR 处理结果，二者共同构成健康数据的历史积累基础。
+
+在交互层面，\texttt{ChatConversation} 与 \texttt{ChatMessage} 用于组织对话会话及逐条消息内容，从而支持连续问答与历史回溯。对于家庭协同场景，\texttt{FamilyLink} 记录授权关系，使系统能够在明确权限边界的前提下支持家庭成员之间的健康关注与代录入。
+
+围绕 Agent 问答治理，系统进一步引入 \texttt{AgentAuditEvent} 与 \texttt{AgentAnswerReplay} 两类实体，用于保存车道判定、回答模式、证据充分性、工具使用摘要以及回答回放所需的关键快照信息。这部分数据不直接面向用户展示，但为后续审计、回归验证和问题排查提供了结构化依据。
 
 \begin{figure}[ht]
     \centering
-    % [图 3-4 面向服务体系 (SOA) 的前端/计算/缓存独立逻辑拓扑图]
-    \caption{面向服务域计算资源隔离机制与前后端解耦的逻辑拓扑}
-    \label{fig:soa_topology}
+    % [图 3-3 核心实体关系图]
+    \caption{平台核心数据实体关系示意}
+    \label{fig:core_er_model}
 \end{figure}
 
+\subsection{多模态数据组织方式}
 
-\section{数据库设计}
+为兼顾结构稳定性与后续扩展需求，平台采用“核心字段结构化存储，扩展信息半结构化保存”的数据组织方式。对于年龄、血糖、糖化血红蛋白、血压等稳定临床指标，系统将其作为 \texttt{UserProfile} 的显式字段保存，便于后续分析服务直接读取。对于随时间变化的观测值及风险快照，系统通过 \texttt{HealthRecord} 进行按时间记录，从而支撑历史趋势展示与阶段性比较。
 
-\subsection{概念结构设计（E-R建模）}
+文档类输入则通过 \texttt{MedicalDocument} 承载文件路径、上传时间与 OCR 处理状态，使原始文件保存、解析状态追踪与结构化导入可以在同一对象下管理。对话类数据由会话实体和消息实体分别保存，以便同时支持最近消息窗口构建、历史检索和前端会话列表展示。对于问答治理中产生的证据面板、上下文预算摘要和工具调用摘要，系统使用 JSON 字段保存结构化扩展信息，以平衡模式稳定性与表达灵活性。
 
-本系统围绕个体“数字孪生”（Digital Twin）构建多维关系模型。系统核心实体及其映射关联定义如下：
+需要指出的是，平台对遗传相关信息采取了独立加密字段存储方式，而不是将其完全混入普通文本字段中；这既符合健康数据的敏感性要求，也与当前代码中的属性访问和加解密处理逻辑保持一致。
 
-\begin{itemize}
-    \item \textbf{用户与画像的 1:1 关联}：\texttt{User} 负责认证与授权，\texttt{UserProfile} 负责承载生理画像与风险分析输入，二者分离有助于划清账户信息与医学数据边界。
-    \item \textbf{观测记录的 1:N 扩展}：在用户主体下进一步挂接 \texttt{IoTHealthData} 与 \allowbreak\texttt{MedicalDocument}，用于保存高频时序观测和 OCR 文档解析结果。
-    \item \textbf{家庭监护的 M:N 授权关系}：\texttt{FamilyLink} 记录管理者与被管理者之间的授权连接，用于支持家庭场景下的跨账户健康监护。
-    \item \textbf{对话会话的 1:N 展开}：在用户主体下进一步挂接 \texttt{ChatConversation} 与 \texttt{ChatMessage}。前者负责维持服务器端会话连续性、标题与归档状态，后者负责存储对话中的逐条消息内容及其可选证据元数据，如 \texttt{sources}、\texttt{evidence\_tags}、\texttt{decision\_summary} 与 \texttt{response\_verdict}。
-    \item \textbf{Agent 治理链路的回答级留痕}：\texttt{AgentAuditEvent} 记录每次已完成回答对应的结构化责任信息，如 lane、verdict、策略版本与回答模式；\texttt{AgentAnswerReplay} 则以回答级快照形式持久化策略快照、执行快照、上下文预算与工具结果摘要，用于事后回放与责任追溯。
-\end{itemize}
+\section{关键模块设计}
 
-\begin{figure}[ht]
-    \centering
-    % [图 3-5 平台全域健康数据 E-R 概念模型图]
-    \caption{系统平台全域健康数据 E-R 概念模型拓扑图}
-    \label{fig:er_model}
-\end{figure}
+\subsection{风险评估模块设计}
 
-\subsection{逻辑结构与高阶存储策略设计}
+风险评估模块是平台分析链路的核心入口。其主要任务是接收用户临床画像、遗传数据和部分行为信息，在统一分析接口下完成特征整理、风险估计与结果组织，并输出可供前端展示的风险报告和分析上下文。该模块在设计上强调“统一入口、统一输出”，从而避免不同数据源分别分析后难以汇总的问题。
 
-在将概念模型下沉为关系型数据库（RDBMS）的物理表结构时，传统强模式（Strict Schema）由于字段固化，难以兼顾医疗数据的动态扩展需求与隐私保护要求。因此，本论文在存储逻辑层引入了两项策略：
+从系统协同关系看，风险评估模块一方面与用户画像、历史记录和文档解析结果相连，负责消费结构化健康数据；另一方面又向仪表盘展示、时间线展示和问答模块提供统一的风险结果支撑。因此，它在整个平台中处于“由输入走向决策”的桥接位置，是第4章算法设计在工程层面的主要承载对象之一。
 
-\textbf{其一，面向异构观测的半范式化设计（Semi-structured Design）。}医疗领域特征维度更新较快，若完全依赖固定列建模，将增加模式演化成本。为此，系统在 \texttt{health\_record} 与 \texttt{medical\_document} 中引入 JSON 文本扩展列，使部分非固定维度指标能够在保持事务存储的前提下完成灵活扩展。
+\subsection{干预推演模块设计}
 
-\textbf{其二，面向敏感字段与治理元数据的分层存储机制。}针对受保护健康信息（PHI）中的高敏感字段，系统依托 ORM 层的属性访问逻辑，对 \texttt{genomic\_data} 相关内容实施字段级 AES-256-GCM 加密。与此同时，对于对话治理链路产生的决策摘要、响应裁决、证据面板与策略快照，系统采用 JSON 列进行有界结构化持久化，以兼顾模式稳定性与后续审计回放需求。
+干预推演模块建立在风险评估结果之上，主要提供未来风险模拟和干预情景比较两类能力。系统通过独立接口接收用户当前画像及目标干预参数，并输出自然演化场景或干预后场景下的风险变化结果。相较于直接给出静态建议，这种设计更强调“可比较”和“可解释”，有助于用户理解不同调整方案可能带来的风险变化方向。
 
-为说明上述半结构化扩展、敏感字段保护与治理留痕机制如何在数据层落地，下文先给出三类基础业务表结构：用户画像表（表 \ref{tab:user_profile}）、观测记录表（表 \ref{tab:health_record}）以及家庭授权关系表（表 \ref{tab:family_link}）；随后补充两类治理相关表结构：Agent 决策审计事件表（表 \ref{tab:agent_audit_event}）与 Agent 答案回放表（表 \ref{tab:agent_answer_replay}）。
+在平台链路中，干预推演模块与风险评估模块共享核心输入字段，但其输出更侧重面向用户的解释与比较，因此会直接服务于前端中的趋势展示、时间线和干预建议交互。第4章将进一步说明其方法基础，第5章则对应其接口与服务实现。
 
-\begin{table}[ht]
-    \centering
-    \caption{用户生理孪生画像表（\texttt{user\_profile}）}
-    \begin{tabularx}{\textwidth}{l l l X}
-        \toprule
-        \textbf{字段名称} & \textbf{数据类型} & \textbf{键/约束} & \textbf{业务含义说明} \\
-        \midrule
-        \texttt{id} & Integer & PK, Auto & 孪生体物理主键 \\
-        \texttt{user\_id} & Integer & FK, Unique & 关联凭证中枢表 ID，落实 1:1 强偶关系 \\
-        \texttt{Glucose\_Fasting} & Float & Nullable & 核心生化指标：空腹血糖值 \\
-        \texttt{HbA1c} & Float & Nullable & 核心生化指标：糖化血红蛋白追踪 \\
-        \texttt{eGFR} & Float & Nullable & 肾脏标志物：估计肾小球滤过率 \\
-        \texttt{ALT} & Float & Nullable & 肝脏标志物：谷丙转氨酶 \\
-        \texttt{encrypted\_genomic\_data} & String & Nullable & 依托 AES-256-GCM 隔离存储的加密变异基因片段 \\
-        \bottomrule
-    \end{tabularx}
-    \label{tab:user_profile}
-\end{table}
+\subsection{Agent健康问答模块设计}
 
-\begin{table}[ht]
-    \centering
-    \caption{多模态异构观测记录表（\texttt{health\_record}）}
-    \begin{tabularx}{\textwidth}{l l l X}
-        \toprule
-        \textbf{字段名称} & \textbf{数据类型} & \textbf{键/约束} & \textbf{业务含义说明} \\
-        \midrule
-        \texttt{id} & Integer & PK, Auto & 观测时序物理主键 \\
-        \texttt{user\_id} & Integer & FK, Index & 指向对应生理孪生的索引从流 \\
-        \texttt{record\_date} & Datetime & Not Null & 状态捕捉的基准时间戳 \\
-        \texttt{source} & String & Not Null & 标定采集通道（如 IoT 探针、手工录注、视觉 OCR） \\
-        \texttt{metrics} & JSON Text & Nullable & \textbf{半范式态延展列}，承载不规则维度异构监测值 \\
-        \texttt{risk\_snapshot} & JSON Text & Nullable & 存储该时空节点系统对其下发的高维决策推演断层快照 \\
-        \bottomrule
-    \end{tabularx}
-    \label{tab:health_record}
-\end{table}
+Agent 健康问答模块承担平台中的智能交互功能。该模块接收用户自然语言问题，在会话上下文的基础上结合用户画像、历史分析结果、文档摘要和知识检索结果生成回答，并根据问题类型调用受限工具集完成补充查询。与普通问答不同，该模块的设计重点不在开放式生成，而在于受控调用、证据约束和结果留痕。
 
-\begin{table}[ht]
-    \centering
-    \caption{多角色家庭监护授权关联表（\texttt{family\_link}）}
-    \begin{tabularx}{\textwidth}{l l l X}
-        \toprule
-        \textbf{字段名称} & \textbf{数据类型} & \textbf{键/约束} & \textbf{业务含义说明} \\
-        \midrule
-        \texttt{id} & Integer & PK, Auto & 关系边权标识主键 \\
-        \texttt{manager\_id} & Integer & FK, Index & 授权网络图中的主动调看方（监护者节点） \\
-        \texttt{member\_id} & Integer & FK, Index & 授权网络图中的被接管方（弱势关怀节点） \\
-        \texttt{relation\_name} & String & Not Null & 维系交互信任的语义标签（如同宗身份描述） \\
-        \texttt{is\_active} & Boolean & Default(True) & 关系链物理有效态指示标定，阻截隐式提权访问 \\
-        \bottomrule
-    \end{tabularx}
-    \label{tab:family_link}
-\end{table}
+从数据流角度看，问答模块以上一轮分析结果和当前会话状态为输入，以结构化回答结果为输出。输出除了回答文本外，还包括来源引用、证据标签、建议卡片以及必要时的人工接管提示。与此同时，系统将本轮问答过程中的关键治理摘要写入审计与回放对象，以便后续进行行为验证和责任追踪。由于这部分内容与实际运行链和服务编排紧密相关，其具体实现将在第5章中集中展开，而本章仅保留其模块定位与职责说明。
 
-随着 Dr. AI 模块由单轮知识问答扩展为具备服务器端会话连续性、证据标注与策略治理能力的对话系统，数据库模型除了承载用户、画像与观测数据外，还需对回答级决策痕迹进行结构化留存。其中，\texttt{ChatConversation} 与 \texttt{ChatMessage} 在概念层负责会话与消息承载；在物理表展示上，本文进一步补充与治理闭环直接相关的两类核心表结构。
+\section{本章小结}
 
-\begin{table}[ht]
-    \centering
-    \caption{Agent 决策审计事件表（\texttt{agent\_audit\_event}）}
-    \begin{tabularx}{\textwidth}{l l l X}
-        \toprule
-        \textbf{字段名称} & \textbf{数据类型} & \textbf{键/约束} & \textbf{业务含义说明} \\
-        \midrule
-        \texttt{id} & Integer & PK, Auto & 审计事件物理主键 \\
-        \texttt{schema\_version} & String & Default & 审计负载版本标识，用于治理结构演进控制 \\
-        \texttt{timestamp} & Datetime & Index & 一次回答型决策完成的记录时间 \\
-        \texttt{user\_id} & Integer & Index & 关联发起该轮对话的用户标识 \\
-        \texttt{conversation\_id} & Integer & Index & 对应会话标识，用于与会话链路进行逻辑关联 \\
-        \texttt{lane / verdict} & String & Nullable & 记录意图车道与最终判定结果 \\
-        \texttt{policy\_version} & String & Nullable & 记录本轮回答采用的策略版本 \\
-        \texttt{response\_mode} & String & Nullable & 记录直接回答、有界回答、拒答等终端回答模式 \\
-        \texttt{evidence\_sufficiency} & String & Nullable & 记录证据充分性状态，如 \texttt{sufficient}、\texttt{limited}、\texttt{insufficient} \\
-        \texttt{tool\_used} & JSON Array & Nullable & 记录本轮回答实际使用的只读工具集合摘要 \\
-        \texttt{context\_budget\_summary} & JSON Object & Nullable & 记录 profile、RAG、tools、history 等上下文预算使用摘要 \\
-        \bottomrule
-    \end{tabularx}
-    \label{tab:agent_audit_event}
-\end{table}
-
-\begin{table}[ht]
-    \centering
-    \caption{Agent 答案回放表（\texttt{agent\_answer\_replay}）}
-    \begin{tabularx}{\textwidth}{l l l X}
-        \toprule
-        \textbf{字段名称} & \textbf{数据类型} & \textbf{键/约束} & \textbf{业务含义说明} \\
-        \midrule
-        \texttt{id} & Integer & PK, Auto & 回放快照物理主键 \\
-        \texttt{schema\_version} & String & Default & 回放负载版本标识 \\
-        \texttt{user\_id} & Integer & Index & 关联用户标识 \\
-        \texttt{conversation\_id} & Integer & Index & 关联会话标识 \\
-        \texttt{chat\_message\_id} & Integer & FK, Unique & 对应一条助手消息的唯一回放索引 \\
-        \texttt{audit\_event\_id} & Integer & FK, Unique & 指向与该回答对应的审计事件记录 \\
-        \texttt{policy\_snapshot} & JSON Object & Default Dict & 存储 lane、verdict、response\_mode 等策略快照 \\
-        \texttt{execution\_snapshot} & JSON Object & Default Dict & 存储模型名、工具规划来源、延迟与缓存命中等执行快照 \\
-        \texttt{context\_budget\_summary} & JSON Object & Nullable & 存储各上下文通道的预算分配与使用情况 \\
-        \texttt{tool\_result\_summary} & JSON Array & Default List & 存储工具结果的有界摘要，用于回答级回放 \\
-        \texttt{rag\_source\_refs} & JSON Array & Default List & 存储检索证据来源引用摘要 \\
-        \bottomrule
-    \end{tabularx}
-    \label{tab:agent_answer_replay}
-\end{table}
-
-
-\section{系统通信协议与接口设计}
-
-\subsection{面向资源的 RESTful 状态机与异步补偿机制}
-
-本系统在 API 路由层遵循表述层状态转移（Representational State Transfer, RESTful）原则。接口并非对底层数据表的直接暴露，而是围绕用户画像、风险分析、知识问答与管理任务等核心资源构建状态流转路径。借助 FastAPI 的依赖注入（Dependency Injection, DI）机制，系统在请求入口完成 JWT 鉴权、数据库会话挂载与业务上下文装配，实现路由层与底层资源之间的解耦。
-
-对于模型训练、数据导入等长时运行任务，系统采用“请求触发 + 后台执行 + 轮询跟踪”的补偿策略。路由层在接收控制指令后，将任务提交给 \texttt{BackgroundTasks} 执行，并返回包含任务状态与追踪标识的响应结果；前端随后通过 \texttt{/admin/}\allowbreak\texttt{task/}\allowbreak\texttt{status} 查询任务进度。该机制避免将长时计算直接压入单次 HTTP 请求周期，有助于降低管理任务对在线业务接口的阻塞影响。
-
-\subsection{全局聚合鉴权与操作级细粒度溯源防线}
-
-在面向服务架构（SOA）的扩展场景中，传统的有状态会话机制会增加节点间状态同步成本。本平台采用基于共享密钥签名验证的 JSON Web Token（JWT, HS256）作为统一认证凭证，使请求可在不同服务节点之间以无状态方式完成身份校验。
-
-此外，令牌解码后的用户身份与权限等级会被注入路由依赖项，例如普通用户鉴权依赖与管理员鉴权依赖。该设计使接口访问控制、受限资源操作与审计记录能够围绕统一身份标识展开，便于形成细粒度的权限边界与操作追踪链路。
-
-\subsection{“感知-决策”核心通信协议字典}
-
-为呈现系统在管理调度、多模态分析与知识问答三类关键链路上的通信组织方式，表 \ref{tab:core_protocol_scheduler}、\ref{tab:core_protocol_fusion} 及 \ref{tab:core_protocol_rag} 对代表性接口进行了归纳。这些接口共同构成了系统从感知输入到决策输出的核心通信骨架。
-
-\begin{table}[ht]
-    \centering
-    \caption{控制面板多擎调度枢纽端点（MLOps 中枢）}
-    \begin{tabularx}{\textwidth}{l X}
-        \toprule
-        \textbf{架构落点/通信要素} & \textbf{部署参数与协议特性描述} \\
-        \midrule
-        \textbf{代表路由路径} & \texttt{/admin/data/upload}、\texttt{/admin/data/clinical/train}、\texttt{/admin/task/status} \\
-        \textbf{HTTP 载体动词} & \texttt{POST / GET} \\
-        \textbf{节点调度特性} & 管理侧请求用于触发数据导入、模型训练与任务状态查询，后台计算由 \texttt{BackgroundTasks} 或服务层逻辑异步承接 \\
-        \textbf{异步补偿方式} & 首次请求返回任务登记结果与状态描述，随后以前端轮询方式跟踪执行进度 \\
-        \textbf{学术架构意义} & 体现控制指令提交与长时任务执行的弱耦合设计，降低管理任务对在线业务链路的阻塞影响 \\
-        \bottomrule
-    \end{tabularx}
-    \label{tab:core_protocol_scheduler}
-\end{table}
-
-\begin{table}[ht]
-    \centering
-    \caption{多模态特征分析与三维贝叶斯融合网关}
-    \begin{tabularx}{\textwidth}{l X}
-        \toprule
-        \textbf{架构落点/通信要素} & \textbf{部署参数与协议特性描述} \\
-        \midrule
-        \textbf{统一路由路径} & \texttt{/analyze/comprehensive} \\
-        \textbf{HTTP 载体动词} & \texttt{POST} \\
-        \textbf{复合载荷流特征} & 支持请求体增量参数与数据库既有画像在服务层完成融合 \\
-        \textbf{非定型结构兼容} & 可同时处理体征、V10 生化指标、行为字段与缺省回退值，形成统一分析输入向量 \\
-        \textbf{学术架构意义} & 体现多源异构观测在统一分析入口处的聚合能力，为后续融合决策提供稳定输入边界 \\
-        \bottomrule
-    \end{tabularx}
-    \label{tab:core_protocol_fusion}
-\end{table}
-
-\begin{table}[ht]
-    \centering
-    \caption{面向 Agent 决策治理的健康问答接口协议}
-    \begin{tabularx}{\textwidth}{l X}
-        \toprule
-        \textbf{架构落点/通信要素} & \textbf{部署参数与协议特性描述} \\
-        \midrule
-        \textbf{统一路由路径} & \texttt{/chat/send} \\
-        \textbf{HTTP 载体规范} & \texttt{POST}，请求体包含用户当前轮问题 \texttt{message}，并可附带 \texttt{conversation\_id} 与 \texttt{force\_refresh} 标记，分别用于承接服务器端会话连续性与执行缓存旁路控制 \\
-        \textbf{响应组织方式} & 返回 JSON。核心字段包括回复文本 \texttt{reply}、来源引用 \texttt{sources}、证据标签 \texttt{evidence\_tags}、治理摘要 \texttt{decision\_summary} 与响应裁决 \texttt{response\_verdict}；并按需附带人工接管提示 \texttt{takeover}、证据面板 \texttt{evidence\_panel} 与建议卡片 \texttt{suggestion\_card} 等可选结构化补充信息 \\
-        \textbf{会话连续性与缓存语义} & 接口由后端负责创建、校验与延续对话会话，前端仅透传当前 \texttt{conversation\_id}；当画像、检索证据或知识状态发生变化时，可通过 \texttt{force\_refresh} 绕过既有缓存结果并重新生成回答 \\
-        \textbf{学术架构意义} & 体现 Agent 决策治理链路在协议层的外显结果，使对话接口不再只是文本生成调用，而是同步输出证据标签、治理摘要与必要的责任提示，从而增强系统在反馈环节的可解释性与可追溯性 \\
-        \bottomrule
-    \end{tabularx}
-    \label{tab:core_protocol_rag}
-\end{table}
-
-需要指出的是，上述 \texttt{decision\_summary}、\texttt{response\_verdict} 与 \texttt{takeover} 等字段属于前端可消费的公开响应契约，用于承载一次回答的治理摘要与交互提示；而与之对应的审计写入、答案回放快照与上下文预算记录，则作为后端内部持久化副作用落入治理数据表，不通过新增公共接口字段再次暴露。由此，系统在接口层保持了前端消费契约的稳定性，同时在数据层完成了责任追踪与事后回放所需的结构化留痕。
+本章从需求、架构、数据模型与关键模块四个层面说明了平台的总体设计思路。总体上，系统以多模态健康数据为输入，以风险评估和干预推演为核心分析链路，并通过 Agent 健康问答模块增强结果解释与交互能力。上述设计为第4章的算法方法和第5章的系统实现提供了结构化框架，也使后续实验验证能够围绕统一的系统主线展开。

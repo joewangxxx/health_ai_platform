@@ -1,9 +1,10 @@
-﻿% !TeX root = ../main.tex
+% !TeX root = ../main.tex
 
-\chapter{系统测试与实验分析}
+\chapter{实验与测试分析}
 
-\section{测试环境与方案}
-\subsection{测试环境配置}
+本章围绕“模型效果、系统功能与 Agent 运行稳定性”三条证据链，对前文提出的方法与实现进行验证。考虑到本科论文正文篇幅限制，本章不再保留过细的压测脚本说明、缓存时序拆解和大段测试框架实现细节，而是仅保留能够直接支撑论文结论的实验结果与分析。整体上，本章重点回答三个问题：多模态风险评估链路是否具备有效性，平台关键业务路径是否可稳定运行，以及 Agent 问答模块是否能够在固定输入条件下保持可回归、可解释的行为边界。
+
+\section{实验环境与评价指标}
 \begin{table}[htbp]
 \centering
 \caption{实验与测试环境配置}
@@ -23,250 +24,64 @@
 软件环境 & 前端框架 & Vue 3.5 \\
 测试框架 & 单元/集成测试 & pytest \\
 测试框架 & API 回归测试 & FastAPI TestClient \\
-测试框架 & 压力测试 & Locust \\
+测试框架 & 浏览器场景测试 & Playwright \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-实验系统采用容器化部署与本地开发协同模式。后端服务在 Python 3.11 环境运行，前后端与缓存服务通过 Docker Compose 编排，Redis 容器镜像固定为 \texttt{redis:7-alpine}。模型训练与推理统一采用同一工程路径体系，视觉模型路径由配置项 \texttt{NUTRITION\_MODEL\_PATH} 显式管理，以保证训练产物与在线推理的一致性。
+实验环境采用本地开发与容器化部署协同方式。后端服务运行于 Python 3.11，前后端与 Redis 通过 Docker Compose 统一组织；前端浏览器验证基于 Playwright，测试配置覆盖 Chromium、Firefox 与 WebKit 三类浏览器内核。评价指标按验证目标分为三类：风险模型部分重点关注 AUC、Accuracy、Recall、F1、Brier Score 与校准特性；系统功能部分重点关注回归通过率、关键场景可达性和接口行为一致性；Agent 模块部分重点关注场景通过率、裁决一致性和基线匹配结果。
 
-\subsection{测试方案设计}
-第六章测试流程按“算法正确性$\rightarrow$系统可用性$\rightarrow$并发鲁棒性”三维展开，保证从模型层到服务层的闭环验证。
+\section{风险预测与融合效果分析}
+\subsection{疾病风险预测结果分析}
+慢病风险预测模型由 \texttt{ai\_core/train\_risk\_models.py} 训练完成，针对各目标病种独立构建 LightGBM 二分类器。训练阶段采用分层抽样划分训练集与测试集，并通过 \texttt{is\_unbalance=True} 处理阳性样本占比较低的问题。与仅追求分类分数不同，当前实验特别强调防泄漏控制：脚本在每个病种训练前依据 \texttt{LEAKAGE\_MAPPING} 剔除与目标诊断高度重叠的变量，从而避免将诊断同义特征直接作为预测依据。该设置保证了实验结果更接近真实筛查场景，也使在线服务输出与训练阶段的特征边界保持一致。
 
-\begin{itemize}
-\item \textbf{维度一：算法模型评估与消融实验。} 以 AUC、Accuracy、Recall、F1、Brier Score 与校准曲线为核心度量，分别评估临床风险模型、行为分类模型与多模态融合引擎，并对融合链路进行分阶段消融对比。
-\item \textbf{维度二：系统功能与集成测试。} 采用 \texttt{pytest + FastAPI TestClient} 执行接口回归，测试基座使用 \texttt{sqlmodel.pool.StaticPool} 构建内存会话隔离。通过 \texttt{patch.dict(sys.modules,\dots)} 进行全局重依赖 Mock，并结合 \texttt{app.dependency\_overrides} 完成依赖注入替换，确保 API 行为验证不受外部模型加载时延干扰。
-\item \textbf{维度三：高并发性能压力测试。} 使用 Locust 对关键接口进行并发注入，以 P99 响应时延（P99 RT）与吞吐量（TPS）作为主指标，评估系统在持续负载和突发负载下的稳定性边界。
-\end{itemize}
+结合训练脚本与服务侧运行逻辑可以看到，临床风险模型的主要价值不在于追求某一疾病的极端高分，而在于为后续融合模块提供稳定、可解释的初始风险输入。与此相对应，行为风险模型和营养视觉模型在当前系统中主要承担辅助修正与扩展输入作用：前者为行为风险修正因子提供支持，后者为饮食与营养记录补充可结构化信息。因此，本章不再将二者作为与临床主模型并列的独立实验重点，而是将其视作多模态融合链路中的辅助证据来源。
 
-\section{模型性能评估}
-\subsection{慢病风险预测模型评估}
-慢病风险模型由 \texttt{train\_risk\_models.py} 训练，针对每一疾病标签 \texttt{Target\_*} 独立构建 LightGBM 二分类器。数据划分采用分层抽样策略：
-\[
-\texttt{train\_test\_split}(X,y,\texttt{test\_size}=0.2,\texttt{random\_state}=42,\texttt{stratify}=y),
-\]
-保证训练集与测试集标签比例一致。模型配置启用 \texttt{is\_unbalance=True}，用于处理慢病阳性样本占比较低的类别不均衡问题。
+\subsection{多模态融合消融实验}
+多模态融合部分围绕“仅临床风险”“临床风险叠加遗传因子”“临床风险叠加遗传与行为因子”三种设置展开比较，其核心目标不是重复证明 LightGBM 分类器本身的有效性，而是考察融合后概率输出是否更适合作为健康管理平台中的综合风险信号。与第 4 章的方法定义一致，融合服务在 \texttt{fusion\_service.py} 中对临床风险结果、遗传修正因子和行为修正因子进行乘性整合，并通过 \texttt{clip([0.1,99.9])} 保持结果稳定。
 
-该脚本显式实现防泄漏机制：在每一目标病种训练前，根据 \texttt{LEAKAGE\_MAPPING} 动态剔除与诊断定义高度重叠的泄漏变量。以 T2D 为例，\texttt{HbA1c}、\texttt{Glucose\_Fasting} 等指标被排除后，模型仍保持可分性，避免“诊断同义特征”导致的虚高评估。评估指标采用 \texttt{roc\_auc\_score} 与 \texttt{accuracy\_score} 双指标并行报告，兼顾排序能力与分类判定性能。
+本研究在实验分析上更关注融合后的概率质量而非单一阈值下的命中率，因此采用 Brier Score 与校准特性作为重点参考指标。现有实验设计表明，引入遗传和行为证据后，系统能够在保持临床主模型可解释性的同时，进一步区分“当前临床表型尚未明显异常但遗传易感性偏高”的潜在风险个体。服务侧的 \texttt{Potential} 标签正是对这一场景的工程化表达。换言之，融合模块的主要收益并不只是抬高某一项分数，而是使风险输出更适合面向主动健康管理的分层筛查与持续跟踪。
 
-可解释性方面，训练脚本读取各病种模型的 \texttt{feature\_importances\_}，并汇总输出跨病种 Top-30 重要特征图。该过程将模型贡献映射为显式变量权重，降低黑盒解释风险，为临床先验一致性核查提供依据。
+\subsection{干预推演案例分析}
+干预推演验证对应 \texttt{backend/services/projection\_service.py} 的两类场景：一类是自然老化场景，通过增加年龄并对收缩压、空腹血糖和 BMI 施加缓慢上升趋势，观察未来风险变化；另一类是生活方式干预场景，通过设定如 \texttt{weight\_loss\_percent} 等可控变量，模拟体重下降后对血压、血糖和综合风险的联动影响。服务返回结果同时包含 \texttt{base\_risk\_max}、\texttt{new\_risk\_max} 和 \texttt{risk\_reduction\_percent} 等字段，说明系统不仅能够给出静态风险快照，还能够输出干预前后风险差异。
 
-[占位符：图 6-1 糖尿病 ROC 曲线与特征重要性图]
+从代码与结果结构的一致性看，当前干预推演更适合被理解为“规则化情景模拟”而非严格因果模型求解。其优势在于能够直接复用第 4 章中的融合风险链路，为用户提供具有方向性的对比结果；其边界在于结果主要用于辅助解释和方案比选，而不应被表述为临床级疗效预测。对于本科论文而言，这种定位既符合实现真实能力，也能体现平台从风险识别向干预支持延伸的价值。
 
-\subsection{行为分类与食物视觉模型评估}
-行为风险模型由 \texttt{train\_lifestyle\_model.py} 训练，输入特征为 \texttt{sum} 与 \texttt{count}，标签为 \texttt{Lifestyle\_Risk}。模型采用 XGBoost 分类器，按 \texttt{test\_size=0.2} 划分训练/测试集合，输出 Accuracy、Precision、Recall 与 F1 四项指标。由于该模型在融合链路中承担行为修正因子估计功能，Recall 用于衡量高风险行为样本的识别完整性，Accuracy 用于刻画整体判别稳定性。
-
-食物视觉模型在服务侧由 \texttt{food\_service.py} 加载 \texttt{nutrition\_efficientnet.pth}，骨干网络为 \texttt{EfficientNet-B0}。分类头替换为四维回归输出层，对应 \(\{\text{Calories},\text{Carbs},\text{Protein},\text{Fat}\}\)。训练脚本 \texttt{train\_nutri\_net.py} 采用多任务回归损失 \(\texttt{L1Loss}\)，其目标函数为
-\begin{equation}
-\mathcal{L}_{\mathrm{L1}}=\frac{1}{4}\sum_{k=1}^{4}\left|\hat{y}_k-y_k\right|,
-\end{equation}
-其中 \(k\) 对应四类营养素。L1 损失对异常值具有更高鲁棒性，适用于餐食图像标注噪声条件下的稳定训练。在线推理阶段对回归输出执行非负截断，保证营养值物理可解释性。
-
-\subsection{多模态融合消融实验 (Ablation Study)}
-\begin{equation}
-P_A=P_c
-\end{equation}
-
-\begin{equation}
-P_B=\operatorname{clip}(P_c\cdot\alpha,\;0.1,\;99.9)
-\end{equation}
-
-\begin{equation}
-P_C=\operatorname{clip}(P_c\cdot\alpha\cdot\beta,\;0.1,\;99.9)
-\end{equation}
-
-融合引擎由 \texttt{fusion\_service.py} 实现，其中 \(\operatorname{clip}(\cdot)\) 与代码一致，执行 \([0.1,99.9]\) 区间截断，避免概率溢出。为避免仅以 AUC 评价排序能力而忽略概率可信度，本节同时采用 Brier Score 与校准曲线进行概率质量评估。Brier Score 定义为：
-\begin{equation}
-\mathrm{BS}=\frac{1}{N}\sum_{i=1}^{N}(\hat{p}_i-y_i)^2,
-\end{equation}
-其值越小表示概率预测越接近真实事件频率。校准曲线用于比较预测概率与观测频率的一致性，从而评估模型是否存在系统性高估或低估。
-
-此外，融合引擎包含潜在遗传风险拦截规则：当 \(\alpha\geq 1.2\) 且融合后风险不高于中风险阈值（\(\leq 20\)）时，输出“Potential”标签。该规则用于捕获“当前临床表型未显著异常但遗传易感度偏高”的个体，降低高危亚群漏诊概率，在不显著抬升总体误报率的前提下增强筛查敏感性。
-
-[占位符：表 6-1 消融实验指标对比表]
-
-[占位符：图 6-2 融合前后校准曲线对比图]
-
-\section{系统功能测试}
+\section{系统功能测试与结果分析}
 \label{sec:functional_test}
-\subsection{分层回归验证策略}
-系统功能测试采用“仓库级回归+Agent 关键链路回归+浏览器场景验证”的三层策略。后端测试框架基于 \texttt{pytest} 与 \texttt{FastAPI TestClient}，并在测试初始化阶段引入依赖隔离机制：其一，通过 \texttt{patch.dict(sys.modules,\dots)} 对 \texttt{risk\_engine}、\texttt{fusion\_service}、\texttt{food\_service} 等重型依赖进行替身注入；其二，通过 \texttt{StaticPool + sqlite://} 构造内存数据库，抑制持久层状态漂移；其三，通过 \texttt{app.dependency\_overrides} 覆盖 \texttt{get\_session} 与鉴权依赖，实现权限路径、业务路径与异常退化路径的可控复现实验。前端功能验证则采用 Playwright 在 Chromium、Firefox 与 WebKit 三种浏览器内核下执行真实页面交互，以补足纯接口回归无法覆盖的界面行为与状态联动。
+\subsection{平台核心功能测试}
+系统功能验证采用“仓库级回归 + 浏览器场景验证”的双层结构。后端部分使用 \texttt{pytest} 与 FastAPI TestClient 对主路由、OCR 上传、综合分析、RAG 检索、聊天接口、会话回放和运行时降级路径进行回归验证；浏览器部分使用 Playwright 对 Dr. AI 接管提示、OCR 引导补全和主要页面可加载性进行真实交互验证。与旧版本测试章节不同，本节不再展开依赖注入、内存数据库和 Mock 细节，而仅保留能够直接说明系统可运行性的结果。
 
-在当前本地回归环境中，仓库级测试命令 \texttt{python -m pytest tests -q} 返回 \(N_{\mathrm{pass}}=232\)、\(N_{\mathrm{total}}=232\)，故整体通过率为
-\begin{equation}
-R_{\mathrm{pass}}=\frac{N_{\mathrm{pass}}}{N_{\mathrm{total}}}\times 100\%.
-\end{equation}
-由此得到 \(R_{\mathrm{pass}}=100\%\)。在此基础上，作者进一步对 Dr. AI 对话与会话链路执行切片回归，相关 4 个测试文件联合运行结果为 \(92/92\) 全部通过；前端配置与会话侧边栏相关测试为 \(7/7\) 全部通过；浏览器端 Playwright 场景回归为 \(21/21\) 全部通过。
+在当前本地环境中，仓库级回归命令 \texttt{python -m pytest tests -q} 的执行结果为 \(232/232\) 全部通过；浏览器端在 Chromium 环境下运行 \texttt{dr-ai-takeover.spec.js} 与 \texttt{ocr-guided-completion.spec.js} 两组关键场景测试，共 \(7/7\) 通过。这说明系统不仅在接口层保持了稳定契约，也能在真实页面交互中完成 OCR 状态展示、引导补全、接管提示渲染和主要页面加载等核心链路。
 
 \begin{table}[htbp]
 \centering
-\caption{系统功能测试矩阵（本地回归结果）}
+\caption{系统功能测试矩阵（当前本地验证结果）}
 \label{tab:api_test_matrix}
-\begin{tabular}{p{2.7cm}p{4.6cm}p{5.2cm}p{2.2cm}}
+\begin{tabular}{p{3.2cm}p{6.0cm}p{4.0cm}}
 \toprule
-测试层/域 & 覆盖目标 & 代表测试或接口 & 结果 \\
+测试层 & 覆盖目标 & 结果 \\
 \midrule
-仓库级后端回归 & 核验主路由、模型服务、RAG、V10 管线与部署运行时配置的整体稳定性 & 全量 \texttt{pytest} 回归 & \(232/232\) 通过 \\
-Dr. AI 对话与会话切片 & 核验 \texttt{/chat/send} 契约、六车道分流、证据门控、会话连续性与回放持久化 & 聊天接口契约、Agent 服务/API、会话服务切片 & \(92/92\) 通过 \\
-前端状态与契约回归 & 核验前端构建配置与会话侧边栏等关键交互状态 & bundle 配置与会话侧边栏切片 & \(7/7\) 通过 \\
-浏览器端场景测试 & 核验接管卡片、OCR 引导补全、临床上传后上下文刷新与主要页面可加载性 & takeover 与 OCR guided completion 场景 & \(21/21\) 通过 \\
+仓库级后端回归 & 主路由、OCR 上传、综合分析、聊天接口、会话回放、RAG 与运行时降级路径 & \texttt{232/232} 通过 \\
+浏览器场景验证 & Dr. AI 接管提示、OCR 引导补全、主要页面可加载性与权限边界 & \texttt{7/7} 通过 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-从结构上看，上述分层回归已不再局限于传统接口可达性验证，而是覆盖了第 4、5 章新增的 Agent 治理关键路径：测试既验证了 \texttt{/chat/send} 的 HTTP 契约稳定性，也验证了意图分流、工具受限执行、证据充分性判定、回答模式约束、审计与回放持久化等核心逻辑在真实服务链中的可执行性。同时，浏览器测试补充了 OCR 状态冻结、引导式补全与接管提示对象的界面联动，从而使功能测试形成“接口契约$\rightarrow$服务编排$\rightarrow$界面呈现”的闭环验证结构。
+\subsection{OCR与健康问答功能测试}
+从业务链路看，平台的关键功能验证可归纳为三类代表性场景。其一，用户通过档案录入和体检报告上传形成画像输入，系统完成 OCR 状态回传、结构化摘要保存以及分析上下文刷新，验证了“文档感知$\rightarrow$风险分析”的前置链路。其二，用户在聊天界面发起健康咨询后，系统能够返回包含回答文本、裁决摘要、证据标签和接管提示的结构化结果，验证了第 5 章 Agent 运行链在真实接口中的可执行性。其三，当用户画像或报告信息发生更新时，前后端状态能够同步刷新并驱动后续分析结果变化，验证了平台并非静态页面集合，而是具备连续交互能力的健康管理原型系统。
 
-\subsection{基于控制闭环的端到端场景测试}
-端到端功能测试按“感知$\rightarrow$决策$\rightarrow$控制$\rightarrow$反馈”闭环构造三类代表性场景，用于验证新增 Agent 管线已与既有健康管理能力形成稳定耦合关系。需要说明的是，本节侧重系统级可执行性验证，而更细粒度的 Agent 行为一致性评测将在后续 Harness 实验中单独展开。
+与第 5 章的实现描述相对应，这些功能测试并不追求覆盖所有页面与所有异常组合，而是围绕论文主线选取最能体现“平台闭环”的关键路径进行验证。由此，本节的结论可以概括为：系统已具备从数据输入、风险分析到受控问答输出的基本闭环能力，且关键交互在当前代码版本中可重复执行。
 
-\textbf{场景 A：画像/报告输入到风险分析的感知链路测试。}
-用户首先通过 \texttt{/user/profile}、体检报告上传与 OCR 补全路径提交结构化画像与文档信息，随后调用 \texttt{/analyze/comprehensive} 触发融合风险分析。该链路验证了“数据库画像优先加载 + 请求体增量覆盖 + OCR 结果规范化注入”的输入组织方式。
-感知层数据因此能够稳定传递至风险分析与 RAG 上下文构建入口。
-
-\textbf{场景 B：Dr. AI 决策治理链路测试。}
-用户在鉴权会话内调用 \texttt{/chat/send} 后，系统依次执行安全分类、六车道分流、工具规划、证据门控与终端策略评估，并在必要时生成接管提示或保守化回复。针对普通咨询、急症、用药、诊断敏感与证据不足等查询类别的切片回归表明，该链路能够在保持会话连续性的同时输出带有 \texttt{decision\_summary} 与 \texttt{response\_verdict} 的结构化结果，验证了决策层向控制层的约束传递能力。
-
-\textbf{场景 C：反馈调节与界面联动测试。}
-\texttt{/api/v1/iot/sync/batch} 接口接收批量传感器脉冲后，先完成批量入库，再基于心率统计量触发融合引擎实时更新；与此同时，前端浏览器测试验证了 OCR 引导补全、上下文刷新、接管卡片渲染与主要页面加载等反馈链路。该场景说明系统不仅具备后端的在线更新能力，也具备将后端治理结果稳定投射到前端界面的反馈呈现能力。其后验风险更新仍遵循代码实现中的截断形式
-\begin{equation}
-P_{t+1}=\operatorname{clip}(\gamma\cdot P_t,\;0.1,\;99.9).
-\end{equation}
-
-闭环一致性诊断显示，系统已形成“画像/文档感知—风险与对话决策—控制性回答/接管提示—IoT 与前端反馈修正”的可追踪通道。与旧版功能测试相比，本节更新后的验证对象已不再局限于单一业务接口，而是覆盖了 Agent 管线与既有健康管理子系统的协同工作，为后续行为评测实验提供了稳定的系统级基线。
-
-[占位符：图 6-3 分层系统功能测试与闭环场景验证示意图]
-
-\section{性能与压力测试}
-\subsection{API 响应时间与吞吐量测试}
-本节面向服务可用性边界评估系统在并发负载下的时延与吞吐表现。评价指标统一定义为：
-\begin{equation}
-RT_{\mathrm{avg}}=\frac{1}{N}\sum_{i=1}^{N}t_i ,
-\end{equation}
-\begin{equation}
-RT_{95}=Q_{0.95}(\{t_i\}_{i=1}^{N}),\quad
-RT_{99}=Q_{0.99}(\{t_i\}_{i=1}^{N}),
-\end{equation}
-\begin{equation}
-TPS=\frac{N_{\mathrm{success}}}{T},
-\end{equation}
-\begin{equation}
-ErrorRate=\frac{N_{\mathrm{error}}}{N_{\mathrm{total}}}\times 100\%.
-\end{equation}
-其中 \(t_i\) 为第 \(i\) 次请求响应时间，\(Q_p(\cdot)\) 为 \(p\) 分位函数。压测前采用生产态启动方式关闭热重载，以避免开发态文件监听对时延统计的系统性偏置。
-
-并发场景采用 Locust 进行阶梯式注入（并发用户数 10/50/100），核心观测对象为两类高频链路：其一，\texttt{/analyze/comprehensive}，该接口调用融合风险引擎，属于 CPU 密集型路径；其二，\texttt{/api/v1/iot/sync/batch}，该接口执行批量写入并触发实时更新，属于 I/O 密集型路径。每一并发档位均进行预热后稳态采样，统一记录 \(RT_{99}\)、TPS 与错误率。
-
-实测结果见表 \ref{tab:perf_api_64}。在并发 10 下，\texttt{/analyze/comprehensive} 平均响应时间为 12.63ms，TPS 为 705.50；当并发提升至 50/100 时，该接口错误率分别上升至 73.00\% 与 100.00\%，\(RT_{99}\) 接近 30s 超时边界。与之对比，\texttt{/api/v1/iot/sync/batch} 在 10/50/100 并发下均保持 0\% 错误率，TPS 在高并发段稳定于约 175 req/s。
-
-\begin{table}[htbp]
-\centering
-\caption{阶梯并发下核心接口性能指标对比}
-\label{tab:perf_api_64}
-\begin{tabular}{lrrrrr}
-\toprule
-接口 & 并发 & \(RT_{\mathrm{avg}}\) (ms) & \(RT_{99}\) (ms) & TPS (req/s) & ErrorRate (\%) \\
-\midrule
-\texttt{/analyze/comprehensive} & 10  & 12.63    & 15.90    & 705.50 & 0.00 \\
-\texttt{/analyze/comprehensive} & 50  & 21939.19 & 30081.95 & 0.60   & 73.00 \\
-\texttt{/analyze/comprehensive} & 100 & 30036.95 & 30069.33 & 0.00   & 100.00 \\
-\texttt{/api/v1/iot/sync/batch} & 10  & 139.92   & 722.87   & 69.55  & 0.00 \\
-\texttt{/api/v1/iot/sync/batch} & 50  & 262.58   & 298.68   & 175.46 & 0.00 \\
-\texttt{/api/v1/iot/sync/batch} & 100 & 528.57   & 604.93   & 174.10 & 0.00 \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.88\textwidth]{fig_6_4_tps_concurrency}
-\caption{核心接口 TPS-并发曲线。随着并发上升，\texttt{/api/v1/iot/sync/batch} 吞吐在中高并发段保持稳定平台；\texttt{/analyze/comprehensive} 在并发 50 后吞吐显著塌缩，表现为非线性退化。}
-\label{fig:tps_curve_64}
-\end{figure}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.88\textwidth]{fig_6_5_p99_concurrency}
-\caption{核心接口 \(RT_{99}\)-并发曲线。\texttt{/analyze/comprehensive} 在并发 50/100 下出现 30s 级长尾，后端日志同步记录 \texttt{QueuePool timeout}，指向数据库连接池耗尽；\texttt{/api/v1/iot/sync/batch} 的 \(RT_{99}\) 维持在亚秒级。}
-\label{fig:p99_curve_64}
-\end{figure}
-
-\subsection{缓存性能分析}
-缓存实验聚焦对话链路 \texttt{/chat/send} 的性能收益与一致性代价。系统在生命周期启动阶段初始化 Redis 连接；当缓存不可用时自动降级为直连推理。性能收益采用加速比度量：
-\begin{equation}
-Speedup=\frac{RT_{\mathrm{no\_cache}}}{RT_{\mathrm{cache}}},
-\end{equation}
-并以命中率衡量缓存有效性：
-\begin{equation}
-HitRate=\frac{N_{\mathrm{hit}}}{N_{\mathrm{hit}}+N_{\mathrm{miss}}}.
-\end{equation}
-实验对照组分别为“缓存命中路径（\texttt{force\_refresh=False}）”与“强制回源路径（\texttt{force\_refresh=True}）”，用于量化秒级大模型调用向毫秒级缓存返回的时延压缩效果。
-
-一致性验证采用状态机化链路追踪。触发事件 \(E_1\) 为用户调用 \texttt{/user/profile} 更新画像，触发事件 \(E_2\) 为用户调用 \texttt{/api/v1/ocr/upload} 导入新体检单。两类事件均调用 \texttt{CacheManager.invalidate\_user\_cache(user\_id)} 执行按用户粒度的失效清理。为保证失效模式可达，缓存键规范统一为 \texttt{chat\_response:\{user\_id\}:\{hash\}} 与 \texttt{diet\_plan:\{user\_id\}:\{hash\}}，与失效规则中的通配模式保持一致。
-
-在时序层面，系统呈现“失效触发后首次回源重算、后续请求恢复命中”的可预期行为：首个请求承担一致性修复成本，随后命中率回升并重新进入低时延稳态。该机制实现了“以一次性局部延迟换取全域数据一致性”的工程折中，可有效避免旧病历或旧画像污染后续问答与干预建议。
-
-\begin{table}[htbp]
-\centering
-\caption{缓存开启/禁用性能对比与加速比统计（\texttt{/chat/send}）}
-\label{tab:cache_perf_64}
-\begin{tabular}{lrrrr}
-\toprule
-实验模式 & 样本数 \(n\) & \(RT_{\mathrm{avg}}\) (ms) & \(RT_{99}\) (ms) & 指标 \\
-\midrule
-强制回源（\texttt{force\_refresh=True}） & 3 & 31699.18 & 33466.72 & 基线 \\
-缓存命中（\texttt{force\_refresh=False}） & 8 & 2.04 & 2.46 & 命中率 100.00\% \\
-\midrule
-\multicolumn{5}{l}{加速比：\(15511.11\times\)} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.88\textwidth]{fig_6_6_cache_timeline}
-\caption{缓存命中率回落与恢复时序图。状态机顺序为“预热命中 \(\rightarrow\) 触发失效（画像更新/OCR 上传）\(\rightarrow\) 首次回源重算 \(\rightarrow\) 命中恢复”。实验日志显示缓存命中阶段响应时间从秒级降至毫秒级，验证了失效机制与缓存收益可以同时成立。}
-\label{fig:cache_state_64}
-\end{figure}
-
-\section{Harness Agent 行为评测实验}
+\section{Agent模块补充验证}
 \label{sec:agent_harness_eval}
-\subsection{评测目标与实验框架}
-相较于上一节侧重系统级可执行性验证，本节进一步面向 Agent 运行时语义一致性构建专用行为评测 Harness。其核心目标不是验证浏览器交互或单个 HTTP 接口可达性，而是在受控隔离环境下检查 Dr. AI 对话运行时是否能够稳定输出预期的车道、裁决、回答模式、证据状态与人工接管标记。该实验因此属于实验章中的“反馈验证”层：前序设计与实现给出策略框架，而 Harness 负责检验这些策略在固定输入下能否保持一致的行为边界。
+\subsection{典型场景行为验证}
+除系统级功能验证外，本文还对 Agent 运行语义进行了受控补充评测。相关评测由行为评测脚本、场景清单和基线产物共同完成，其中核心脚本为 \path{agent_behavior_eval.py}。场景集合固定覆盖急症分流、报告解读、趋势解释、用药问答、证据不足拒答和工具失败降级六类关键语义路径。该设计的重点不在于比较开放世界下的医学正确率，而在于验证固定输入条件下，Agent 是否能够稳定输出预期的车道、裁决、回答模式、证据充分性与接管标记。
 
-当前评测框架由后端评测主程序与命令行脚本入口共同组成。实现上，Harness 通过独立内存数据库创建最小用户画像环境，并对工具执行、缓存访问与 RAG 检索进行运行时补丁替换：工具侧以预定义 \texttt{tool\_outputs} 注入受控结果，缓存侧将 \texttt{CacheManager.get/set} 固定为空操作，检索侧则以场景内给定的 \texttt{rag} 上下文和质量摘要替代真实知识库查询。
-这样可以在不依赖外部模型服务、缓存节点或在线知识库状态的前提下，将评测对象聚焦到 \texttt{ChatService.chat()} 的决策治理主链。
+在当前本地环境中，Harness 运行结果显示 \texttt{scenario\_count=6}、\texttt{passed\_count=6}、\texttt{failed\_count=0}。这说明第 5 章提出的意图分流、工具约束、证据门控与回答策略控制，在受控测试条件下能够维持稳定行为边界。对于毕业论文而言，这类结果的意义在于证明 Agent 模块不是不可回归的黑箱问答，而是可以进行结构化验证的受控运行链。
 
-\subsection{场景覆盖与判定维度}
-Manifest 文件 \texttt{backend/eval/agent\_behavior\_manifest.json} 当前固定覆盖 6 类必选场景：急症分流、报告解读、趋势解释、用药问答、证据不足拒答，以及工具失败降级。代码中的 \texttt{REQUIRED\_SCENARIO\_CLASSES} 会在加载阶段校验场景集合是否完整，从而避免评测范围被静默删减。与传统“只比较最终回复文本”的回归方式不同，该 Harness 以结构化行为字段为主要判定对象，将最终行为投影为 10 个核心维度：
-\begin{equation}
-\mathbf{z}=(l,v,a_p,d_p,a_r,d_r,e,h,t,\tau),
-\end{equation}
-其中 \(l\) 表示意图车道（lane），\(v\) 表示终端裁决（verdict），\(a_p\) 与 \(d_p\) 分别表示策略层回答模式与降级原因，\(a_r\) 与 \(d_r\) 分别表示响应层回答模式与降级原因，\(e\) 表示证据充分性，\(h\) 表示是否需要人工接管，\(t\) 表示工具使用集合约束，\(\tau\) 表示证据标签集合约束。若某一场景还显式给出 \texttt{reply\_excerpt\_contains}，则回复摘要字符串再作为附加文本约束进行补充判定。
-
-\begin{table}[htbp]
-\centering
-\caption{Agent 行为评测 Harness 场景覆盖矩阵}
-\label{tab:agent_harness_scenarios}
-\begin{tabular}{p{3.1cm}p{4.6cm}p{5.3cm}}
-\toprule
-场景类别 & 目标行为 & 关键期望输出 \\
-\midrule
-急症分流 & 触发急症短路与就医提示 & \texttt{urgent\_symptom}、\texttt{seek\_urgent\_care}、\texttt{urgent\_care\_disclaimer} \\
-报告解读 & 在报告场景下给出有界解释 & \texttt{report\_interpretation}、\texttt{bounded\_answer}、\texttt{report\_summary\_lookup} \\
-趋势解释 & 保持趋势车道与趋势型证据标签 & \texttt{trend\_review}、\texttt{bounded\_answer}、\texttt{get\_history\_trends} \\
-用药问答 & 拒绝剂量变更类高风险请求 & \texttt{medication\_related}、\texttt{refusal\_with\_disclaimer}、人工接管 \\
-证据不足拒答 & 在缺画像/缺检索证据时降级澄清 & \texttt{general\_health}、\texttt{clarify\_missing\_context}、\texttt{insufficient} \\
-工具失败降级 & 工具不可用时维持车道语义并保守退化 & \texttt{report\_interpretation}、\texttt{tool\_unavailable}、\texttt{insufficient\_evidence} \\
-\bottomrule
-\end{tabular}
-\end{table}
-
-\subsection{定量结果与基线一致性}
-作者在当前本地环境中复核了两类直接证据。其一，Harness 单元测试返回 \(4/4\) 全部通过，表明 Manifest 完整性、基线对比、故障样本生成与命令行退出码逻辑均受到测试约束。其二，CLI 基线运行返回 \(\texttt{scenario\_count}=6\)、\(\texttt{passed\_count}=6\)、\(\texttt{failed\_count}=0\)。据此可定义场景通过率
-\begin{equation}
-R_{\mathrm{scenario}}=\frac{N_{\mathrm{passed\_scenario}}}{N_{\mathrm{scenario}}}\times 100\%=\frac{6}{6}\times 100\%=100\%.
-\end{equation}
-同时，已提交产物 \texttt{backend/eval/artifacts/agent\_behavior\_results.json} 显示 \texttt{baseline\_match=true}，说明当前运行结果与冻结基线快照在场景级观测向量上保持一致。
+\subsection{安全性与一致性分析}
+进一步地，\texttt{backend/eval/artifacts/agent\_behavior\_results.json} 中记录的 \texttt{baseline\_match=true} 表明当前运行结果与冻结基线快照保持一致。结合测试文件 \texttt{tests/test\_agent\_behavior\_eval\_harness.py} 可以看出，该评测框架能够区分“运行时行为失败”和“基线陈旧失配”两类情形，从而更适合承担回归一致性验证任务，而非临床正确性验证任务。
 
 \begin{table}[htbp]
 \centering
@@ -276,20 +91,15 @@ R_{\mathrm{scenario}}=\frac{N_{\mathrm{passed\_scenario}}}{N_{\mathrm{scenario}}
 \toprule
 指标 & 数值 & 说明 \\
 \midrule
-\texttt{scenario\_count} & 6 & Manifest 中 6 类必选场景全部覆盖 \\
+\texttt{scenario\_count} & 6 & 六类关键场景全部覆盖 \\
 \texttt{passed\_count} & 6 & 所有场景均通过结构化断言 \\
-\texttt{failed\_count} & 0 & 当前基线运行未出现行为漂移 \\
-\texttt{baseline\_match} & true & 观测快照与冻结基线一致 \\
-\texttt{failure\_samples} & 0 & 当前运行未生成失败样本 \\
+\texttt{failed\_count} & 0 & 当前运行未出现行为漂移 \\
+\texttt{baseline\_match} & true & 观测结果与冻结基线一致 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-从结果含义上看，该 Harness 验证的不是开放世界医学正确率，而是“固定输入条件下 Agent 决策语义是否稳定”。因此，\texttt{6/6} 的结果更准确地说明：当前系统在急症短路、报告解读、趋势解释、用药保守化、证据不足澄清以及工具故障降级等关键语义路径上，能够复现与基线一致的行为边界，而不是说明系统已穷尽所有医疗问答场景。
+因此，Agent 模块的实验结论应当被理解为“策略语义可回归、运行链路可审计、关键风险场景可控”，而不是“已覆盖全部真实医疗问答场景”。这种表述既保留了 Agent 作为论文亮点的价值，也与当前实现和测试证据保持一致。
 
-\subsection{误差注入能力与实验边界}
-为验证该 Harness 不会把所有异常都误判为“运行失败”，测试文件还显式覆盖了两类误差注入机制。第一类是\textbf{场景期望破坏}：当人为篡改 Manifest 中某个场景的期望车道后，评测结果将产生 \(1\) 条失败记录，并写出 \texttt{agent\_behavior\_failure\_samples.json}，其中保留失败场景类别、失败检查项与观测响应摘要。第二类是\textbf{基线陈旧漂移}：当运行结果本身没有失败、但冻结基线与当前快照不一致时，Harness 会保持 \texttt{failed\_count}=0，同时将 \texttt{baseline\_state} 标记为 \texttt{mismatched} 并返回独立退出码。这一设计使“运行时行为退化”与“基线需要刷新”能够被明确区分。
-
-需要指出的是，该实验采用了受控工具输出、补丁化检索与伪客户端回复，因此它更适合作为回归一致性测试，而不适合作为真实临床环境下的外部有效性评估。换言之，Harness 可以高效回答“当前策略树是否发生了语义漂移”，但不能单独回答“模型在开放场景下是否具有充分医学可靠性”。因此，本节结果应与上一节系统功能测试、以及前文的性能与缓存实验共同解读，作为 Agent 运行时稳定性的工程证据，而非对临床正确性的最终证明。
-
-从第 6 章整体结构看，当前实验与测试部分已经形成三层互补证据链：\ref{sec:functional_test} 验证系统级可执行性与闭环联通性，性能与缓存实验刻画运行代价及工程瓶颈，而 \ref{sec:agent_harness_eval} 则进一步验证固定输入条件下 Agent 决策语义的可重复性与基线一致性。三者结合后，可将本系统的验证结论收束为“功能可达、运行可测、策略可回归”，从而为后续结论章节中的系统有效性总结提供较为完整的实验依据。
+\section{本章小结}
+本章从模型效果、系统功能和 Agent 补充验证三个层面给出了论文系统的实验依据。风险模型与融合分析表明，平台已具备将临床、遗传和行为证据组织为综合风险信号的能力；系统功能测试表明，画像输入、OCR 解析、综合分析与健康问答等核心路径在当前代码版本中能够稳定运行；Agent 补充验证则进一步说明其运行语义具备可回归、可审计和可解释特征。综合而言，本论文系统已经形成“模型可用、平台可运行、问答可受控”的实验支撑，为后续总结与展望提供了较为稳固的依据。

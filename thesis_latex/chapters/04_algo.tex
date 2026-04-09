@@ -1,729 +1,110 @@
-% !TeX root = ../main.tex
-% ============================================
-% 第四章 多模态数据融合与预测模型构建（核心算法章节）
-% ============================================
+\chapter{关键算法与模型设计}
 
-\chapter{多模态数据融合与预测模型构建}
+本章围绕平台中的核心分析链路展开，重点说明多模态健康数据如何经过预处理、疾病风险建模、多源融合与干预推演，最终形成可用于健康管理的结构化风险结果。与前文总体设计相对应，本章聚焦“风险评估”与“干预推演”两条算法主线；面向医疗问答的 Agent 决策治理链虽然同样属于平台的重要亮点，但其本质上依赖运行时的服务编排、工具约束与审计回放，因此放在第 \ref{sec:agent_impl} 节的系统实现部分集中展开，以避免算法层与工程层的重复叙述。
 
-\section{数据采集与预处理}
+\section{数据来源与预处理}
 
-本系统的数据采集与预处理阶段承担了多源异构数据的标准化接入职责。系统从三个独立的数据域——临床体检、基因组学以及行为与营养——分别获取原始数据，经过清洗、映射和特征工程处理后，输出可供下游模型直接消费的结构化数据集。
+平台当前使用的数据来源可分为三类：一是以 NHANES 为代表的结构化临床表型数据，二是来源于 GWAS 汇总统计的基因位点权重数据，三是用于行为观测与营养补充的设备侧和膳食侧数据。代码实现上，这三类数据分别对应临床 ETL 脚本 \texttt{etl\_nhanes.py}、GWAS 预处理脚本 \texttt{process\_gwas\_folders.py} 以及移动端和营养数据处理脚本，其目标并不是将所有原始数据直接暴露给模型，而是统一生成可被后续风险引擎消费的中间特征表与知识文件。
 
-\subsection{NHANES临床表型数据ETL流程}
+\subsection{临床数据预处理}
 
-\subsubsection*{数据来源}
+临床主数据采用 NHANES 多表按 \texttt{SEQN} 主键进行左连接。为减少不同 \texttt{XPT} 文件之间的字段不一致问题，平台在常量配置中维护统一的 \texttt{NHANES\_MAPPING} 映射表，并在清洗脚本中先完成列名标准化，再抽取人口学、体格测量、血压、生化、问卷和尿检等核心变量。与传统“按病种单独构表”的做法不同，当前实现先生成统一的临床样本表，再在同一张宽表上构造派生特征与任务标签，从而降低后续模型训练与推理阶段的特征对齐成本。
 
-本系统选用美国疾病控制与预防中心（CDC）发布的国家健康与营养调查（National Health and Nutrition Examination Survey, NHANES）2017--2020 Pre-Pandemic 周期数据作为临床模型的主要训练语料。该数据以 SAS Transport（XPT）格式分模块发布，系统共接入 25 个原始文件，涵盖人口学（DEMO）、体格测量（BMX）、血压（BPX）、血糖与胰岛素（GLU / GHB / INS）、血脂（TCHOL / HDL / TRIGLY）、肝肾功能（BIOPRO）、血常规（CBC）、膳食摄入（DR1TOT / DR2TOT）、尿流率（UCFLOW）、微量元素（VID / FOLATE）以及多项健康问卷等子集。所有子表以唯一受试者编号 SEQN 为连接键（Join Key），通过左外连接（Left Outer Join）逐步融合为一张宽表。
+在派生特征层，系统重点构造了可直接支撑慢病判断的中间指标，例如基于肌酐、年龄和性别计算估算肾小球滤过率 \(eGFR\)，基于尿微量白蛋白与尿肌酐计算尿白蛋白肌酐比 \(UACR\)，以及基于空腹血糖和胰岛素构造胰岛素抵抗指标 \(HOMA\text{-}IR\)。这些特征随后用于生成糖尿病、慢性肾病、高脂血症、代谢综合征等任务标签，也为第 4.2 节的临床风险模型提供统一输入。
 
-\subsubsection*{三级变量映射策略}
+需要说明的是，当前平台的临床预处理并不是面向某一单病种建立高专精数据集，而是面向多疾病并行风险评估建立通用特征空间。因此，本章更强调“统一特征准备与标签构造”这一方法目标，而不再展开逐字段清洗细节。详细变量字典和标签规则更适合放入附录，以避免正文退化为实现说明书。
 
-原始 NHANES 数据的列名采用 SAS 编码命名（如 \texttt{LBXGLU}、\texttt{BMXBMI}），缺乏语义可读性，且无法直接与前端中文界面对接。为此，系统设计了一套三级变量映射策略：
+\subsection{基因数据预处理}
 
-\begin{enumerate}
-    \item \textbf{第一级：SAS 编码 $\rightarrow$ 英文语义名}。将晦涩的 SAS 变量代码转译为具有医学语义的英文标识符，例如 \texttt{LBXGLU} $\rightarrow$ \texttt{Glucose\_Fasting}、\texttt{BPXOSY1} $\rightarrow$ \texttt{SBP}。该映射由 \texttt{NHANES\_MAPPING} 字典集中维护，涵盖 50 余个核心变量。
-    \item \textbf{第二级：英文语义名 $\rightarrow$ 中文业务名}。将英文标识符映射为面向终端用户的中文显示名称，例如 \texttt{Glucose\_Fasting} $\rightarrow$ ``空腹血糖 (mmol/L)''。该映射由 \texttt{FIELD\_CHINESE\_NAMES} 字典维护，用于 AI 报告生成和前端可视化。
-    \item \textbf{第三级：内部变量名 $\rightarrow$ 中文疾病名}。将疾病代码映射为中文名称，例如 \texttt{T2D} $\rightarrow$ ``2型糖尿病''，由 \texttt{DISEASE\_CHINESE\_NAMES} 字典维护。
-\end{enumerate}
+基因侧数据以公开 GWAS 汇总统计文件为基础。在 \texttt{process\_gwas\_folders.py} 中，系统首先对不同来源文件执行列名猜测与同义字段匹配，统一抽取 \texttt{rsid}、\texttt{p\_value}、\texttt{weight} 和 \texttt{risk\_allele} 四类核心字段；若原始文件缺少标准 \texttt{rsid}，则退化为以 \texttt{chr:pos} 形式构造近似位点标识，以保证后续位点去重与合并仍可执行。随后，脚本按显著性阈值筛选候选位点，并在检测到 \texttt{OR} 或 \texttt{odds ratio} 语义时取对数权重，使不同来源的效应值能够落入一致的加权框架。
 
-该三级映射策略使得同一套代码能够同时服务于模型训练（使用英文语义名）和用户交互（使用中文业务名），在不引入冗余数据副本的前提下实现了多场景适配。
+完成单文件处理后，系统按病种目录聚合多个来源文件，并保留每个位点显著性最强的一条记录，最终生成 \texttt{GWAS\_\{disease\}\_weights.csv}。这些知识文件在运行时由 \texttt{GeneRiskEngine} 读取为“位点 $\rightarrow$ 权重与风险等位基因”的字典结构，为后续的遗传风险评分提供快速查表能力。与全文原稿中较长的列名修复和清洗流程相比，当前方法更适合概括为“字段标准化、显著位点筛选、效应值统一、病种内去重”四个步骤。
 
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入 NHANES 数据清洗与特征映射流程图
-    \caption{NHANES 数据清洗与特征映射流程}
-    \label{fig:nhanes_etl_flow}
-\end{figure}
-
-\begin{table}[htbp]
-    \centering
-    \caption{核心临床表型特征字典片段}
-    \label{tab:feature_dict}
-    \begin{tabular}{lll}
-        \hline
-        SAS 编码 & 英文语义名 & 中文业务名 \\
-        \hline
-        LBXGLU  & Glucose\_Fasting & 空腹血糖 (mmol/L) \\
-        LBXGH   & HbA1c            & 糖化血红蛋白 (\%) \\
-        BMXBMI  & BMI              & 体重指数 \\
-        BPXOSY1 & SBP              & 收缩压 (mmHg) \\
-        LBXTC   & Cholesterol\_Total & 总胆固醇 (mmol/L) \\
-        LBXSCR  & Creatinine       & 肌酐 ($\mu$mol/L) \\
-        LBXHSCRP & HS\_CRP         & 超敏C反应蛋白 \\
-        URXPMAX & Urine\_Peak\_Flow & 最大尿流率 (mL/s) \\
-        \hline
-    \end{tabular}
-\end{table}
-
-\subsubsection*{衍生特征工程}
-
-在完成基础变量映射后，系统基于临床指南计算了三项关键衍生特征：
-
-\begin{itemize}
-    \item \textbf{eGFR}（估算肾小球滤过率）：采用 CKD-EPI 2009 公式，以血清肌酐（Creatinine）、年龄（Age）和性别（Gender）为输入，计算肾功能评估指标。
-    \item \textbf{UACR}（尿白蛋白肌酐比）：按 $\text{UACR} = (\text{Urine\_Albumin} / \text{Urine\_Creatinine}) \times 100$ 计算，用于早期肾损伤筛查。
-    \item \textbf{HOMA-IR}（胰岛素抵抗指数）：按 $\text{HOMA-IR} = (\text{Glucose\_Fasting} \times \text{Insulin}) / 405$ 计算，用于代谢综合征评估。
-\end{itemize}
-
-\subsubsection*{缺失值处理}
-
-系统采用分类型缺失值处理策略：对于连续型数值变量（如血糖、血压、肝功能指标等），以该列的中位数进行填充；对于问卷类分类变量（如"是否患有哮喘"），通过二值化函数将阳性应答（编码值为 1）标记为 1，其余情况（包括缺失）统一标记为 0。同时，系统删除 Age 和 BMI 同时缺失的样本行，因为这两项指标是所有下游模型的必要输入。
-
-\subsubsection*{病种判定规则与标签生成}
-
-ETL 流程的最终产出是包含 30 余种疾病二分类标签的结构化数据集。每种疾病的判定规则均基于国际临床指南，主要包括三类判定方式：
-
-\begin{itemize}
-    \item \textbf{基于生化阈值}：如 2 型糖尿病（HbA1c $\geq$ 6.5\% 或空腹血糖 $\geq$ 126 mg/dL）、高血压（SBP $\geq$ 140 或 DBP $\geq$ 90 mmHg，或正在服用降压药）、慢性肾病（eGFR $<$ 60 或 UACR $>$ 30）。
-    \item \textbf{基于复合计分}：如代谢综合征采用 ATP III 标准，腹型肥胖、高甘油三酯、低 HDL、高血压、高血糖五项中满足三项及以上即判定为阳性。
-    \item \textbf{基于问卷自报告}：如冠心病、中风、哮喘等疾病直接引用受试者在 MCQ 问卷中的自报告结果。
-\end{itemize}
-
-\begin{table}[htbp]
-    \centering
-    \caption{部分疾病判定规则摘要}
-    \label{tab:disease_rules}
-    \begin{tabular}{llp{7cm}}
-        \hline
-        疾病 & 类型 & 判定条件 \\
-        \hline
-        2型糖尿病   & 阈值 & HbA1c $\geq$ 6.5\% 或 FPG $\geq$ 126 \\
-        高血压       & 阈值+药物 & SBP $\geq$ 140 或 DBP $\geq$ 90 或服用降压药 \\
-        慢性肾病     & 阈值 & eGFR $<$ 60 或 UACR $>$ 30 \\
-        代谢综合征   & 复合 & ATP III 五项中 $\geq$ 3 项 \\
-        贫血         & 阈值 & 男性 Hb $<$ 13，女性 Hb $<$ 12 \\
-        冠心病       & 问卷 & MCQ160C 自报告 \\
-        \hline
-    \end{tabular}
-\end{table}
-
-% ---------------------------------------------------------------
-\subsection{GWAS基因组数据标准化处理}
-
-\subsubsection*{数据来源与挑战}
-
-基因组学数据来源于 GWAS Catalog 公开发布的全基因组关联分析（Genome-Wide Association Study）汇总统计量（Summary Statistics）。不同研究团队提交的数据文件在列名命名、分隔符格式以及效应量表示方式（Beta 系数或 Odds Ratio）方面存在显著的异构性，这给自动化批量处理带来了工程挑战。
-
-\subsubsection*{自适应列名识别}
-
-为应对上述异构性，系统设计了一套基于候选词表的自适应列名识别机制。对于每一个目标字段（如 rsid、p\_value、weight、risk\_allele），系统维护一组候选别名列表，并在读取文件时逐一匹配。例如，效应量列可能被命名为 \texttt{beta}、\texttt{log\_odds}、\texttt{or}、\texttt{odds\_ratio}、\texttt{effect\_size} 等，系统会自动识别并统一映射为 \texttt{weight} 字段。当文件缺少 rsid 列但包含染色体坐标（chr + pos）时，系统自动拼接 ``chr:pos'' 作为降级标识符。
-
-\subsubsection*{显著性筛选}
-
-系统对每个疾病的 GWAS 数据采用 $p < 10^{-5}$ 作为 SNP 显著性筛选阈值。相较于标准全基因组显著性水平（$p < 5 \times 10^{-8}$），该宽松阈值的选取基于以下考量：多基因风险评分（PRS）的计算通常需要纳入大量弱效应位点以提升预测解释方差，过于严格的阈值会导致有效位点数量不足，从而降低 PRS 的区分效能。该策略与 PRS 领域的最佳实践（如 PRSice-2 中的 P-value Thresholding 方法）保持一致。
-
-\subsubsection*{效应值标准化}
-
-不同 GWAS 研究采用不同的效应量表示方式：部分使用 Beta 系数（即 log(OR)），部分直接报告 Odds Ratio（OR）。系统通过检测权重列的列名关键词自动判断其类型：当识别到 OR 类型时，自动执行对数转换以统一为 log(OR) 形式：
-\begin{equation}
-    w_i = \begin{cases}
-        \beta_i & \text{若原始数据为 Beta 系数} \\
-        \ln(OR_i) & \text{若原始数据为 Odds Ratio}
-    \end{cases}
-    \label{eq:or_transform}
-\end{equation}
-
-经过上述清洗流程，每种疾病的最终产出为一个标准化权重文件。其文件名规范为 \texttt{GWAS\_\{Disease\}\_weights.csv}，包含 \texttt{rsid}、\texttt{p\_value}、\texttt{weight} 和 \texttt{risk\_allele} 四列，按 p 值升序排列并去重，供后续 PRS 引擎直接加载。
-
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入 GWAS 数据清洗流程图
-    \caption{GWAS 基因组数据标准化处理流程}
-    \label{fig:gwas_etl_flow}
-\end{figure}
-
-% ---------------------------------------------------------------
 \subsection{行为与营养数据预处理}
 
-\subsubsection*{IoT行为数据处理（MobileWell）}
+平台在行为与营养模态上采取“离线补充、在线择要使用”的策略。移动端与设备侧数据经脚本清洗后，形成步数、心率等低频聚合特征，用于融合阶段的生活方式修正与实时风险更新；营养数据和微量营养素数据则通过训练脚本中的营养加载器与 NHANES 主表对齐，用于扩展临床特征空间，并为营养建议、异常解读等模块提供支持。
 
-系统使用 MobileWell 公开数据集中的活动识别（Activity Recognition）记录作为行为模态的训练语料。原始数据以时间戳粒度记录受试者的活动状态标签（如 WALKING、STILL、RUNNING、ON\_BICYCLE 等）。
+从代码实现看，行为数据在当前运行链中的直接作用主要体现在步数与心率：前者进入 \texttt{LifestyleService.calculate\_modifier()} 形成行为修正系数，后者在第 4.3.3 节中参与实时风险更新；营养数据则更多用于离线训练和健康档案补全，而不是在在线融合时作为独立高频输入。这一边界说明本平台虽然具备多模态数据接入能力，但不同模态在当前版本中的参与深度并不相同，后文算法设计也据此采用“临床为主、基因为辅、行为动态修正”的组织方式。
 
-ETL 流程首先将活动标签二值化为"活跃"与"久坐"两类：包含 WALK、RUN、BICYCLE、FOOT 等关键词的标签标记为活跃（$is\_active = 1$），其余标记为久坐（$is\_active = 0$）。随后，以"受试者 $\times$ 日期"为粒度进行聚合，计算每日的活跃比率：
+\section{疾病风险预测模型设计}
+
+\subsection{临床风险预测模型}
+
+平台的临床风险评估由 \texttt{DiseaseRiskEngine} 完成，其核心是针对多种慢病的模型集群并行预测。模型训练脚本 \texttt{ai\_core/train\_risk\_models.py} 将临床宽表划分为多个疾病任务，并基于任务相关特征训练 LightGBM 二分类模型；训练完成后，模型集合与每个病种对应的 \texttt{features\_map} 一并序列化保存。在线推理时，\texttt{assess\_health()} 会先对用户画像中的字段名做统一清洗，再根据每个病种所需特征构造输入向量，对缺失字段统一以 \texttt{NaN} 占位，从而保证训练态与推理态的特征顺序一致。
+
+若记第 \(d\) 个病种的输入向量为 \(\mathbf{x}_d\)，其对应分类器为 \(f_d(\cdot)\)，则临床风险概率可写为
 \begin{equation}
-    Active\_Ratio = \frac{\sum is\_active}{N_{total}}
-    \label{eq:active_ratio}
+P_d^{\text{clinical}} = f_d(\mathbf{x}_d), \qquad d \in \mathcal{D},
 \end{equation}
-其中 $N_{total}$ 为当日的总记录数。系统过滤掉日记录数不足 100 条的低质量数据天，并基于群体第 30 分位数阈值生成二分类伪标签：活跃比率低于阈值的样本标记为高久坐风险（$Lifestyle\_Risk = 1$），用于后续 XGBoost 行为风险分类器的训练。
+其中 \(\mathcal{D}\) 表示平台支持的疾病集合。实现中，\texttt{risk\_engine.py} 会将概率映射为百分数，并按预设阈值划分为“低、中、高、极高”四级风险，同时在概率超过一定阈值时输出中文风险因子摘要。这里的“风险因子归因”并非严格意义上的可解释学习，而是基于模型特征重要性与当前输入值生成的轻量解释，因此更适合作为面向用户的辅助说明，而不应被表述为因果结论。
 
-\subsubsection*{食物营养视觉数据处理（Nutrition5k）}
+为降低训练集信息泄漏带来的性能高估，训练脚本中维护了病种级泄漏字段映射 \texttt{LEAKAGE\_MAPPING}，对与标签高度同义的字段进行剔除或约束。例如，慢性肾病任务不直接把 \(eGFR\) 与 \(UACR\) 的标签型衍生字段同时作为可学习输入，而是根据病种配置进行控制。该机制虽然仍属于经验性防泄漏，而非严格的数据生成过程建模，但对提升工程落地中的稳健性具有直接价值。
 
-Nutrition5k 数据集包含食物俯拍 RGB 图像及其对应的营养成分标注（热量、碳水化合物、蛋白质、脂肪）。系统通过递归扫描图像目录建立 ``dish\_id $\rightarrow$ 图像路径'' 的索引映射，再与营养素 CSV 标签文件按 dish\_id 进行匹配，过滤掉热量为零的异常记录后，输出 ``图像路径 + 四维营养标签'' 的结构化训练集。该数据集用于训练食物识别与热量估算的视觉模型。
+除机器学习模型外，平台还实现了基于规则的 CKM 综合征分期逻辑，相关实现由 \texttt{assess\_ckm\_stage()} 完成。该部分依据血糖、血压、血脂、肥胖与肾损伤指标进行阶段判定，更适合被视为临床知识驱动的辅助评估模块，而非与 LightGBM 并列的第二套预测主模型。因此，在本章中仅将其作为临床风险评估链的补充，而不再单独展开过多篇幅。
 
-\subsubsection*{USDA食品营养数据库处理}
+\subsection{基因风险评估模型}
 
-系统接入 USDA SR Legacy 食品营养数据库作为 AI 营养师模块的知识基础。ETL 流程包含三层净化策略：首先，基于食品分组编号过滤快餐、饮料、酒精等非正餐类别；其次，通过关键词黑名单剔除品牌快餐（如 McDonald's、KFC）和工业制品；最后，对保留的食品名称进行标准化美化处理，并提取六项核心营养素（热量、蛋白质、脂肪、碳水化合物、膳食纤维、钠）。最终输出为 JSON 格式的食品营养数据库，供个性化食谱生成模块直接检索。
-
-
-\section{疾病风险预测模型}
-
-本节描述系统用于健康风险评估的三类模型：基于 LightGBM 的多疾病统计模型、基于 AHA 临床指南的规则推理引擎以及基于 GWAS 权重的多基因风险评分（PRS）模型。三者在方法论上各有侧重，分别对应数据驱动、知识驱动和遗传统计三种范式。
-
-\subsection{基于LightGBM的多疾病风险评估模型}
-
-\subsubsection*{模型选型论证}
-
-本系统的核心风险评估任务是：基于结构化临床体检数据（表格型、高维、含缺失值），对 30 余种慢性疾病同时进行二分类预测。在模型选型中，系统选择了 LightGBM（Light Gradient Boosting Machine）梯度提升树框架，而非深度神经网络，主要基于以下考量：
-
-\begin{enumerate}
-    \item \textbf{数据形态适配}。临床体检数据为中等规模的结构化表格数据（约 $10^4$ 量级样本、$10^2$ 量级特征），并非深度学习擅长的高维非结构化数据（如图像、文本）。在此类场景下，梯度提升树在多项基准测试中持续优于深度模型。
-    \item \textbf{缺失值原生处理}。LightGBM 在分裂节点时能够自动处理缺失特征，无需预先进行全局填充，避免了人为填充策略引入的信息偏差。
-    \item \textbf{可解释性需求}。医疗场景对模型的可解释性具有刚性要求。树模型天然支持特征重要性分析，便于生成面向用户的中文风险归因报告。
-\end{enumerate}
-
-\subsubsection*{模型集群架构与训练流程}
-
-系统为每种目标疾病训练独立的 LightGBM 二分类子模型，形成并行预测集群。训练流程的关键参数如下：
-
-\begin{itemize}
-    \item \textbf{数据划分}：采用 80\%/20\% 的训练/测试分层随机抽样（Stratified Split），确保正负样本比例在训练集与测试集中保持一致。
-    \item \textbf{超参数配置}：树数量 $n\_estimators = 150$，学习率 $\eta = 0.05$，最大叶节点数 $num\_leaves = 31$。
-    \item \textbf{类别不平衡处理}：启用 \texttt{is\_unbalance=True} 参数，令 LightGBM 根据正负样本比例自动调整叶节点权重，等效于代价敏感学习（Cost-sensitive Learning）。相较于 SMOTE 等过采样方法，该策略无需生成合成样本，避免了训练分布的人为扭曲。
-    \item \textbf{样本下限}：阳性样本数不足 20 的疾病自动跳过训练，防止因样本稀疏导致的过拟合。
-\end{itemize}
-
-\subsubsection*{防数据泄漏机制}
-
-在医学预测建模中，一个常被忽视的陷阱是\textbf{数据泄漏}（Data Leakage）：若训练特征中包含了与标签定义直接相关的变量，模型将学到标签到标签的恒等映射，而非真正的病理模式。例如，若在预测 2 型糖尿病（$y = \mathbb{1}[\text{HbA1c} \geq 6.5]$）时，输入特征中包含 HbA1c 本身，模型只需学习一个简单的阈值规则即可获得接近 1.0 的 AUC，但这一结果不具备任何临床推广价值。
-
-为此，系统维护了一个\textbf{逐疾病的泄漏特征映射表}（Leakage Mapping），在每种疾病的训练阶段，动态地从输入特征中移除与该疾病标签高度相关的变量。部分映射规则如下：
-
-\begin{table}[htbp]
-    \centering
-    \caption{防数据泄漏特征排除映射（部分）}
-    \label{tab:leakage_mapping}
-    \begin{tabular}{lp{8cm}}
-        \hline
-        目标疾病 & 排除特征 \\
-        \hline
-        2型糖尿病 (T2D) & HbA1c, Glucose\_Fasting, Insulin, HOMA\_IR \\
-        高血压 & SBP, DBP, 降压药使用 \\
-        慢性肾病 (CKD) & Creatinine, eGFR, UACR \\
-        肥胖 & BMI, WaistCircum, Weight, Height \\
-        高脂血症 & Cholesterol\_Total, HDL, Triglycerides \\
-        贫血 & Hemoglobin, Ferritin, MCV \\
-        \hline
-    \end{tabular}
-\end{table}
-
-该机制确保了每个子模型学习到的是\textbf{间接病理关联}（如 T2D 模型学习到"年龄+BMI+家族史$\rightarrow$糖尿病风险"），而非"标签$\rightarrow$标签"的恒等映射，从而保障了模型在未见数据上的泛化能力与临床参考价值。
-
-\subsubsection*{推理流程与风险归因分析}
-
-在推理阶段，系统针对每位用户执行以下流程：
-
-\begin{enumerate}
-    \item 清洗用户输入的健康数据字典，统一变量命名格式。
-    \item 对每种疾病，加载该子模型所需的特征列表，缺失特征填充为 NaN（由 LightGBM 自动处理）。
-    \item 调用 \texttt{predict\_proba} 获取阳性类概率 $p \in [0, 1]$，乘以 100 转为百分制 $P_c$。
-    \item 根据阈值将 $P_c$ 映射为四级风险等级（低 / 中 / 高 / 极高）。
-    \item 对风险概率超过 20\% 的疾病，利用 LightGBM 内建的特征重要性（基于分裂增益），提取贡献最高的 Top-5 风险因子，转译为中文输出，形成可解释的风险归因报告。
-\end{enumerate}
-
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入 LightGBM 训练与推理流程图
-    \caption{LightGBM 多疾病模型训练与预测流程}
-    \label{fig:lgb_flow}
-\end{figure}
-
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入 Top-30 特征重要性排名图
-    \caption{跨疾病模型平均特征重要性排名（Top-30）}
-    \label{fig:feature_importance}
-\end{figure}
-
-% ---------------------------------------------------------------
-\subsection{AHA CKM综合征分期评估模型}
-
-\subsubsection*{设计理由：规则引擎与机器学习的边界}
-
-对于已有明确临床金标准的疾病分期任务，系统选择了确定性规则推理引擎（Rule-based Reasoning Engine），而非统计学习模型。这一设计选择基于以下判断：AHA 于 2023 年发布的心血管-肾脏-代谢（Cardiovascular-Kidney-Metabolic, CKM）综合征分期标准，其判定条件已由权威医学机构以离散阈值的形式严格定义。在这种场景下，使用黑盒机器学习模型不仅不会带来精度提升，反而会引入不必要的不确定性和可解释性损失。因此，系统将 CKM 分期实现为一套确定性的规则引擎，确保输出与 AHA 指南完全一致。
-
-\subsubsection*{CKM 0--4 期分期逻辑}
-
-系统根据用户的体检数据，按照优先级从高到低依次判定 CKM 分期：
-
-\begin{enumerate}
-    \item \textbf{Stage 4（临床期）}：用户存在心血管疾病确诊病史（中风、心梗、心衰或冠心病中任意一项）。
-    \item \textbf{Stage 3（亚临床期）}：存在早期器官损伤证据，即 eGFR $< 60$ 或 UACR $\geq 30$ mg/g。
-    \item \textbf{Stage 2（代谢风险期）}：至少满足以下一项代谢异常：糖尿病（HbA1c $\geq 6.5\%$）、高血压（SBP $\geq 130$ 或 DBP $\geq 80$ mmHg）、血脂异常（TG $> 1.7$ mmol/L 或低 HDL）。
-    \item \textbf{Stage 1（超重/糖耐量受损期）}：BMI $\geq 25$、腹型肥胖（男性腰围 $\geq 90$ cm、女性 $\geq 85$ cm，采用中国标准）或糖耐量受损（$5.7\% \leq$ HbA1c $< 6.5\%$）。
-    \item \textbf{Stage 0（健康期）}：上述条件均不满足。
-\end{enumerate}
-
-该引擎在输出分期结果的同时，返回所有命中的判定条件列表（如"糖尿病 (HbA1c $\geq$ 6.5\%)"、"腹型肥胖 (腰围 = 95 cm)"）以及对应分期的个性化干预建议，供前端直接展示。
-
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入 CKM 分期决策树流程图
-    \caption{AHA 2023 CKM 综合征分期决策树}
-    \label{fig:ckm_flow}
-\end{figure}
-
-% ---------------------------------------------------------------
-\subsection{基因风险评估模型（PRS引擎）}
-
-多基因风险评分（Polygenic Risk Score, PRS）的理论基础已在第二章中详细推导。本节侧重描述 PRS 引擎在系统内的工程实现 机制。
-
-\subsubsection*{计算流转过程}
-
-PRS 引擎的完整计算流转分为三个阶段：
-
-\textbf{（1）用户基因数据解析。}系统支持用户上传 23andMe 格式的基因检测文本文件。解析器逐行读取该文件，跳过注释行后，将每条 SNP 记录转化为 ``rsid $\rightarrow$ genotype'' 的索引映射。基因型字段被编码为风险等位基因的携带数（0、1 或 2），表示用户在该位点上携带风险等位基因的拷贝数。
-
-\textbf{（2）加权累加计算。}对于每种目标疾病，引擎加载 §4.1.2 中预处理生成的 GWAS 权重文件，按 p 值升序排列后取前 50 个位点以降低弱信号噪声。随后，遍历这 50 个位点，将用户基因型编码 $g_i$ 与 GWAS 效应值权重 $w_i$ 逐位点相乘并累加：
+遗传风险评估由 \texttt{GeneRiskEngine} 执行。系统首先解析用户上传的 23andMe 原始文本，将其转化为 \(\{\texttt{rsid}: \texttt{genotype}\}\) 的字典，再与病种知识库中的风险位点进行匹配。对于病种 \(d\)，若其知识库包含的位点集合为 \(\mathcal{S}_d\)，位点 \(i\) 的效应权重为 \(w_i\)，用户在该位点命中的风险等位基因剂量为 \(g_i \in \{0,1,2\}\)，则原始遗传风险分数可表示为
 \begin{equation}
-    PRS_{raw} = \sum_{i=1}^{N} w_i \cdot g_i, \quad N \leq 50
-    \label{eq:prs_raw}
-\end{equation}
-其中 $w_i$ 为 §4.1.2 中标准化后的 log(OR) 值，$g_i \in \{0, 1, 2\}$ 为用户在第 $i$ 个风险位点上的等位基因拷贝数。
-
-\textbf{（3）归一化与修正系数映射。}原始 PRS 分值的量纲和尺度因疾病而异，无法直接用于跨疾病比较和下游融合。系统将其归一化至 $[0, 100]$ 的百分制分数：
-\begin{equation}
-    PRS_{norm} = \min\left(100, \; \frac{PRS_{raw}}{PRS_{max}} \times 100\right)
-    \label{eq:prs_norm}
-\end{equation}
-其中 $PRS_{max}$ 为预设的归一化上限（系统默认取 50）。随后，该分数通过线性映射转化为 §4.3 节贝叶斯融合所需的基因修正系数 $\alpha \in [0.8, 1.5]$：
-\begin{equation}
-    \alpha = 0.8 + \frac{PRS_{norm}}{100} \times 0.7
-    \label{eq:prs_to_alpha}
+S_d = \sum_{i \in \mathcal{S}_d} w_i g_i.
 \end{equation}
 
-当用户未上传基因数据时，$\alpha$ 默认取 1.0（中性值），融合引擎退化为临床-行为两维模型。
+考虑到不同病种纳入位点数量和权重尺度差异较大，系统并未直接输出 \(S_d\)，而是取该病种中权重绝对值最大的前若干位点构造归一化分母，得到 \(0\sim100\) 的相对分数。换言之，当前实现更接近“病种内相对风险评分”，而不是临床研究中严格定义的标准化 PRS。之所以在论文中继续使用“基因风险评估模型”这一表述，是因为平台确实实现了基于 GWAS 效应值和用户基因型的加权求和逻辑；但从代码边界看，它仍属于面向应用的轻量化 PRS 近似，而非经过队列标定的正式群体遗传风险模型。
 
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入 PRS 计算流转图
-    \caption{PRS 基因风险评分计算流转过程}
-    \label{fig:prs_flow}
-\end{figure}
+\section{多模态融合风险评估方法}
 
+\subsection{融合策略设计}
 
-\section{多模态融合风险引擎}
+在平台当前版本中，多模态融合并未采用端到端深度联合建模，而是采取更符合工程落地需求的分层融合路线：先由临床模型输出病种级基准风险，再用基因风险对个体易感性进行修正，最后引入行为观测对近期状态进行动态调节。这样的设计具有三个现实考虑。其一，临床指标是风险判断的主要信息源，应当作为主干概率空间；其二，基因模态更新频率低、但稳定性高，更适合以“长期易感性修正项”而不是独立预测头参与融合；其三，设备侧行为数据噪声较大但时效性强，更适合作为在线动态修正项。
 
-\subsection{基于领域知识的半监督数据增强策略（表型反推法）}
+因此，平台将三类模态组织为“基准风险 + 静态修正 + 动态修正”的结构，而不是追求统一嵌入空间下的高复杂度建模。这一策略与系统代码中的调用顺序完全一致：\texttt{FusionRiskEngine} 先调用 \texttt{DiseaseRiskEngine} 获取 \texttt{clinical\_report}，再调用 \texttt{GeneRiskEngine} 获取 \texttt{gene\_report}，最后由 \texttt{LifestyleService} 生成生活方式修正系数。
 
-在构建多模态健康风险预测模型的过程中，系统面临的首要挑战是多源异构数据之间缺乏统一的高质量标注。具体而言，基因组学数据（如 GWAS 效应值）、临床体检数据（如血液生化指标）以及连续采集的物联网（IoT）行为数据，往往来源于不同的时空尺度与受试群体，这导致各模态特征难以在同一个样本空间中直接配对并对齐，进而无法采用传统的端到端（End-to-End）有监督学习算法进行联合训练。
+\subsection{融合推理方法}
 
-为解决上述问题，本研究提出了一种基于领域知识（Domain Knowledge）的半监督数据增强策略，即“表型反推法”（Phenotype Back-propagation）。
-
-该方法的核心思想在于利用医学和分子遗传学领域的先验证据，建立隐性基因特征谱与其映射的显性临床表型之间的关联桥梁。根据已有的遗传流行病学研究，2型糖尿病及代谢综合征患者的胰岛素抵抗指数（HOMA-IR）与特定基因（如 TCF7L2、FTO、KCNQ1 等）的变异表达模式存在显著的强相关性，其表型变异的群体遗传度（Heritability，$h^2$）估算通常介于 $40\% \sim 50\%$ 之间。以此为切入点，本研究提出如下系统核心机制推演的支撑假设：
-
-\textbf{假设 H1}：在缺乏全基因组靶向测序特征层的常规临床体检样本中，外周血特定生化反馈指标（如基于空腹血糖与胰岛素联合计算的 HOMA-IR 及其衍生的动态代谢负荷特征），可作为个体具备高易感遗传风险的稳健“表型代理标记物”（Phenotypic Proxy Marker）。
-
-依托上述假设，表型反推法在系统内的具体实施流水线如下：首先，在具备详细膳食摄入记录的数据集中，基于时序对齐（Time-series Alignment）机制截取患者进食后的连续血糖波动片段以及同期对应的碳水化合物绝对摄入当量，进而定义“碳水敏感度”（Carbohydrate Sensitivity）这一基于刺激-响应范式的复合表型指标。其标准计算公式如下：
+考虑到三类模态在当前版本中已经被映射到“概率”或“修正系数”的可组合形式，平台采用受贝叶斯后验更新思想启发的乘性融合框架。对病种 \(d\)，若临床基准概率为 \(P_d^{\text{clinical}}\)，基因修正系数为 \(\alpha_d^{\text{gene}}\)，行为修正系数为 \(\alpha^{\text{life}}\)，则融合风险写为
 \begin{equation}
-    S_i = \frac{\Delta \text{Glucose}_i}{\text{Carbs}_i}
-    \label{eq:carb_sensitivity}
-\end{equation}
-其中，式中所列 $\Delta \text{Glucose}_i$ 表示摄入外源性碳水化合物后两小时观测窗口内，血糖曲线下面积（AUC）对比基础代谢状态下的净增绝对量；而 $\text{Carbs}_i$ 表示触发第 $i$ 次饮食代谢反馈事件时，碳水化合物的标准化摄入量（克）。
-
-系统在完成该群体队列的 $S_i$ 概率分布推断后，会将其转化为用于指导异构特征投影映射的伪标签（Pseudo-labels）矩阵。给定一个基于人群大样本统计的分位数阈值 $\tau$（本文系统算法中默认选取截断于上四分位数），伪标签的软分配生成逻辑被形式化为如下示性函数：
-\begin{equation}
-    \hat{y}_g = \mathbb{1}(S_i > \tau)
-    \label{eq:pseudo_label}
-\end{equation}
-通过上述伪标签注入机制，碳水敏感度偏高的样本（即 $\hat{y}_g=1$）在特征空间中被“软对齐”（Soft Alignment）至高 PRS 风险区域附近。该半监督策略缓解了多模态数据因来源差异导致的特征稀疏（Feature Sparsity）问题，使模型在训练阶段能够间接学习基因-临床表型间的交互效应，从而提升风险预测模型对代谢性疾病的泛化能力。
-
-\subsection{临床-基因-行为三维贝叶斯融合算法}
-
-在异构特征完成概率空间对齐的基础上，本课题需要从决策层面实现多模态预测结果的可解释聚合。为此，本文基于朴素贝叶斯（Naive Bayes）推断框架，设计了一种临床-基因-行为三维后融合（Late Fusion）架构。
-
-相较于深度张量拼接融合（Deep Feature Concatenation）等黑盒方法，该后融合策略具有两方面优势：其一，保留了各单模态基线分类器的医学可解释性；其二，通过似然概率的乘积形式，在统计学意义上表达了不同证据维度对整体风险的独立修正作用。
-
-\textbf{三维解耦模型。}融合引擎将慢性疾病的综合风险解耦为三个正交的因果维度，分别对应三个关键评估因子：
-
-\begin{itemize}
-    \item \textbf{临床基准概率 $P_c$}。由 LightGBM 梯度提升树集群负责计算。该模型以受试者的多维静态体检指标、血液生化结果及结构化病历特征向量 $\mathbf{x}_c$ 作为输入，输出目标疾病的基准发生概率。系统内部统一采用百分制表示：
-    \begin{equation}
-        P_c = f_{lgb}(\mathbf{x}_c) \times 100 \in [0, 100] \quad (\text{单位: \%})
-        \label{eq:clinical_prob}
-    \end{equation}
-
-    \item \textbf{基因修正系数 $\alpha$}。系统调用 \texttt{gene\_service} 模块完成全基因组位点比对，计算受试者针对特定疾病的多基因风险评分（PRS）。随后，通过一个基于比值比（Odds Ratio）的非线性映射函数 $\varPhi$，将离散的 PRS 分值转化为连续的乘积修正因子。当 PRS 偏高时，$\alpha$ 相应增大以放大风险估计；当 PRS 偏低时，$\alpha$ 缩小以体现遗传保护效应。其映射关系及截断边界定义如下：
-    \begin{equation}
-        \alpha = \varPhi(PRS) \in [\alpha_{min}, \alpha_{max}], \quad (\alpha_{min}=0.8, \;\alpha_{max}=1.5)
-        \label{eq:gene_modifier}
-    \end{equation}
-    其中 PRS 为 $0$ 分时 $\alpha=0.8$（遗传保护效应），PRS 为 $100$ 分时 $\alpha=1.5$（高危遗传）。当用户未上传基因检测数据时，$\alpha$ 默认取 $1.0$，即不施加遗传修正。
-
-    \item \textbf{行为修正系数 $\beta$}。该因子量化后天生活方式对疾病风险的动态影响。系统接收可穿戴设备上报的日均步数 $x_{steps}$，经归一化后构造活跃度特征，输入预训练的 XGBoost 二分类器获取久坐风险概率 $p_{risk}$，再通过线性映射转换为修正因子：
-    \begin{equation}
-        \beta = 0.8 + p_{risk} \times 0.5 \in [0.8, 1.3]
-        \label{eq:behavior_modifier}
-    \end{equation}
-    其中 $\beta=0.8$ 表示高活跃度下的风险折减，$\beta=1.3$ 表示久坐模式下的风险放大。当无 IoT 数据接入时，$\beta$ 默认取 $1.0$。
-\end{itemize}
-
-\textbf{融合公式与边界截断。}基于条件独立假设，三个因子以乘积形式完成最终的风险融合。为防止数值溢出和概率越界，融合结果被截断在 $[0.1, 99.9]$ 的安全区间内（单位：\%）：
-\begin{equation}
-    P_{fusion} = \text{clip} \big( P_c \times \alpha \times \beta, \; 0.1, \; 99.9 \big)
-    \label{eq:fusion}
+\label{eq:fusion}
+P_d^{\text{fusion}} = \operatorname{clip}\!\left(P_d^{\text{clinical}} \cdot \alpha_d^{\text{gene}} \cdot \alpha^{\text{life}},\ 0.1,\ 99.9 \right).
 \end{equation}
 
-\textbf{极值边界安全保护机制。}在工程实现中，融合引擎的 \texttt{calculate\_composite\_risk} 函数末端设置了一项兜底保护规则。该规则针对以下特殊情形：受试者的临床指标正常（$P_c$ 较低），但基因风险显著偏高（$\alpha \geq 1.2$），导致融合后概率仍处于低风险区间（$P_{fusion} \leq 20\%$）。此时，系统将绕过常规的分级判定逻辑，强制将该个体的风险等级标记为"潜在遗传风险（Potential）"。该机制的设计目的有二：
-\begin{enumerate}
-    \item 避免因临床表型正常而遗漏具有高遗传易感性的个体（降低漏诊率）；
-    \item 为临床医生提供显式的遗传风险提示，辅助制定个性化随访方案。
-\end{enumerate}
+其中，\(\operatorname{clip}(\cdot)\) 对输出进行边界截断，避免过小或过大的风险值破坏后续分级稳定性。基因修正项来源于病种映射后的遗传得分，其数值范围由 \texttt{GENE\_MODIFIER\_BASE} 与 \texttt{GENE\_MODIFIER\_RANGE} 控制；生活方式修正项则由设备侧步数等低频行为数据驱动，其本质是将近期活动水平映射为中性附近的乘性调整因子。
 
-\subsection{IoT实时贝叶斯风险更新}
+需要强调的是，上式虽借鉴了贝叶斯更新“先验 $\times$ 证据”的形式，但当前代码实现并未显式建模条件独立性、似然函数或后验分布，因此更准确的表述应为“基于乘性修正的轻量融合方法”。本文保留“贝叶斯融合思想”这一说法，是因为系统确实围绕先验风险和证据因子组织了更新流程；但在学术表述上，应避免将其夸大为严格的概率图模型求解。
 
-传统健康风险评估系统通常以季度或半年度为周期执行批量计算。在两次评估之间，模型无法感知用户的实时健康状态变化。这一局限使得系统难以应对突发性的生理异常事件，如急性心率失常或代谢指标骤变。
+在风险分级上，平台在常规的高、中、低阈值之外，还加入了“潜在遗传风险”兜底逻辑：当某病种的基因修正项显著偏高，而融合后风险值仍未达到中高风险阈值时，系统会将其标记为需要持续关注的潜在风险状态。该规则使得基因模态不会在临床表现尚未显著异常时完全失去表达能力，也符合健康管理中“高遗传易感但尚未表型化”的解释需求。
 
-为弥补上述不足，本系统通过 \texttt{update\_realtime\_risk} 模块实现了基于事件驱动的在线贝叶斯风险更新机制。当可穿戴设备上报异常生理信号时，系统将实时修正先前的静态风险评估结果。其理论表达遵循贝叶斯后验更新公式：
+\subsection{实时风险更新机制}
+
+为增强平台对短期状态波动的响应能力，\texttt{FusionRiskEngine} 进一步实现了面向设备事件的实时风险更新。当前版本主要使用最新心率与 BMI 组合触发事件分级：当心率高于阈值且伴随肥胖风险时，系统赋予更高的更新因子 \(\gamma\)；当心率处于正常范围时，则维持静态风险结果不变。若以时刻 \(t\) 的融合风险为 \(P_{d,t}^{\text{fusion}}\)，则更新后的风险为
 \begin{equation}
-    P_{t+1}(Risk | HR_{abnormal}) = \frac{P(HR_{abnormal}|Risk) \cdot P_t(Risk)}{P(HR_{abnormal})}
-    \label{eq:realtime_update}
+P_{d,t+1} = \operatorname{clip}\!\left(\gamma_t \cdot P_{d,t}^{\text{fusion}},\ 0.1,\ 99.9 \right).
 \end{equation}
 
-其中，$P_t(Risk)$ 为当前时刻的先验风险概率，即最近一次静态评估结果；$P(HR_{abnormal}|Risk)$ 为似然函数，$P(HR_{abnormal})$ 为归一化常数。需要指出的是，该式用于给出在线更新的概率论依据；在工程实现中，系统并未对连续似然项进行实时估计，而是以离散 Bayes Factor 对似然比进行近似。
+该过程并不重新训练模型，而是在已得到的静态风险上叠加事件因子，从而实现低成本、可解释的在线更新。其优势在于易于与设备数据流集成，且不会破坏临床和基因风险的稳定基线；不足之处在于，当前版本只使用了极少量实时信号，尚未形成覆盖多传感器、多时间窗口的时序概率模型。因此，本节更适合被理解为“实时风险修正机制”，而不是高频时序预测框架。
 
-在工程实践中，该模块围绕以下三个子机制展开：
-
-\subsubsection*{实时事件捕获机制}
-
-系统通过流式数据接口持续接收可穿戴设备上报的心率数据。当检测到心率超过临床阈值（$HR_{latest} > 100\,\text{bpm}$）时，触发实时更新流程。系统将当前心率读数与用户的历史健康档案（特别是 BMI 等基础体征）进行联合评估，以确定异常事件的严重程度。
-
-事件分级规则如下：
-\begin{itemize}
-    \item 若 $HR_{latest} > 100\,\text{bpm}$ 且 $\text{BMI} > 28$（高心率伴肥胖），判定为高危复合事件；
-    \item 若 $HR_{latest} > 100\,\text{bpm}$ 且 $\text{BMI} \leq 28$（单纯高心率），判定为中等风险事件；
-    \item 若 $HR_{latest} < 50\,\text{bpm}$（心动过缓），判定为低风险异常事件。
-\end{itemize}
-
-\subsubsection*{计算降维与查表优化}
-
-在实际部署环境中，逐次计算完整的似然比 $\frac{P(HR_{abnormal}|Risk)}{P(HR_{abnormal})}$ 需要大量的条件概率估计，计算开销较大。为满足实时响应的延迟要求，本系统采用预定义贝叶斯因子（Bayes Factor）$\gamma$ 的查表策略，对式~\eqref{eq:realtime_update}~中的似然比进行离散近似。
-
-具体而言，系统根据事件分级预先设定 $\gamma$ 的离散取值：
-\begin{itemize}
-    \item 高危复合事件（高心率 + 肥胖）：$\gamma = 1.8$；
-    \item 中等风险事件（单纯高心率）：$\gamma = 1.3$；
-    \item 低风险异常事件（心动过缓）：$\gamma = 1.2$。
-\end{itemize}
-
-该策略将式~\eqref{eq:realtime_update}~中的似然比简化为常数乘子，使得后验更新退化为 $P_{t+1} \propto \gamma \cdot P_t$，从而将单次更新的时间复杂度降至 $O(1)$。
-
-\subsubsection*{假阳性过滤与分级修正}
-
-在实际使用场景中，可穿戴设备频繁产生的噪声信号（如运动后短暂的心率升高、情绪波动导致的瞬时心率异常等）可能触发大量非病理性的假阳性事件。若不加区分地对每次异常均施加较大的修正权重，将导致风险估计产生不必要的波动，降低用户体验并消耗不必要的医疗资源。
-
-为此，系统采用分级修正策略：对于缺乏多维度交叉验证支持的孤立异常事件，仅施加较小的修正因子（如 $\gamma = 1.3$）。该设计使得 $P_{t+1}$ 相对于 $P_t$ 仅产生温和的增量变化，避免因单一噪声信号引发不必要的高危预警。只有当异常信号与其他风险因素（如高 BMI）形成多维度关联时，系统才施加较大的修正因子（$\gamma = 1.8$），以确保对真实风险事件的及时响应。
-
-该分级策略在假阳性率控制与真阳性敏感度之间取得了工程平衡：既避免了对用户的过度干扰，又保证了对高危事件的捕获能力。
-
-
-\section{基于反事实推理的健康干预推演模型}
-
-从自动化控制论的视角出发，前述的融合风险引擎（§4.3）完成了"感知"与"决策"两个环节——采集多模态数据并计算当前风险。然而，一个完整的闭环控制系统还需要"预测"与"仿真"能力：在施加控制输入之前，预判系统的未来行为轨迹。本节所设计的反事实推演模型正是承担这一角色。
-
-系统将用户的当前健康状态视为\textbf{系统当前态}（State），将干预方案视为\textbf{控制输入}（Control Input），将融合风险引擎视为\textbf{受控对象的数字孪生模型}（Digital Twin）。通过在数字孪生上施加不同的输入条件，系统能够在不影响真实用户的前提下，模拟多种假设情景下的风险演化轨迹，从而为健康决策提供量化依据。
+\section{基于反事实推理的干预推演方法}
 
 \subsection{自然老化风险推演}
 
-\subsubsection*{问题定义}
+平台的干预推演由 \texttt{ProjectionService} 实现，其设计思想是：在保持风险计算主链不变的前提下，对用户画像施加特定方向的特征扰动，再通过同一融合引擎重新评估未来风险。对于“自然老化”场景，系统先复制当前用户画像，再按经验规则对年龄、收缩压、空腹血糖和 BMI 进行年度递增，然后调用融合引擎中的组合风险计算接口生成未来时点的风险报告。
 
-自然老化推演回答的是一个\textbf{开环预测}问题：在不施加任何人工干预的前提下，用户的生理指标将沿何种轨迹退化？对应的风险水平将如何演变？该推演构成了干预效果评估的\textbf{基线参照}（Baseline），即"不做干预的最坏情况"。
-
-\subsubsection*{数字孪生构建与退化函数}
-
-系统首先通过深拷贝（Deep Copy）用户的当前健康档案，构建一个独立于真实用户的\textbf{健康数字孪生}。随后，在该副本上施加基于流行病学统计的年化退化参数，模拟生理指标随年龄增长的自然变化趋势。退化函数定义如下：
-
+若将当前画像记为 \(\mathbf{x}\)，自然老化后的画像记为 \(\mathbf{x}^{+y}\)，则该过程可以概括为
 \begin{equation}
-    \mathbf{x}_{t+\Delta} = \mathbf{x}_t + \boldsymbol{\delta} \cdot \Delta
-    \label{eq:aging_model}
+\mathbf{x}^{+y} = \mathbf{x} + \Delta_y,
 \end{equation}
+其中 \(\Delta_y\) 由年龄增长与若干代谢指标的经验变化率构成。应当看到，这里采用的是规则化的长期趋势扰动，而非基于结构因果模型的严格反事实生成。因此，本系统中的“未来风险推演”更准确地说是一种共享风险引擎下的情景模拟方法：它能帮助用户比较“维持当前状态若干年后”的风险走向，但并不等同于临床级长期预后模型。
 
-其中 $\mathbf{x}_t$ 为当前健康指标向量，$\Delta$ 为推演年数，$\boldsymbol{\delta}$ 为年化退化率向量。系统当前设定的退化参数如下：
-
-\begin{table}[htbp]
-    \centering
-    \caption{年化退化参数设定}
-    \label{tab:aging_params}
-    \begin{tabular}{llll}
-        \hline
-        指标 & 年化退化量 & 单位 & 生理依据 \\
-        \hline
-        收缩压 (SBP) & $+0.5$ & mmHg/年 & 动脉硬化导致外周阻力增加 \\
-        空腹血糖 (FPG) & $+0.05$ & mmol/L/年 & 胰岛素敏感性随年龄下降 \\
-        体重指数 (BMI) & $+0.1$ & kg/m$^2$/年 & 基础代谢率降低 \\
-        年龄 (Age) & $+\Delta$ & 岁 & 自然增长 \\
-        \hline
-    \end{tabular}
-\end{table}
-
-完成指标修改后，系统将退化后的数字孪生数据直接传入 §4.3 节的融合引擎（\texttt{calculate\_composite\_risk}），获取推演年份下的完整多疾病风险报告。该设计实现了推演模块与风险引擎的\textbf{完全复用}——推演并不引入新的模型或新的参数，仅对输入进行系统性扰动后复用已有的推理流水线，从而确保推演结果与当前评估结果在方法论上的一致性。
-
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入自然老化风险推演曲线图
-    \caption{自然老化情景下多疾病风险随年龄变化趋势}
-    \label{fig:aging_curve}
-\end{figure}
-
-% ---------------------------------------------------------------
 \subsection{生活方式干预推演}
 
-\subsubsection*{反事实推理框架}
-
-干预推演回答的是一个典型的\textbf{反事实}（Counterfactual）问题："如果用户在当前时刻执行了某项生活方式干预（如减重 5\%），其风险水平将如何改变？"反事实推理的核心在于构造一个与现实世界仅在干预变量上存在差异的\textbf{平行假设世界}，并比较两个世界的结局差异。
-
-在本系统中，反事实推理的实现遵循以下范式：以用户当前健康档案为\textbf{事实世界}（Factual World），在数字孪生副本上施加干预引发的指标变化作为\textbf{反事实世界}（Counterfactual World），分别通过融合引擎计算两个世界的完整风险报告，最终量化干预带来的风险收益。
-
-\subsubsection*{干预联动效应建模}
-
-在真实的人体代谢系统中，各生理指标之间存在耦合关系：单一干预往往引发多个指标的联动变化。系统对此进行了建模。以体重干预（减重 $\lambda\%$）为例，其联动效应链如下：
-
-\begin{enumerate}
-    \item \textbf{体重直接变化}：$W_{new} = W_{current} \times (1 - \lambda)$。
-    \item \textbf{BMI 重新计算}：$\text{BMI}_{new} = W_{new} / H^2$（$H$ 为身高，单位 m）。
-    \item \textbf{血压联动改善}：$\text{SBP}_{new} = \text{SBP}_{current} - 5$ mmHg。根据临床干预试验的经验均值，每减重 5\%--10\% 体重，收缩压平均下降约 5 mmHg。
-    \item \textbf{血糖联动改善}：$\text{FPG}_{new} = \text{FPG}_{current} - 0.5$ mmol/L。减重可通过改善胰岛素敏感性降低空腹血糖水平。
-\end{enumerate}
-
-该联动模型将单一的减重干预映射为一组\textbf{多维指标扰动}（Multi-dimensional Perturbation），使得干预效果的评估不局限于体重本身，而是反映了代谢系统的整体改善。
-
-\subsubsection*{双轨对比与收益量化}
-
-系统分别在事实世界与反事实世界上调用融合引擎，获取两份完整的多疾病风险报告。随后，提取各疾病中最高风险概率进行对比，计算干预的最大风险降幅：
-
+对于干预场景，系统在复制用户画像后，按预设干预目标修改与生活方式高度相关的特征。例如，当输入包含 \texttt{weight\_loss\_percent} 时，\texttt{ProjectionService} 会同步调整体重、BMI、收缩压和空腹血糖，并分别计算干预前后的融合风险，再用最高病种风险的变化衡量整体收益。若干预前后的最大风险分别为 \(R_{\max}^{\text{base}}\) 与 \(R_{\max}^{\text{new}}\)，则平台定义风险下降比例为
 \begin{equation}
-    \Delta_{reduction} = \frac{P_{max}^{base} - P_{max}^{new}}{P_{max}^{base}} \times 100\%
-    \label{eq:risk_reduction}
+\text{Benefit} = \frac{R_{\max}^{\text{base}} - R_{\max}^{\text{new}}}{R_{\max}^{\text{base}}}.
 \end{equation}
 
-其中 $P_{max}^{base}$ 为干预前所有疾病中的最高风险概率，$P_{max}^{new}$ 为干预后的对应值。该指标以百分比形式呈现用户可感知的健康收益（如"减重 5\% 后，您的最高疾病风险降低了 12.3\%"），为用户的健康决策提供直观的量化支撑。
+这种定义使系统能够快速输出“干预是否有效、幅度大致如何”的直观结论，也便于与前端的情景对比页面衔接。与此同时，其局限同样十分明确：一方面，收益度量当前取的是病种集合中的最大风险变化，未覆盖多目标健康效益；另一方面，干预响应参数采用经验规则设定，尚未引入来自真实随访数据的个体化效应估计。因此，本节方法更应被理解为面向用户交互的轻量级反事实近似，而不是严格的个体化因果推断系统。
 
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入干预前后风险对比图
-    \caption{干预推演双轨对比示意：自然老化轨迹 vs 干预后轨迹}
-    \label{fig:intervention_compare}
-\end{figure}
+\section{本章小结}
 
+本章从代码实现可支撑的角度，梳理了平台在算法层的四条关键链路：首先，系统通过临床、基因、行为与营养数据的预处理建立统一输入基础；其次，利用多病种 LightGBM 模型与轻量化遗传评分完成临床风险和基因风险评估；再次，采用乘性修正框架将临床基准风险、遗传易感性和行为状态组织为统一的融合风险，并支持基于设备事件的实时更新；最后，在共享融合引擎的前提下，通过规则化特征扰动实现未来风险与生活方式干预的情景推演。
 
-\section{面向医疗对话的 Agent 安全分流与多策略评估算法}
-
-在第 \ref{sec:theory} 节所述的受控生成理论框架中，我们提出了策略评估函数 $\pi(q)$ 以及相关的意图车道、策略探针与分段控制。本节将详细阐述这一框架底层的算法设计。与直接由提示词驱动的大型语言模型不同，本系统在调用底层模型前，引入了长达数百条细粒度规则的强制安全决策树。在此算法体系下，Agent 的一切意图识别、工具组合与回答模式决定均遵循严格的确定性约束。
-
-\subsection{基于多维探针的意图分流算法}
-
-传统大模型在接收到医疗查询时通常采取即时回答的闭环策略。本系统采用了独立意图车道（Lane）分流与策略压力探针（Pressure Probe）分离校验的设计架构。用户查询 $q$ 在进入生成环节前，必须映射到六条严格偏序的安全车道之一。
-
-系统内置了 8 组高敏感模式列表（Pattern Lists），主要涵盖：急症判断（Urgent)、诊断确认（Diagnosis）、药物相关（Medication）、趋势分析（Trend）、报告解读（Report）、用药干预（Medication\allowbreak Change）、急症豁免要求（Urgent\allowbreak Override）以及高危风险提及（Elevated\allowbreak Risk）。其典型的探针识别模式如表 \ref{tab:intent_patterns} 所示。
-
-\begin{table}[htbp]
-    \centering
-    \caption{多维意图探针词例与作用车道映射}
-    \label{tab:intent_patterns}
-    \begin{tabular}{p{3.2cm}p{5.5cm}p{5cm}}
-        \toprule
-        \textbf{模式组标识} & \textbf{探针词根（多语种匹配缩略）} & \textbf{触发规则与所属维度} \\
-        \midrule
-        \texttt{URGENT\_}\allowbreak\texttt{PATTERNS} & 呼吸困难, 晕厥, 严重过敏, suicidal & 触发 \texttt{urgent} 车道，启动急症拦截 \\
-        \texttt{DIAGNOSIS\_}\allowbreak\texttt{PATTERNS} & 确诊, 诊断, 排除, what disease & 触发 \texttt{diagnosis} 车道，限制诊断性断言 \\
-        \texttt{MEDICATION\_}\allowbreak\texttt{PATTERNS} & 用药, 处方, 剂量, pill, medication & 触发 \texttt{medication} 唤起药物库查询工具 \\
-        \texttt{TREND/REPORT\_}\allowbreak\texttt{PATTERNS} & 趋势, 化验单, 体检报告, test result & 触发 \texttt{trend} 或 \texttt{report} \\
-        \texttt{MEDICATION\_}\allowbreak\texttt{CHANGE} & 停药, 换药, 减量, start taking & 策略压力探针：捕捉高风险的药量修改诉求 \\
-        \texttt{ELEVATED\_}\allowbreak\texttt{RISK} & 恶化, 加重, worsening, 偏高 & 策略压力探针：评估当前健康场景危险等级 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-为了保证短路求值时的优先级控制，系统为上述 6 条主车道定义了优先级降序评估序列（Evaluation Order）：
-\begin{equation}
-    \texttt{urgent} \succ \texttt{diagnosis} \succ \texttt{medication} \succ \texttt{trend} \succ \texttt{report} \succ \texttt{general\_}\allowbreak\texttt{health}
-\end{equation}
-
-在意图分流阶段，系统执行贪婪探测：优先从高风险车道开始匹配，首次命中即锁定为本次提问的主判定车道 $\operatorname{Lane}(q)$。与此同时，执行全局的“策略压力”检测，提取 $\operatorname{Press}(q)$ 字典，用于记载用户是否提出换药、忽略急诊指征等激进行为。此分离设计使得即使用户的查询被归类为普通药物咨询（中等风险），一旦带有变更剂量的隐含企图，压力探针也能实时纠偏为“高压区”。这些数字路标直接决定了后续工具规划的安全剪枝。
-
-
-\subsection{基于分流约束的工具白名单规划算法}
-
-当前实现并非向大语言模型直接暴露全局工具注册表。系统首先由本地规划器依据提问所归属的车道生成极度受限的候选集合，随后仅向模型提供该集合对应的局部工具定义。该机制将候选工具规模限制在固定常数上界之内，并通过车道专属的白名单过滤，降低了非相关查询触发高敏感工具的潜在风险。
-
-该规划算法在内部被划分为首尾相连的三个推导与过滤阶段：
-
-首先，系统执行阶段一：\textbf{特定车道的默认种子集加载（Lane-conditioned Default Seed Set）}：
-\begin{equation}
-    L = \operatorname{Lane}(q),\quad \mathcal{T}_{seed}(L) = \text{lane\_defaults}(L)
-\end{equation}
-不同车道拥有差异化的基础种子。例如 $\texttt{diagnosis\_}\allowbreak\texttt{sensitive}$ 车道的默认种子集并非单一工具，而是包含画像摘要（\texttt{get\_user\_profile\_summary}）与分析快照检索（\texttt{latest\_analysis\_snapshot\_lookup}）的复合集合。
-
-其次，阶段二执行：\textbf{基于车道条件的关键词包含式探测（Keyword Inclusion Probe）}：
-\begin{equation}
-    \mathcal{T}_{cand}(q,L) = \mathcal{T}_{seed}(L) \cup \text{KeywordProbe}(q,L)
-\end{equation}
-在此流程中，系统依据当前车道独有的词法哈希表对查询语句 $q$ 展开包含式判定。以 $\texttt{report\_}\allowbreak\texttt{interpretation}$ 车道为例，若语句探测到形如 \textsf{compare/\allowbreak comparison/\allowbreak difference/\allowbreak versus} 等特征串，系统则即刻将报告对比工具（\texttt{report\_comparison\_}\allowbreak\texttt{lookup}）追加至候选集合；在 $\texttt{general\_}\allowbreak\texttt{health}$ 车道中，出现 \textsf{risk / result} 标识符则追加 \texttt{get\_latest\_}\allowbreak\texttt{risk\_report}。
-
-最后，进入阶段三：\textbf{白名单求交与状态截断（Whitelist Intersection \& Truncation）}：
-\begin{equation}
-    \mathcal{T}_{plan}(q) = \operatorname{Head}_4\left(\operatorname{Dedup}\left(\mathcal{T}_{cand}(q,L) \cap \mathcal{W}_L\right)\right)
-\end{equation}
-式中 $\mathcal{W}_L$ 代表车道约束矩阵，负责对模型越界探索进行硬阻断。$\operatorname{Dedup}$ 保障集合元素唯一性以节约 Token 消耗，最终 $\operatorname{Head}_4$ 将取回的工具规模强行截断，即无条件保留首次出现顺序后的前 $4$ 项。需要说明的是，此上限为本地分流器选取的工具定义总量，这区别于执行层中每次受控调用的最高并发执行工具数量限制（后者将在后文予以专题阐释）。车道级的完整约束集合列于表 \ref{tab:lane_tool_whitelist}。
-
-\begin{table}[htbp]
-    \centering
-    \caption{Agent 车道工具白名单约束矩阵}
-    \label{tab:lane_tool_whitelist}
-    \begin{tabular}{p{4cm}p{10cm}}
-        \toprule
-        \textbf{意图车道 ($L$)} & \textbf{准入工具白名单 ($\mathcal{W}_L$)} \\
-        \midrule
-        \texttt{urgent\_}\allowbreak\texttt{symptom} & \textbf{空集合}。急症车道不分配工具，随后由上层安全分流直接短路到紧急就医响应。 \\
-        \texttt{general\_}\allowbreak\texttt{health} & 画像摘要、最新风险报告、异常指标查询、医学指南检索 \\
-        \texttt{report\_}\allowbreak\texttt{interpretation} & 报告摘要读取、报告差异比对、已上传文档摘要、医学指南检索 \\
-        \texttt{trend\_}\allowbreak\texttt{review} & 历史趋势提取、异常指标查询、分析快照检索、医学指南检索 \\
-        \texttt{medication\_}\allowbreak\texttt{related} & 药物摘要读取、报告摘要读取、医学指南检索 \\
-        \texttt{diagnosis\_}\allowbreak\texttt{sensitive} & 画像摘要、报告摘要读取、分析快照检索、医学指南检索 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-
-\subsection{多级证据门控与冲突校验算法}
-
-在规划工具被调用完毕后，Agent 不立即进入生成阶段，而是先对结构化工具结果、用户画像证据与检索文本进行后置充分性评估（Evidence Gating）。该评估模块采用两阶段级联架构：首先由基础门控函数 $\mathcal{G}_{base}$ 综合车道门槛与冲突校验输出初始证据状态 $E_0$，随后由 RAG 质量修正函数 $\mathcal{G}_{qual}$ 对 $E_0$ 进行保守修正，输出最终证据状态 $\mathcal{E}$：
-\begin{equation}
-    E_0 = \mathcal{G}_{base}(L, \mathcal{T}_{out}, p_u, R_{retr})
-\end{equation}
-\begin{equation}
-    \mathcal{E} = \mathcal{G}_{qual}(E_0, Q_{rag}) \in \{\text{sufficient}, \text{limited}, \text{insufficient}\}
-\end{equation}
-其中 $L$ 为意图车道，$\mathcal{T}_{out}$ 为工具执行结果集合，$p_u$ 为患者结构化画像，$R_{retr}$ 为检索增强文本，$Q_{rag}$ 为 RAG 质量摘要向量。该证据状态将直接约束下游策略评估阶段（\S 4.5.4）可选的回答模式上界。
-
-\subsubsection{基础门控：车道门槛与冲突校验}
-
-基础门控函数 $\mathcal{G}_{base}$ 按严格优先级顺序执行以下判定链：
-
-\textbf{（1）急症短路。}若当前车道为 \texttt{urgent\_symptom}，直接返回 $E_0 = \text{insufficient}$，不执行后续任何判定。
-
-\textbf{（2）空结果兜底。}若所有工具均已返回但无一包含有效证据（即工具返回空结果或被阻断），则返回 $E_0 = \text{insufficient}$。
-
-\textbf{（3）跨来源状态冲突校验。}这是本门控机制的核心安全特性。系统围绕 4 项强约束量化体征指标构建跨源冲突探针：空腹血糖（\texttt{glucose\_fasting}）、收缩压（\texttt{sbp}）、舒张压（\texttt{dbp}）、体质指数（\texttt{bmi}）。对于每项指标 $m$，系统首先通过分段函数将原始数值映射为离散状态码：
-\begin{equation}
-    \sigma_m(x) = \begin{cases} \text{high}, & x > \theta_m \\ \text{normal}, & \text{otherwise} \end{cases}
-\end{equation}
-其中各指标的医学判定阈值 $\theta_m$ 如表 \ref{tab:metric_thresholds} 所示。
-
-\begin{table}[htbp]
-    \centering
-    \caption{状态映射函数的医学判定阈值}
-    \label{tab:metric_thresholds}
-    \begin{tabular}{llll}
-        \toprule
-        \textbf{指标 ($m$)} & \textbf{阈值 ($\theta_m$)} & \textbf{单位} & \textbf{临床依据} \\
-        \midrule
-        \texttt{glucose\_fasting} & 6.1 & mmol/L & WHO 空腹血糖受损标准 \\
-        \texttt{sbp} & 140 & mmHg & 高血压诊断界值 \\
-        \texttt{dbp} & 90 & mmHg & 高血压诊断界值 \\
-        \texttt{bmi} & 24 & kg/m$^2$ & 中国成人超重界值 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-系统分别从体检报告工具、历史趋势工具和个人画像中提取指标记录集合 $\operatorname{Met}_A$ 与 $\operatorname{Met}_B$，执行三组比对路径：报告数据与趋势历史之间、报告数据与个人画像之间、以及检索文本与个体事实之间。当同名指标在不同来源中的状态码出现不一致时，即判定为跨来源状态冲突：
-\begin{equation}
-    \exists m \in (\operatorname{Met}_A \cap \operatorname{Met}_B),\ \sigma_m(v_A) \neq \sigma_m(v_B) \implies \text{Conflict}_{data} = \text{True}
-\end{equation}
-
-此外，系统基于预定义正常/异常提示词表对检索文本与个体异常状态之间的显式语义错配进行轻量检验：若患者存在异常标识但检索文本含 \textsf{healthy adult} 等正常态指示词，或患者无异常标识但检索文本含 \textsf{high fasting glucose} 等异常态指示词，则判定为检索冲突 $\text{Conflict}_{rag}$。命中任何冲突类别后，系统\textbf{一律直接将 $E_0$ 降为 \texttt{insufficient}}，不经过后续门槛判定。
-
-\textbf{（4）车道最低证据门槛判定。}在通过冲突校验后，系统根据当前车道评估工具证据是否满足最低门槛（$\text{floor\_met}$）或部分支撑条件（$\text{partial\_support}$），如表 \ref{tab:lane_evidence_floor} 所示。
-
-\begin{table}[htbp]
-    \centering
-    \caption{各车道最低证据门槛与部分支撑条件}
-    \label{tab:lane_evidence_floor}
-    \begin{tabular}{p{3cm}p{5.2cm}p{5.3cm}}
-        \toprule
-        \textbf{意图车道} & \textbf{完整门槛} & \textbf{部分支撑} \\
-        \midrule
-        \texttt{general\_}\allowbreak\texttt{health} & 画像完整 $\land$ 指南命中 & 画像部分可用 $\lor$ 指南 $\lor$ 异常指标 \\
-        \texttt{report\_}\allowbreak\texttt{interpretation} & 报告摘要完整 $\lor$ 对比完整 & 文档 $\lor$ 指南 $\lor$ 摘要部分 $\lor$ 对比部分 \\
-        \texttt{trend\_}\allowbreak\texttt{review} & 趋势记录 $\geq 2$ 条且完整 & 趋势 1 条 $\lor$ 异常 $\lor$ 快照 $\lor$ 指南 \\
-        \texttt{medication\_}\allowbreak\texttt{related} & 药物事实项完整 & 药物部分 $\lor$ 摘要部分 $\lor$ 指南 \\
-        \texttt{diagnosis\_}\allowbreak\texttt{sensitive} & 画像 $\lor$ 报告摘要 $\lor$ 分析快照 & 指南 $\lor$ 画像部分 $\lor$ 摘要部分 $\lor$ 快照部分 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-当完整门槛满足时，输出 $E_0 = \text{sufficient}$；仅部分支撑满足时，输出 $E_0 = \text{limited}$；两者均不满足时，输出 $E_0 = \text{insufficient}$。
-
-\subsubsection{RAG 质量保守修正}
-
-基础门控输出 $E_0$ 后，系统接入 RAG 质量摘要向量 $Q_{rag}$（详见 \S 2.3.1）进行保守修正。该修正遵循\textbf{只降不升}原则：即使 $E_0$ 已被判定为 \texttt{sufficient}，若检索分块质量未达标，系统仍将其强制拉回。具体规则为：当检索状态为不可用、分块质量为空或薄弱、或命中数为零时，$\mathcal{E}$ 被强制降为 \texttt{insufficient}；当文本密度不足或数据溯源状态为部分缺失时，$\mathcal{E}$ 被降为 \texttt{limited}；否则保持 $E_0$ 不变。最终输出的 $\mathcal{E}$ 将与车道信号一并投入终端策略评估判定树。
-
-\subsection{基于决策树的终端策略评估算法}
-
-前述三节已依次输出意图车道 $L$ 与策略压力 $\operatorname{Press}(q)$（\S 4.5.1）、受限工具候选集 $\mathcal{T}_{plan}(q)$（\S 4.5.2）、以及经两阶段门控后的证据状态 $\mathcal{E}$（\S 4.5.3）。本节阐述 Agent 决策管线的终端汇聚点。策略评估函数消费上述全部中间产物，输出核心决策子元组：
-\begin{equation}
-\begin{split}
-    \pi_{core}(q) &= \text{PolicyEval}\big(L, \operatorname{Press}(q), \mathcal{E}\big) \\
-           &= \big(\text{answer\_mode},\ \text{disclaimer\_mode},\ \text{risk\_level},\ \text{degrade\_reason}\big)
-\end{split}
-\end{equation}
-该子元组直接约束大语言模型在生成阶段的行为边界与免责声明级别。此外，实现层还同步输出策略版本号（\texttt{policy\_version}）、所选规则标识（\texttt{selected\_rule}）、证据状态与工具可用性等可追溯元数据，供责任审计层消费。
-
-\subsubsection{判定分支结构}
-
-策略评估函数内部采用优先级递降的判定树结构，包含 3 条硬编码短路分支与 1 条证据驱动的默认分支。前三条分支的回答模式不受证据状态 $\mathcal{E}$ 控制，但诊断与药物变更分支仍沿用后置检查输出的证据状态与工具可用性，将其写入策略输出记录以供审计。
-
-\textbf{分支 1：急症短路。}若 $L = \texttt{urgent\_symptom}$，立即输出紧急就医引导模式，$\texttt{risk\_level} = \texttt{high}$，证据状态固定为 \texttt{insufficient}。该模式下系统短路到紧急就医引导响应，不进入后续证据评估流程。
-
-\textbf{分支 2：诊断类拒答。}若 $L = \texttt{diagnosis\_sensitive}$，无论证据是否充分，一律输出 $\texttt{answer\_mode}$ $=$ $\texttt{refusal\_with\_}$\allowbreak$\texttt{disclaimer}$，$\texttt{disclaimer\_mode}$ $=$ $\texttt{diagnosis\_}$\allowbreak$\texttt{guardrail}$。此分支体现了系统对诊断行为的合规性红线：任何涉及"确诊""排除"等诊断性断言的意图均被拦截。
-
-\textbf{分支 3：用药变更拒答。}若 $L = \texttt{medication\_related}$ 且策略压力探针检测到用户存在用药变更意图（即压力字典中药量修改标记为真），则输出拒答模式并附加保守免责声明。该分支拦截用户试图让系统开药、停药或调整剂量的请求。
-
-\textbf{分支 4：证据驱动的默认路径。}当查询未命中上述三条短路规则时，回答模式由证据状态 $\mathcal{E}$ 决定，其映射关系如表 \ref{tab:policy_decision} 所示。
-
-\begin{table}[htbp]
-    \centering
-    \caption{终端策略评估判定表}
-    \label{tab:policy_decision}
-    \begin{tabular}{p{4.2cm}p{3.8cm}p{3.2cm}p{2cm}}
-        \toprule
-        \textbf{条件组合} & \textbf{回答模式} & \textbf{免责模式} & \textbf{风险} \\
-        \midrule
-        $L{=}\texttt{urgent}$ & urgent\_care\_\allowbreak disclaimer & urgent\_care & high \\
-        $L{=}\texttt{diagnosis}$ & refusal\_with\_\allowbreak disclaimer & diagnosis\_\allowbreak guardrail & high \\
-        $L{=}\texttt{medication}$ $\land$ $\text{Change}$ & refusal\_with\_\allowbreak disclaimer & conservative & high \\
-        $\mathcal{E}{=}\text{suff.}$ $\land$ $L{=}\texttt{general}$ & direct\_answer & none & low \\
-        $\mathcal{E}{=}\text{suff.}$ $\land$ $L{=}\texttt{med.}$ & bounded\_answer & conservative & medium \\
-        $\mathcal{E}{=}\text{suff.}$ $\land$ 其他 $L$ & bounded\_answer & none & medium \\
-        $\mathcal{E}{=}\text{limited}$ & bounded\_answer & conservative & 分级函数 \\
-        $\mathcal{E}{=}\text{insuff.}$ & clarify\_missing\_\allowbreak context & conservative & 分级函数 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-表中有两个值得特别关注的约束：其一，完全无约束的直接回答仅在一般健康车道且证据充分时才被释放，这是系统中唯一不附加免责声明的输出路径；其二，药物相关车道即使证据充分，仍然强制附加保守免责声明，体现了对用药安全的持续审慎。
-
-\subsubsection{回答模式语义定义}
-
-为明确各输出模式的行为边界，表 \ref{tab:answer_modes} 给出了 5 种回答模式的完整语义定义。
-
-\begin{table}[htbp]
-    \centering
-    \caption{Agent 回答模式语义定义}
-    \label{tab:answer_modes}
-    \begin{tabular}{p{3.8cm}p{9.5cm}}
-        \toprule
-        \textbf{回答模式} & \textbf{语义描述与行为边界} \\
-        \midrule
-        \texttt{direct\_answer} & 无附加约束的常规回复，仅在一般健康咨询且证据充分时释放 \\
-        \texttt{bounded\_answer} & 带安全边界的受限回复，回答内容受证据范围约束，不得外推 \\
-        \texttt{clarify\_missing\_}\allowbreak\texttt{context} & 不回答用户问题，引导用户补充缺失的数据或上下文 \\
-        \texttt{refusal\_with\_}\allowbreak\texttt{disclaimer} & 拒绝回答并附加免责声明与就医建议 \\
-        \texttt{urgent\_care\_}\allowbreak\texttt{disclaimer} & 强制输出紧急就医引导，不生成任何医学内容 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\subsubsection{风险分级与下游传导}
-
-需要注意的是，本系统存在两套独立的风险标签体系。上游安全分类函数输出的是查询级安全态标签（$\texttt{urgent}$ / $\texttt{elevated}$ / $\texttt{normal}$），用于决定查询进入哪条处理管线；而策略评估函数输出的 $\texttt{risk\_level}$ 为策略层风险等级（$\texttt{high}$ / $\texttt{medium}$ / $\texttt{low}$），由独立的分级函数根据车道与压力探针推断。急症与诊断车道固定为高风险；药物车道在存在变更压力时升级为高风险，否则为中等风险；报告和趋势车道为中等风险；一般健康车道在无高危提及时为低风险。该等级不影响回答模式选择，而是为责任审计层（\S\ref{sec:audit_replay_impl}）提供风险标签。
-
-策略输出被下游业务层消费时，系统追加派生标记 $\texttt{must\_refuse}$：当 $\texttt{answer\_mode}$ $=$ $\texttt{refusal\_with\_}$\allowbreak$\texttt{disclaimer}$ 时该标记为真，用于显式标注拒答型策略。需要说明的是，实际的生成短路并非由该布尔值单独驱动，而是由上游急症分流路径与车道专属的直接回复生成分支共同实现。至此，从意图分流、工具规划、证据门控到终端策略评估的完整 Agent 决策管线构成了一个确定性闭环：每一次用户交互的决策路径均可通过策略版本号、车道标识、证据状态与核心决策子元组进行完整追溯与事后审计。
+从结构上看，本章已经形成“输入准备 $\rightarrow$ 风险建模 $\rightarrow$ 多模态融合 $\rightarrow$ 干预推演”的完整分析主线。与之对应，面向医疗问答的 Agent 模块更多承担运行时治理、工具约束与责任追踪功能，因此将在第 \ref{sec:agent_impl} 节中作为系统实现的重点内容进一步展开。

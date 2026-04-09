@@ -1,607 +1,91 @@
-% ============================================
-% 第五章 系统详细设计与实现（核心工程章节）
-% ============================================
+\chapter{系统实现}
 
-\chapter{系统详细设计与实现}
+在完成总体设计与关键算法分析后，本章进一步说明平台如何在现有代码框架中落地实现。与第 4 章偏重算法主线不同，本章关注的是服务组织方式、前后端协同、Agent 运行链以及部署运行路径。为避免实现章再次滑向“工程说明书”，本章只保留与论文主线直接相关的实现内容，即风险评估、OCR 报告解析、健康问答 Agent、核心前端交互与容器化集成；而过细的缓存键设计、载荷模式字段和后台数据中枢细节不再在正文中展开。
 
-\section{后端服务层设计与实现}
+\section{后端核心服务实现}
 
-本系统后端采用 Python FastAPI 框架构建，遵循面向服务架构（Service-Oriented Architecture, SOA）的松耦合设计原则。本节从架构分层、核心引擎实现、异步调度、OCR 解析、智能问答以及营养与药物服务六个维度阐述后端的工程实现。
+平台后端采用 FastAPI 作为主要服务入口，应用实例在 \texttt{backend/main.py} 中创建，并通过 \texttt{lifespan} 生命周期钩子完成可选模型、风险引擎、基因引擎与融合引擎的延迟加载。这样做的直接目的是将“应用导入”和“模型初始化”两个阶段分离，从而降低启动时的强耦合度，并为后续的 OCR、风险分析、问答等路由提供统一的运行时依赖。需要强调的是，当前系统仍属于单后端进程承载多类业务服务的实现方式，而非严格意义上的多后端微服务拆分架构，因此本节的描述以模块化服务组织为主，不夸大其分布式程度。
 
-\subsection{面向服务的松耦合架构与生命周期管理}
+\subsection{风险评估服务实现}
 
-\subsubsection*{架构分层与设计理由}
+风险评估服务的实现主链由入口文件 \texttt{main.py}、风险服务文件 \texttt{risk\_engine.py}、融合服务文件 \texttt{fusion\_service.py} 和分析接口共同构成。系统在启动阶段分别加载临床、基因和融合三类风险引擎，并在综合分析接口中组织临床数据、用户 SNP 数据和默认设备状态，形成与第 4 章算法一致的推理输入。这里的实现重点不是再次推导模型公式，而是保证训练阶段保存的模型包、特征映射和运行时输入能够稳定对齐。
 
-系统后端采用 Router $\rightarrow$ Service $\rightarrow$ Engine $\rightarrow$ Model 的四层架构模式。API 路由层（Router）仅负责请求参数校验与响应序列化，业务逻辑完全下沉至服务层（Service），而模型推理则封装在独立的引擎类（Engine）中。这种分层的设计目标不仅是关注点分离（Separation of Concerns），更在于为系统的\textbf{模块扩展性}提供架构保障：当需要接入新的异构数据源（如未来的连续血糖监测仪 CGM、心电图 ECG 等 IoT 设备）时，仅需新增对应的 Service 类并注册路由，无需修改已有的风险引擎或融合逻辑。
+从接口行为看，前端或业务侧在调用综合分析接口后，会得到结构化风险报告，其中包含病种级概率、风险分级与部分解释信息。若融合引擎不可用，主程序中还提供了降级分支，用于返回基于临床数据的简化风险结果。这一设计说明平台在实现层采用了“优先保证分析可返回，再区分是否进入完整融合路径”的策略，其目标是提升服务可用性，而不是保证所有请求都严格走同一条满配推理链。
 
-系统共注册 10 个路由模块，涵盖认证（Auth）、分析（Analysis）、营养（Nutrition）、问答（Chat）、OCR 解析、IoT 传感器、知识库管理、科研数据等功能域。
+\subsection{OCR解析服务实现}
 
-\subsubsection*{应用生命周期与引擎预热}
+体检报告解析由 OCR 服务文件 \texttt{ocr\_service.py} 与接口文件 \texttt{ocr.py} 协同完成。当前实现中，\texttt{MedicalOCRService} 负责 PDF 转图片、OCR 文本抽取、正则初筛以及大模型结构化解析，接口层则负责接收上传文件、创建 \texttt{MedicalDocument} 记录、保存规范化后的结构化摘要与处理状态，并在成功后触发缓存失效。这样的职责划分使“文档解析逻辑”和“文档持久化逻辑”保持分离，便于后续对 OCR 供应商或解析策略进行替换。
 
-系统利用 FastAPI 的 \texttt{lifespan} 异步上下文管理器实现引擎预热机制。在应用启动阶段，\texttt{lifespan} 函数依次执行以下初始化操作：
+需要特别说明的是，OCR 链路在当前系统中并非“只要上传就一定得到完整结构化结果”。从代码实现看，系统显式保留了 \texttt{stored\_unprocessed}、\texttt{partial\_success} 和降级返回路径，这意味着正文中应当将其描述为“带有状态回传与失败兜底的智能解析服务”，而不是无条件成功的自动识别模块。这种写法既符合实际实现边界，也更适合在答辩中回应“识别失败时系统如何处理”的问题。
 
-\begin{enumerate}
-    \item 初始化 SQLite 数据库并自动创建管理员账号；
-    \item 自动检测并修补数据库 Schema（如新增 \texttt{extra\_data}、\texttt{allow\_research} 列），实现无停机迁移；
-    \item 初始化 Redis 缓存连接；
-    \item 按依赖顺序创建并加载六个核心引擎实例：疾病风险引擎（DiseaseRiskEngine）、基因风险引擎（GeneRiskEngine）、药物基因组学引擎（PharmService）、食物视觉引擎（FoodPredictor）、通用推理引擎（Predictor），最后创建依赖前两者的融合风险引擎（FusionRiskEngine）。
-\end{enumerate}
+\subsection{数据管理与任务调度实现}
 
-该预热机制确保了所有 ML 模型在首次用户请求到达之前完成加载，消除了冷启动延迟（Cold Start Latency），使得首次 API 调用的响应时间与后续请求保持一致。
+除面向普通用户的分析与问答接口外，平台还保留了若干管理员侧的数据上传与训练入口。相关逻辑主要位于后端入口和管理服务模块中，并借助 FastAPI 的 \texttt{BackgroundTasks} 执行临床数据处理、GWAS 清洗和模型训练等后台任务。这里的实现特点是轻量级、进程内和任务目标明确：它能够满足论文原型系统对“上传后异步处理”的需要，但并未引入消息队列、分布式调度器或独立任务中间件。因此，在学术表达上更合适的说法是“后台任务调度支持”，而不是“统一任务编排平台”。
 
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入后端服务层依赖关系图
-    \caption{后端 SOA 分层架构与服务依赖关系}
-    \label{fig:backend_arch}
-\end{figure}
-
-% ---------------------------------------------------------------
-\subsection{风险评估引擎的工程实现}
-
-\subsubsection*{Lazy Loading 与热重载}
-
-\texttt{DiseaseRiskEngine} 类采用 Lazy Loading（延迟加载）模式：构造函数仅定义空引用，实际的模型文件加载推迟至 \texttt{load\_models()} 异步方法中执行。该设计避免了模块导入阶段的文件 I/O 阻塞。同时，引擎暴露 \texttt{reload()} 方法，允许管理员在管理后台触发模型重训练后在线重置引擎状态，使系统在不进行进程级重启的前提下进入新的模型加载周期。
-
-\subsubsection*{输入鲁棒性清洗}
-
-在实际部署环境中，用户健康数据来源多样（手动输入、OCR 解析、23andMe 文件导入），字段命名格式存在不一致。引擎通过 \texttt{\_clean\_keys} 方法对输入字典的所有键执行正则标准化（将非字母数字字符替换为下划线），确保与训练阶段的特征名完全对齐，避免因命名偏差导致的特征错位。
-
-% ---------------------------------------------------------------
-\subsection{基于 BackgroundTasks 与内存状态记录的轻量级异步任务调度}
-
-系统的管理后台支持多种耗时任务：临床数据 ETL 清洗、LightGBM 模型重训练、GWAS 权重文件生成等。这些任务的执行时间从数秒到数分钟不等，不适合在 HTTP 请求-响应周期内同步完成。
-
-\subsubsection*{架构选择与设计论证}
-
-在分布式任务调度领域，Celery + RabbitMQ/Redis 是主流方案。然而，本系统基于轻量化部署原则与运维复杂度均衡，选择了 FastAPI 原生 \texttt{BackgroundTasks} 配合全局内存任务状态记录的异步方案。该设计决策基于以下判断：
-
-\begin{itemize}
-    \item 系统的并发任务量有限（通常为单管理员操作），不需要分布式消息队列的吞吐能力；
-    \item 单体部署模式下，引入额外的消息中间件会显著增加运维复杂度和资源消耗；
-    \item \texttt{BackgroundTasks} 与 FastAPI 的 ASGI 事件循环原生集成，可在保证非阻塞的前提下，极大简化系统架构。
-\end{itemize}
-
-\subsubsection*{任务状态记录与前端闭环感知}
-
-系统维护一个全局状态字典（\texttt{system\_task\_state}），记录当前任务的运行状态、实时日志和活跃任务计数。后台任务在执行过程中持续更新该状态字典中的日志条目。前端管理后台（\texttt{DataCenterView.vue}）通过心跳轮询（Polling）机制，以固定间隔调用 \texttt{/admin/task/status} 接口获取最新状态，实现任务执行过程的实时可视化。该设计适用于低并发的管理任务场景，在实现复杂度与可观测性之间取得了平衡。
-
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入异步任务调度序列图
-    \caption{BackgroundTasks 异步任务调度与前端轮询交互序列}
-    \label{fig:async_task_flow}
-\end{figure}
-
-% ---------------------------------------------------------------
-\subsection{基于防御性编程的智能OCR体检报告解析}
-
-\subsubsection*{医疗场景的鲁棒性需求}
-
-体检报告的自动化解析是连接线下医疗数据与线上健康管理平台的关键桥接环节。然而，该任务面临严峻的工程挑战：用户上传的体检单据可能存在扫描倾斜、折痕遮挡、分辨率不足、表格格式多样等不可控因素。在医疗数据场景中，单一识别路径的不可靠性是不可接受的——任何关键指标的漏提取都可能导致下游风险评估产生偏差。因此，系统采用\textbf{防御性编程策略}（Defensive Programming Strategy），构建了三级容错的 OCR 解析流水线。
-
-\subsubsection*{三级容错流水线}
-
-\texttt{MedicalOCRService} 类实现了以下三级解析机制：
-
-\begin{enumerate}
-    \item \textbf{Level 1：光学字符识别（百度 OCR）}。将用户上传的体检报告（支持 PDF 和图片格式）通过百度云 OCR API 转换为纯文本。对于多页 PDF 文件，系统使用 PyMuPDF 先将每页渲染为图像，再通过 \texttt{ThreadPoolExecutor} 实现多页并发识别，提升解析吞吐量。
-    \item \textbf{Level 2：大语言模型语义结构化抽取}。将 OCR 输出的非结构化文本传入 LLM（Kimi/Moonshot），通过精心设计的 Prompt 指令，要求模型从自由文本中提取标准化的健康指标 JSON 结构（如 BMI、血压、血糖等字段）。为应对 LLM API 的速率限制（HTTP 429），系统集成 \texttt{tenacity} 库实现指数退避重试（Exponential Backoff Retry）。
-    \item \textbf{Level 3：正则表达式兜底提取}。当 LLM 调用失败（如 API 不可用、返回格式异常）时，系统降级至基于预定义正则模式的规则提取器，确保核心血压、血糖、血脂等高频指标仍能被捕获。
-\end{enumerate}
-
-该三级容错设计遵循“高精度优先、失败可降级”的原则：优先采用语义抽取提升结构化质量，在外部模型不可用时退回规则匹配，以在精度与可用性之间取得平衡。
-
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入 OCR 三级容错流水线图
-    \caption{体检报告 OCR 三级容错解析流水线}
-    \label{fig:ocr_pipeline}
-\end{figure}
-
-% ---------------------------------------------------------------
-\subsection{Dr. AI健康问答系统实现}
-\label{sec:dr_ai_rag_impl}
-
-\subsubsection*{RAG 增强问答架构}
-
-系统的 Dr. AI 健康问答模块采用检索增强生成（Retrieval-Augmented Generation, RAG）架构，将外部医学知识库纳入对话服务的证据供给链，以提升回答的循证性与专业性。与早期仅由“检索$\rightarrow$Prompt 拼接$\rightarrow$直接生成”构成的单段式问答流程不同，当前实现中的 RAG 模块不再独立承担完整回答闭环，而是负责为后续 Agent 决策管线提供检索证据与查询时质量摘要。
-
-RAG 流程分为三个阶段：
-
-\begin{enumerate}
-    \item \textbf{知识检索}。系统使用 ChromaDB 持久化存储预处理后的医学指南文档，并利用 HuggingFace 中文语义向量模型 \texttt{shibing624/text2vec-base-chinese} 将用户问题编码为稠密向量，执行相似性检索返回 Top-$k$（$k=3$）相关文档片段。运行时优先采用本地文件加载模式，以避免在服务启动阶段因远程模型下载造成阻塞。
-    \item \textbf{结果格式化与质量摘要构建}。检索命中后，系统将文档片段格式化为带来源标识的参考上下文，并同步构建 \texttt{rag\_quality\_summary}，其中包含 \texttt{retrieval\_status}、\texttt{hit\_count}、\texttt{source\_kind}、\texttt{provenance\_state} 与 \texttt{chunk\_quality} 等运行时质量字段，用于刻画本轮检索证据的可用性边界。
-    \item \textbf{上下文预算注入}。对话服务随后将 RAG 检索结果与用户画像摘要、工具证据文本及当前查询共同送入上下文构建模块，由 \texttt{build\_context\_payload()} 按预算向量进行裁剪与拼装，再交由后续 Agent 规划、证据门控与策略评估链继续消费。因此，本小节中的 RAG 仅承担“证据供给子模块”职责，而非独立完成最终回答控制。
-\end{enumerate}
-
-\subsubsection*{计算/存储代价平衡：Redis 缓存策略}
-
-大模型推理与检索增强上下文构建具有较高的计算成本。对于同一用户在同一会话上下文中反复触发的相似问题，重复执行完整推理链既不经济也不必要。系统引入 Redis 结果缓存机制来处理这一\textbf{计算/存储代价权衡}（Computation-Storage Trade-off）问题：
-
-\begin{itemize}
-    \item 以 ``\texttt{chat\_response:\{user\_id\}:\{conversation\_id\}:\{fingerprint\}}'' 为缓存键，其中 \texttt{fingerprint} 由最终消息窗口的哈希摘要生成，TTL 设为 1 小时；
-    \item 在未显式指定 \texttt{force\_refresh} 时，系统优先尝试命中缓存；若命中，则直接回放既有回答文本及其治理摘要、响应裁决与证据标签，而无需重新执行完整推理链；
-    \item 当用户更新健康档案时，系统通过 \texttt{invalidate\_user\_cache()} 统一清除该用户名下的聊天缓存模式 \texttt{chat\_response:\{user\_id\}:*}，确保画像变更后的问答能够反映最新健康状态。
-\end{itemize}
-
-需要说明的是，上述 RAG 检索与 Redis 缓存模块在当前系统中均作为 Agent 决策管线的子组件运行。前者输出检索上下文及 \texttt{rag\_quality\_summary}，后者负责对同一上下文窗口下的结果进行有界复用；二者共同服务于后续的工具规划、证据门控、策略评估与责任审计。完整的 Agent 执行链实现在后续 \S\ref{sec:agent_impl} 中展开说明。
-
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入 RAG 问答流程图
-    \caption{Dr. AI 健康问答 RAG 流程与缓存策略}
-    \label{fig:rag_flow}
-\end{figure}
-
-% ---------------------------------------------------------------
-\subsection{AI营养师与药物基因组学实现}
-
-\subsubsection*{个性化膳食方案生成}
-
-AI 营养师模块（\texttt{DietOptimizer}）基于 §4.1.3 中预处理的 USDA SR Legacy 食品营养数据库，为用户生成个性化每日膳食方案。其计算流程采用"检索-筛选"（Search-then-Filter）两阶段策略：第一阶段，从本地 JSON 食品库中启发式检索 20 种多样化候选食品；第二阶段，将候选食品列表、用户目标热量及饮食限制（如无麸质、低钠）传入 LLM，由模型从营养均衡性和口味搭配角度筛选出最佳的 2--3 道菜品，并生成中文食谱说明。
-
-\subsubsection*{药物基因组学安全核查}
-
-药物基因组学模块（\texttt{PharmService}）提供基于三维异构数据的用药安全评估。系统加载预处理的药物-基因交互规则库（\texttt{drug\_gene\_rules.csv}，源自 PharmGKB 数据库），对用户指定的目标药物执行三重安全核查：
-
-\begin{itemize}
-    \item \textbf{基因型匹配}：遍历用户的 SNP 数据，检测是否携带已知的代谢缺陷等位基因。当匹配到规则库中的风险基因型时，系统输出对应的代谢分型（如"CYP2D6 Poor Metabolizer"）和用药建议。
-    \item \textbf{临床指标安全检查}：检测用户的 eGFR（肾功能）和 ALT（肝功能）是否低于安全阈值，若肝肾功能异常则发出剂量调整警告。
-    \item \textbf{IoT 实时联动}：结合可穿戴设备上报的心率数据，对具有心脏毒性风险的药物（如 $\beta$-受体阻滞剂）进行心动过缓预警。
-\end{itemize}
-
-
-\section{Agent架构实现}
-\label{sec:agent_impl}
-
-\subsection{Agent执行管线概览}
-\label{sec:agent_pipeline}
-{\sloppy
-
-\subsubsection*{统一事件驱动主链路}
-
-当前 Dr. AI 的后端执行链不再采用早期“读取画像$\rightarrow$检索文档$\rightarrow$单次生成回答”的同步直连模式，而是以 \texttt{ChatService} 内部共享异步事件生成器 \texttt{\_chat\_events()} 作为运行时中枢。同步接口 \texttt{chat()} 通过消费该事件流中的 \texttt{final} 事件获得最终结果，流式接口 \texttt{stream\_chat()} 则直接对外转发阶段状态、工具执行与最终回答，使同步响应与流式反馈在同一条执行链上保持一致。
-
-围绕该共享事件流，系统将一次对话请求组织为以下九个运行阶段：
-
-\begin{enumerate}
-    \item \textbf{会话建立与消息入链}。系统首先依据可选 \texttt{conversation\_id} 获取或创建服务器端会话，并将当前用户消息写入 \texttt{ChatConversation} / \texttt{ChatMessage} 链路，为后续多轮历史截断与回答回放提供统一入口。
-    \item \textbf{安全分流与急症短路}。随后调用 \texttt{classify\_query\_safety()} 完成安全分类与车道判定；若结果落入 \texttt{medical\_escalation} 路径，则直接构造急症响应并提前结束本轮执行，而不再继续进入工具与生成阶段。
-    \item \textbf{画像读取与 RAG 检索}。对于常规查询，系统继续读取用户画像摘要，执行 \texttt{\_search\_rag\_context\_with\_quality()} 获取检索上下文及 \texttt{rag\_quality\_summary}，从而为后续证据门控提供个人事实与医学参考的双重输入。
-    \item \textbf{规划上下文构建}。系统将画像摘要、RAG 上下文与当前查询送入 \texttt{build\_context\_payload()}，并结合 \texttt{trim\_history\_to\_token\_budget()} 对最近多轮对话历史进行预算裁剪，形成工具规划阶段使用的消息窗口。
-    \item \textbf{工具规划与执行}。在得到 \texttt{planned\_tool\_names} 后，系统优先尝试 provider-native function calling；若模型侧未返回任何工具调用，则退回本地确定性 fallback planner，依次执行白名单内的只读工具。
-    \item \textbf{证据汇聚与治理摘要生成}。工具返回后，系统整理 \texttt{evidence\_tags}，并进一步构造 \texttt{decision\_summary}、\texttt{response\_verdict}、\texttt{takeover}、\texttt{suggestion\_card} 与 \texttt{evidence\_panel} 等结构化治理对象。
-    \item \textbf{后置门控与上下文重建}。在进入最终回答前，系统调用 \texttt{evaluate\_post\_tool\_sufficiency()} 进行证据充分性复核，并将工具证据文本重新并入 \texttt{build\_context\_payload()}，形成最终生成阶段的预算化上下文。
-    \item \textbf{缓存回放或终端回答生成}。若当前请求未指定 \texttt{force\_refresh} 且命中 Redis 结果缓存，则系统直接回放既有回答及其治理摘要；否则，根据 \texttt{lane\_direct\_reply}、本地兜底文本或最终模型调用结果生成本轮回答。
-    \item \textbf{持久化收口与结果返回}。最后，系统在 \texttt{\_finalize\_response()} 中统一完成回答载荷组装、审计记录写入、答案回放持久化、会话消息追加与缓存回写，形成从查询输入到反馈留痕的闭环执行链。
-\end{enumerate}
-
-\subsubsection*{关键分支与执行收口}
-
-从工程实现看，上述执行链并非严格线性串行，而是包含三个关键分支。其一，\textbf{急症短路分支}在安全分流阶段直接返回就医提示，用于阻断高风险查询继续进入生成链。其二，\textbf{工具规划分支}采用“native function calling 优先、本地 planner 兜底”的双路机制：当模型具备原生工具调用能力时，系统仅执行其返回的前若干个工具调用；当模型不可用或未返回工具决定时，则退回本地规划器以保证只读工具链的确定性执行。其三，\textbf{缓存回放分支}在命中既有结果时直接回放回答文本、治理摘要与证据标签，但仍同步完成审计事件与答案回放的补记，从而保持缓存路径与新鲜生成路径在责任留痕上的一致性。
-
-因此，\texttt{\_chat\_events()} 实质上承担了 Agent 运行时“总装配器”的角色：向前连接会话建立、分流、检索、工具与预算模块，向后连接回答生成、结构化反馈、审计记录与回放持久化。该总链路为后续各子模块的实现细节提供了统一宿主：六车道分流见 \S\ref{sec:lane_engine_impl}，工具注册与执行约束见 \S\ref{sec:tool_runtime_impl}，证据门控与策略评估见 \S\ref{sec:evidence_policy_impl}，而预算、质量与规范化支撑层则分别在 \S\ref{sec:context_budget_impl} 至 \S\ref{sec:payload_norm_impl} 中展开。
-
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入 Agent 执行管线概览图
-    \caption{Agent 统一事件流、关键分支与持久化收口总览}
-    \label{fig:agent_pipeline_overview}
-\end{figure}
-
-\subsection{六车道意图分流引擎}
-\label{sec:lane_engine_impl}
-
-作为 Agent 运行链的前置入口，意图分流模块负责将自然语言查询归并到后续可控的执行车道中。当前实现并未采用独立分类模型，而是以 \texttt{agent\_safety.py} 中的模式表、优先级顺序和安全分流规则构成确定性的轻量引擎，再由 \texttt{classify\_query\_safety()} 输出供服务层直接消费的路由结果。
-
-\subsubsection*{模式表与优先级求值}
-
-实现层首先对用户查询执行去空白与小写化处理，然后按照 \texttt{POLICY\_EVALUATION\_ORDER} 的顺序调用 \texttt{\_classify\_lane()} 完成首个命中车道的判定。当前系统共维护六条正式车道：
-\begin{itemize}
-    \item \texttt{urgent\_symptom}：涵盖胸痛、呼吸困难、昏厥等需要优先急症处置的高风险表达；
-    \item \texttt{diagnosis\_sensitive}：涵盖“是否就是某病”“能否确诊”等寻求诊断确定性的请求；
-    \item \texttt{medication\_related}：涵盖药物、剂量、停药或调整用药相关咨询；
-    \item \texttt{trend\_review}：涵盖近期波动、趋势变化、连续指标回顾等请求；
-    \item \texttt{report\_interpretation}：涵盖报告解读、OCR 报告摘要和报告对比场景；
-    \item \texttt{general\_health}：作为兜底车道，承接一般性健康咨询与生活方式建议。
-\end{itemize}
-该机制的工程特点在于“有序首匹配”而非概率投票：一旦前序高敏感模式被命中，后续低风险车道不再继续参与竞争，从而在运行时维持稳定的分流边界，并与第 4 章中基于优先级的策略求值顺序保持一致。
-
-\subsubsection*{策略压力探针与服务层衔接}
-
-在获得车道标签后，\texttt{classify\_policy\_pressure()} 进一步抽取四类策略压力信号：
-\begin{itemize}
-    \item \texttt{requests\_medication\_change}
-    \item \texttt{requests\_urgent\_override}
-    \item \texttt{requests\_diagnostic\_certainty}
-    \item \texttt{mentions\_elevated\_risk}
-\end{itemize}
-这些布尔型探针并不直接生成回答，而是与车道标签一起被封装进 \texttt{safety\_result}，形成后续工具规划与策略评估的统一输入。
-
-在 \texttt{ChatService.\_chat\_events()} 中，\texttt{classify\_query\_safety()} 的输出不仅包含 \texttt{lane}，还给出 \texttt{route}、\texttt{safety\_level}、\texttt{risk\_level} 及 \texttt{policy\_pressure}。其中，急症车道会直接将 \texttt{route} 置为 \texttt{medical\_escalation}，并由服务层短路到紧急就医提示；其余车道则进入 Agent 主链，继续执行画像读取、RAG 检索、工具规划及证据门控。因此，该分流引擎在控制闭环中承担的是“输入解释到受控决策”的桥接角色，为后续运行链提供稳定而可追踪的决策起点。
-
-\subsection{工具注册与安全执行框架}
-\label{sec:tool_runtime_impl}
-
-在完成意图分流后，系统并不会将完整工具注册表直接暴露给大模型，而是先在服务侧完成工具注册、白名单过滤与执行策略约束，再将受限工具集交由 provider-native function calling 或本地规划器消费。该机制使“可调用工具集合”成为车道相关的受控子集，而不是随查询自由扩张的全局动作空间。
-
-\subsubsection*{注册表、白名单与提供商函数定义}
-
-当前工具层以 \texttt{@agent\_tool} 装饰器和 \texttt{TOOL\_REGISTRY} 为中心组织。每个工具在注册时同时固化名称、参数模式、只读属性、访问作用域及简要说明；\texttt{LANE\_TOOL\_WHITELIST} 则进一步给出六条车道各自允许访问的工具池。以当前实现为例，\texttt{general\_health} 车道主要开放画像摘要、最新风险报告、异常指标查询与医学指南检索，而 \texttt{urgent\_symptom} 车道对应的白名单为空集。
-
-为了与 provider-native function calling 对接，\texttt{get\_tool\_definitions()} 会先按候选名称或车道白名单过滤注册表，再生成符合函数调用协议的工具定义。由此，模型在支持原生函数调用时只能看到本轮允许的受限工具集合，而不会接触完整的内部工具注册信息。需要说明的是，当前异常指标查询工具在主注册表中的正式名称为 \texttt{recent\_metric\_anomaly\_lookup}，其旧名仅保留在部分兼容分支中，不再作为本轮规划的主名。
-
-\subsubsection*{双路执行与策略约束}
-
-服务层的 \texttt{\_plan\_tools()} 负责构造本地候选工具集。其实现流程可概括为“车道默认种子 + 条件追加 + 白名单求交 + 去重截断”四步：首先依据车道加载默认工具，例如 \texttt{trend\_review} 默认挂载 \texttt{get\_history\_trends}；随后基于当前生效的 \texttt{lane\_keyword\_map} 对查询文本执行包含式关键词探测，按需追加 \texttt{report\_comparison\_lookup}、\texttt{search\_medical\_guidelines} 等工具；再与 \texttt{LANE\_TOOL\_WHITELIST} 求交；最终保留首次出现顺序下的前 4 个候选工具。该上界对应的是“规划候选数”，与后续原生函数调用路径最多执行前 3 个 \texttt{tool calls} 的运行上界并不相同。
-
-在真正执行阶段，\texttt{ChatService.\_select\_tools\_with\_fallback()} 采用“provider-native function calling 优先、本地规划兜底”的双路机制。若模型支持原生函数调用，则系统将受限工具定义传入 provider，并在模型返回工具决策时逐个调用 \texttt{execute\_tool\_call()}；若模型不可用、未返回工具调用或返回纯文本建议，则退回本地规划路径，对 \texttt{planned\_tool\_names} 逐项调用 \texttt{execute\_registered\_tool()}。无论走哪条路径，执行层都会继续落实参数规范化、车道白名单校验、问题适用性检查、\texttt{enforce\_tool\_policy()} 访问控制，以及证据元数据追加等步骤，从而将“工具是否存在”“本轮是否允许调用”“调用结果是否可被后续门控消费”统一收敛到可审计的结构化结果上。
-
-\subsection{证据门控与策略评估}
-\label{sec:evidence_policy_impl}
-
-工具执行完成后，系统不会立即进入回答生成阶段，而是先由证据门控与策略评估模块对当前上下文进行后置检查。该阶段的核心任务不是再次解释用户意图，而是判断“已有证据是否足够、安全且与当前车道相匹配”，并将判定结果压缩为后续回答模式和责任提示的可控输入。
-
-\subsubsection*{后置证据门控实现}
-
-\texttt{evaluate\_post\_tool\_sufficiency()} 负责在工具层返回后评估证据充分性。其内部首先依据 \texttt{\_evaluate\_evidence\_gate()} 检查车道对应的最低证据门槛：\texttt{general\_health} 车道要求画像与指南证据同时存在，\texttt{report\_interpretation} 要求报告摘要或报告对比结果，\texttt{trend\_review} 要求至少两条趋势记录，\texttt{medication\_related} 要求可用的药物事实项，而 \texttt{diagnosis\_sensitive} 则至少需要画像、报告摘要或分析快照中的一种。若最低门槛未满足，系统会将 \texttt{evidence\_state} 下调为 \texttt{limited} 或 \texttt{insufficient}，并同步记录 \texttt{tool\_availability} 与降级原因。
-
-除最低门槛外，门控链还实现了两类冲突检查。第一类由 \texttt{\_metric\_maps\_conflict()} 完成，用于比较报告、趋势和个人画像在 \texttt{glucose\_fasting}、\texttt{sbp}、\texttt{dbp}、\texttt{bmi} 四项核心指标上的状态级一致性；实现中并不直接比较数值差，而是先映射为 \texttt{high}/\texttt{normal} 状态，再判断跨来源状态是否冲突。第二类由 \texttt{\_retrieval\_conflicts\_with\_personal\_data()} 完成，用于检查 RAG 返回文本与个体异常状态之间的显式提示词错配，例如当个人证据已提示血糖异常，而检索文本却包含 \texttt{healthy adult}、\texttt{normal fasting glucose} 等正常化表达时，系统会将其标记为冲突。此外，\texttt{evaluate\_post\_tool\_sufficiency()} 还会继续吸收 \texttt{rag\_quality\_summary}，把检索不可用、内容稀疏、OCR 退化或来源不完整等质量信号合并到证据状态中。
-
-\subsubsection*{策略评估与终端控制对象}
-
-在证据状态形成后，\texttt{evaluate\_chat\_policy()} 进一步依据车道、策略压力和证据状态生成终端策略对象。其实现先处理三类硬约束分支：\texttt{urgent\_symptom} 直接输出 \texttt{urgent\_care\_disclaimer}；\texttt{diagnosis\_sensitive} 直接输出带诊断护栏的拒答模式；\texttt{medication\_related} 且命中用药调整压力时则输出保守型拒答模式。通过硬约束后的普通车道，再按照证据状态进入分级求值：当 \texttt{general\_health} 且证据充分时允许 \texttt{direct\_answer}；其余充分证据场景通常映射为 \texttt{bounded\_answer}；证据有限时保持 \texttt{bounded\_answer + conservative disclaimer}；证据不足时则退化为 \texttt{clarify\_missing\_context}。
-
-服务层随后将该策略对象外显为三个面向前端与审计链的结构化载体：其一是 \texttt{decision\_summary}，用于汇总 \texttt{lane}、\texttt{verdict}、已用工具及内部 \texttt{policy}；其二是 \texttt{response\_verdict.v1}，用于公开回应模式、医学风险级别、证据充分性与是否需要人工升级；其三是按需生成的 \texttt{takeover.v1}，用于显式标注高风险或证据不足场景的人机接管提示。需要强调的是，\texttt{must\_refuse} 仅是策略对象中的派生标记，实际运行时是否直接跳过自由生成，还会与急症短路路径及 \texttt{\_build\_lane\_direct\_reply()} 的模板化响应共同决定。因此，本阶段在控制闭环中承担的是“由证据状态收敛到回答边界”的终端治理作用，为后续预算管理、审计记录与答案回放提供稳定的控制输出。
-
-\subsection{上下文预算管理}
-\label{sec:context_budget_impl}
-
-当分流、工具与门控主干稳定之后，运行链还需要解决上下文规模受限的问题。当前实现并未直接依赖 provider 专有 tokenizer，而是在 \texttt{context\_builder.py} 中采用轻量近似预算器：以 \texttt{estimate\_tokens()} 对文本长度执行 \texttt{len/4} 量级估算，再由一组固定预算向量控制不同证据槽位的可用上下文规模。该实现属于工程近似，而非严格的模型端 token 计数，但足以在当前运行链中形成稳定的输入边界。
-
-\subsubsection*{预算向量与裁剪策略}
-
-当前默认预算向量如表 \ref{tab:agent_context_budget} 所示。系统将画像摘要、RAG 上下文、工具证据文本、历史窗口和当前查询拆分为五个独立槽位，从而避免某一类长文本挤占全部上下文资源。
-
-\begin{table}[htbp]
-    \centering
-    \caption{Agent 运行时上下文预算默认配置}
-    \label{tab:agent_context_budget}
-    \begin{tabular}{p{3.2cm}p{2cm}p{8.3cm}}
-        \toprule
-        \textbf{上下文槽位} & \textbf{预算} & \textbf{作用说明} \\
-        \midrule
-        \texttt{profile} & 500 & 用户画像摘要、基础体征与异常标记等个人证据 \\
-        \texttt{rag} & 1500 & 向量检索返回的参考知识上下文 \\
-        \texttt{tools} & 800 & 各只读工具输出的压缩证据文本 \\
-        \texttt{history} & 320 & 多轮会话中保留的近端历史窗口 \\
-        \texttt{query} & 300 & 当前轮用户原始问题文本 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-\texttt{trim\_text\_to\_token\_budget()} 负责对单段文本执行预算裁剪；当内容超出上限时，函数会保留前部字符并在尾部追加 \texttt{[truncated]} 标记，而不是直接丢弃整段上下文。对历史窗口而言，\texttt{trim\_history\_to\_token\_budget()} 则采用“由近到远”的逆序保留策略：优先保留最近轮消息，若首条消息本身已超过预算，则对其内容做局部裁剪后保留。这一策略在工程上优先保证近期对话连贯性，而不是机械地按轮次平均分配预算。
-
-\subsubsection*{双阶段上下文构建}
-
-在主链实现中，上下文预算并非只在最终回答前执行一次。首先，\texttt{ChatService.\_chat\_events()} 会在工具规划前构造 \texttt{planning\_context}，将画像摘要、RAG 上下文和空工具证据组合为第一阶段上下文。工具执行与证据门控完成后，服务层再以真实的 \texttt{tool\_evidence\_text} 重建 \texttt{final\_context}。这两次构造均由 \texttt{build\_context\_payload()} 完成，并输出统一的 \texttt{budget\_summary}。
-
-需要说明的是，历史窗口裁剪发生在 \texttt{ChatService} 中对 \texttt{conversation\_service.get\_recent\_history()} 的结果进行预处理之后，再交由 \texttt{build\_message\_window()} 组装消息窗，而不是由 \texttt{build\_context\_payload()} 直接完成。最终产生的 \texttt{budget\_summary} 不仅服务于当轮提示词构建，也会被继续写入审计记录与答案回放快照，形成“运行时预算控制”和“事后责任留痕”的统一桥梁。
-
-\subsection{责任审计与答案回放}
-\label{sec:audit_replay_impl}
-
-为保证 Agent 回答链具有可追踪性，当前实现将运行时治理结果拆分为“审计事件”和“回答回放”两类内部持久化对象。前者强调责任归属与决策摘要，后者强调回答级快照与证据重建，两者都在服务层 \texttt{\_finalize\_response()} 或缓存回放路径中同步写入，而不是作为额外公共接口直接暴露给前端。
-
-\subsubsection*{责任审计记录}
-
-\texttt{agent\_audit.py} 中的 \texttt{build\_audit\_record()} 负责构造 \texttt{agent\_audit\_responsibility.v2} 结构。其核心字段可分为三组：
-\begin{itemize}
-    \item 决策语义字段：\texttt{lane}、\texttt{verdict}、\texttt{selected\_rule}、\texttt{policy\_version}、\texttt{response\_mode}、\texttt{evidence\_sufficiency} 与 \texttt{degraded\_reason}
-    \item 工具与缓存字段：\texttt{tool\_plan\_source}、\texttt{tool\_used} 与 \texttt{cache\_hit}
-    \item 运行时元数据：\texttt{context\_budget\_summary}、\texttt{tool\_latency\_ms}、\texttt{response\_latency\_ms} 与 \texttt{fallback\_used}
-\end{itemize}
-随后，\texttt{persist\_audit\_record()} 会将其映射为 \texttt{AgentAuditEvent} 实体，并在持久化前对枚举值、布尔值、整数计数和预算摘要执行显式规范化。
-
-这种实现方式的意义在于，它并不只记录“是否回答成功”，而是把车道、规则、证据充分性与工具规划来源一并固化到结构化记录中。特别是在当前系统同时支持四类收口路径的前提下，审计记录提供了统一的责任观察面：
-\begin{itemize}
-    \item \texttt{native\_function\_calling}
-    \item \texttt{local\_fallback\_planner}
-    \item \texttt{cache\_replay}
-    \item \texttt{urgent\_short\_circuit}
-\end{itemize}
-这有助于后续定位“本轮回答为何以当前模式结束”。
-
-\subsubsection*{回答级回放快照}
-
-与责任审计相配套，\texttt{agent\_answer\_replay.py} 通过 \texttt{build\_answer\_replay\_record()} 构造 \texttt{agent\_answer\_replay.v1} 快照对象，并在 \texttt{persist\_answer\_replay\_record()} 中映射到 \texttt{AgentAnswerReplay} 实体。该快照并不重复保存完整提示词，而是将回答所需的关键运行面压缩为以下部分：
-\begin{itemize}
-    \item \texttt{policy\_snapshot}
-    \item \texttt{execution\_snapshot}
-    \item \texttt{context\_budget\_summary}
-    \item \texttt{tool\_result\_summary}
-    \item \texttt{rag\_source\_refs}
-\end{itemize}
-其中前四项对应运行快照主体，最后一项用于保留检索来源。
-
-\texttt{tool\_result\_summary} 与 \texttt{rag\_source\_refs} 在写入前会被有界化处理，例如工具条目数、来源引用数以及 \texttt{freshness}/\texttt{coverage}/\texttt{confidence} 等属性都会经过截断与枚举归一。更重要的是，缓存命中路径虽然不重新调用大模型，但仍会补写新的审计记录和答案回放，这使缓存回放结果与新鲜生成结果在责任留痕层面保持同构。因此，该模块在控制闭环中承担的是“回答后反馈可重建”的支撑角色，而不是简单的日志附加件。
-
-\subsection{RAG质量治理}
-\label{sec:rag_quality_impl}
-
-在当前 Agent 运行链中，RAG 模块不再只输出一段参考文本，而是同步返回一个有界的质量摘要，用于告知后续门控链“检索到的内容是否足够可信、完整和可追溯”。这使 RAG 从单纯的知识补充模块，转变为可被策略层消费的运行时证据源。
-
-\subsubsection*{质量摘要生成}
-
-\texttt{RAGService.search\_context\_with\_quality()} 在完成向量检索后，会同时返回 \texttt{context} 与 \texttt{rag\_quality\_summary}。其中，\texttt{rag\_quality\_summary} 由 2 个计数项和 6 个状态项构成，具体如表 \ref{tab:rag_quality_fields} 所示。
-
-\begin{table}[htbp]
-    \centering
-    \caption{RAG 运行时质量摘要字段}
-    \label{tab:rag_quality_fields}
-    \begin{tabular}{p{3.6cm}p{2.2cm}p{7.7cm}}
-        \toprule
-        \textbf{字段} & \textbf{类型} & \textbf{含义} \\
-        \midrule
-        \texttt{retrieval\_status} & 状态 & 检索是否成功，典型值为 \texttt{ok}/\texttt{empty}/\texttt{unavailable} \\
-        \texttt{hit\_count} & 计数 & 当前命中的检索片段数量 \\
-        \texttt{unique\_source\_count} & 计数 & 去重后的来源文档数量 \\
-        \texttt{source\_kind} & 状态 & 来源类型，如 \texttt{pdf\_text}/\texttt{ocr\_text}/\texttt{mixed} \\
-        \texttt{density\_status} & 状态 & 文档密度评估结果，如 \texttt{low\_density} \\
-        \texttt{ocr\_fallback\_state} & 状态 & OCR 回退能力的可用性状态 \\
-        \texttt{provenance\_state} & 状态 & 来源元数据完整度，如 \texttt{missing}/\texttt{partial}/\texttt{full} \\
-        \texttt{chunk\_quality} & 状态 & 综合质量等级，如 \texttt{empty}/\texttt{weak}/\texttt{mixed}/\texttt{strong} \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-该摘要的生成并不是基于主观评分，而是由 \texttt{rag\_service.py} 中一组可解释的推断函数完成：\texttt{\_infer\_source\_kind()} 判定来源类型，\texttt{\_infer\_density\_status()} 调用文档密度诊断器，\texttt{\_infer\_ocr\_fallback\_state()} 结合 OCR 能力探测结果给出回退状态，\texttt{\_infer\_provenance\_state()} 检查 \texttt{source/page/chunk\_index} 等元数据底座是否完整。由此，RAG 质量治理的实现基础仍然是规则化的运行时统计，而不是额外的黑盒评估模型。
-
-\subsubsection*{质量等级与后续门控消费}
-
-\texttt{chunk\_quality} 的推断进一步将多项质量信号压缩为 \texttt{empty}、\texttt{weak}、\texttt{mixed} 和 \texttt{strong} 四级结果。其内部并非独立模型打分，而是对低密度、来源不完整、来源类型未知、OCR 回退退化以及单条命中等因素进行累计计数；严重度较高时降为 \texttt{weak}，存在单项问题时记为 \texttt{mixed}，仅在主要维度均稳定时才记为 \texttt{strong}。
-
-更关键的是，该质量摘要不会停留在检索模块内部。\texttt{ChatService.\_search\_rag\_context\_with\_quality()} 会将其沿主链传入 \texttt{evaluate\_post\_tool\_sufficiency()}。随后，后者再通过 \texttt{\_merge\_rag\_quality\_into\_result()} 将 \texttt{unavailable}、\texttt{empty}、低密度、OCR 退化或来源部分缺失等信号继续转化为证据状态降级。因此，实现层中的 RAG 已不再是“仅返回字符串”的检索器，而是 Agent 门控链中具有质量自描述能力的证据供给模块。
-
-\subsection{Payload规范化引擎}
-\label{sec:payload_norm_impl}
-
-由于 OCR 报告、风险快照和药物摘要最初来自不同子系统，其原始载荷结构并不天然一致。为减少工具层与上下文层直接处理原始异构 JSON 的复杂度，当前实现在 \texttt{payload\_normalization.py} 中构建了共享规范化层，将“持久化原始载荷”“规范化包络”“工具投影视图”和“上下文摘要文本”分离为不同层次。
-
-\subsubsection*{规范化包络与兼容读路径}
-
-对 OCR 报告而言，\texttt{normalize\_ocr\_summary\_payload()} 会将原始或历史格式载荷归一到 \texttt{ocr\_summary.v1}，统一抽取 \texttt{patient\_context}、\texttt{metrics}、\texttt{extra\_findings} 和 \texttt{narrative\_summary}；对风险快照而言，\texttt{normalize\_risk\_snapshot\_payload()} 则将结果统一到 \texttt{risk\_snapshot.v1}，抽取 \texttt{generated\_at}、\texttt{source}、\texttt{findings} 与 \texttt{ckm}。相应的规范化摘要如表 \ref{tab:normalized_payload_schema} 所示。
-
-\begin{table}[htbp]
-    \centering
-    \caption{共享规范化包络与主要消费路径}
-    \label{tab:normalized_payload_schema}
-    \begin{tabular}{p{3.3cm}p{5.2cm}p{5cm}}
-        \toprule
-        \textbf{Schema} & \textbf{核心字段} & \textbf{主要消费路径} \\
-        \midrule
-        \texttt{ocr\_summary.v1} & \texttt{patient\_context}、\texttt{metrics}、\texttt{extra\_findings}、\texttt{narrative\_summary} & 报告摘要读取、报告对比、上下文摘要构建 \\
-        \texttt{risk\_snapshot.v1} & \texttt{generated\_at}、\texttt{source}、\texttt{findings}、\texttt{ckm} & 分析快照工具、风险上下文摘要 \\
-        \texttt{medication\_summary.v1} & \texttt{count}、\texttt{medication\_items}、\texttt{source\_refs} & 药物摘要工具输出 \\
-        \bottomrule
-    \end{tabular}
-\end{table}
-
-这里需要强调的是，规范化层的主要价值在于兼容读路径与统一写路径，而不是声称所有历史数据都已被物理回填。也就是说，当前系统允许底层仍保留原始或旧版载荷，但在工具消费和上下文消费前，都会先通过共享规范化函数转换到稳定包络，再继续后续处理。
-
-\subsubsection*{工具投影视图与上下文摘要}
-
-在规范化包络之上，系统进一步区分两类输出：一类是面向工具执行的有界投影视图，另一类是面向提示词构建的压缩摘要文本。前者包括：
-\begin{itemize}
-    \item \texttt{project\_ocr\_summary\_for\_tool()}
-    \item \texttt{project\_report\_comparison\_for\_tool()}
-    \item \texttt{project\_medication\_summary\_for\_tool()}
-    \item \texttt{project\_risk\_snapshot\_for\_tool()}
-\end{itemize}
-这些投影视图只输出有界字段和受限条目数，避免工具层直接暴露完整原始载荷。后者则由 \texttt{summarize\_ocr\_summary\_for\_context()} 与 \texttt{summarize\_risk\_snapshot\_for\_context()} 负责，将规范化结果进一步压缩为适合进入上下文预算链的摘要字符串。
-
-这种“规范化包络 -> 工具投影 -> 上下文摘要”的分层方式，使 Agent 运行链在面对 OCR、风险快照与药物事实等异构来源时，能够以统一的模式完成读取、截断、比较与回放。它既降低了工具注册层对底层持久化结构的耦合，也为前述预算管理、证据门控和答案回放提供了更稳定的输入边界，因此可以视为当前 Agent 实现中的共享数据适配底座。
-
-
-\par}
-\section{前端设计与实现}
+\section{前端核心功能实现}
 \label{sec:frontend_impl}
 
-\subsection{前端架构与RBAC路由权限设计}
+前端采用 Vue 3 与 Pinia 组织用户交互逻辑，核心路由由 \texttt{router/index.js} 管理，主要状态仓库则由 \texttt{healthStore.js} 与 \texttt{authStore.js} 承担。实现上，系统并未追求复杂的前端框架创新，而是围绕“健康档案录入、风险结果展示、对话与推演交互”三个主任务组织页面。因此，本节的重点不在于枚举所有页面组件，而在于说明关键用户流程如何与后端分析链衔接。
 
-\subsubsection*{前端架构选型}
+\subsection{用户健康档案与报告上传功能}
 
-本系统前端采用单页面应用（Single Page Application, SPA）与前后端分离架构，核心基于 Vue 3 框架及 Composition API 构建。相较于传统的 Options API，Composition API 提供了更细粒度的逻辑复用能力，使健康状态监控、图表渲染及物联网外设通信等复杂视图的内部状态更容易解耦。UI 层采用 Element Plus 组件库结合 Tailwind CSS 实用工具链，实现了响应式与客制化医疗级数据仪表盘。
+在临床信息录入侧，\texttt{ClinicalView.vue} 与状态仓库共同承担了用户画像编辑、OCR 报告上传和结果回填等任务。用户上传体检报告后，前端通过 OCR 上传接口提交表单数据，并将返回的结构化摘要、处理状态和分析上下文写回本地状态；若返回结果中包含可用的结构化数据，则界面进一步将其映射回档案字段，并尝试刷新后端分析上下文与风险报告。这样的流程设计使 OCR 不只是孤立的上传能力，而是直接嵌入到“档案补全 $\rightarrow$ 风险分析”的前端主路径中。
 
-\subsubsection*{两级 RBAC 路由隔离与守卫}
+\subsection{风险展示与可视化功能}
 
-系统的功能结构依据访问主体差异划分为用户视图域（User Domain）与管理员控制域（Admin Domain）。为确保跨域访问时的数据安全与资源隔离，前端实现了基于角色访问控制（Role-Based Access Control, RBAC）的两级路由守卫机制。
+风险展示功能主要由 \texttt{DashboardView.vue} 与 \texttt{healthStore.js} 实现。前端在组织完临床字段与基因数据后，会调用 \texttt{/analyze/comprehensive} 获取结构化风险结果，并将其写入统一的 \texttt{riskReport} 状态，再由仪表盘图表和疾病名称映射模块完成可视化渲染。这里的实现重点是“结果状态统一归口”：分析接口、临床页、生活方式页和时间线页都围绕同一份风险快照展开更新，避免不同页面各自维护一份互不一致的分析结果。
 
-\begin{enumerate}
-    \item \textbf{Level 1：JWT 认证守卫}。针对普通受限路由（配置 \texttt{requiresAuth} 元数据），Vue Router 在前置钩子中读取本地持久化的 JWT Token。若 Token 缺失或失效，则将访问重定向至登录页面；若用户已通过认证，则按需加载基础画像数据。
-    \item \textbf{Level 2：管理员权限守卫}。针对管理员路由（配置 \texttt{requiresAdmin} 元数据），守卫进一步检查当前用户的 \texttt{is\_superuser} 标识，仅允许管理员身份访问；若用户越权访问，则回退至普通控制台。
-\end{enumerate}
+\subsection{干预建议与交互流程实现}
 
-此外，对于已完成认证的用户，当前端检测到其再次访问登录或注册页面时，会根据 \texttt{is\_superuser} 将其重定向至管理员面板或普通用户主界面，以保持访问路径的一致性。
+除静态风险展示外，前端还通过时间线视图和问答视图承接更具交互性的分析过程。前者通过 \texttt{/analysis/simulate/future} 和 \texttt{/analysis/simulate/intervention} 接口展示自然老化与干预场景下的结果差异，后者则在 \texttt{DrAI.vue} 中通过 \texttt{/chat/send} 与 \texttt{/chat/stream} 接口提供增量式对话体验，并展示证据标签、治理摘要、接管提示与证据面板。由此可见，前端在当前论文系统中的角色并非单纯的数据展示终端，而是将分析、解释和问答三类能力组织为连续交互流程的界面层实现。
 
-\begin{figure}[htbp]
-    \centering
-    % TODO: 插入前端路由结构与权限守卫流程图
-    \caption{前端多域路由拓扑与双层 RBAC 拦截时序}
-    \label{fig:router_rbac}
-\end{figure}
+\section{Agent架构设计与实现}
+\label{sec:agent_impl}
 
-% ---------------------------------------------------------------
-\subsection{核心页面交互与复杂视图状态编排}
+Agent 模块是本论文在系统实现层最具有特色的部分。与常见“直接将用户问题交给大模型生成回答”的问答方式不同，当前实现采用了显式的运行时治理链：先进行意图分流，再组织受限工具调用，随后执行证据门控与回答策略控制，最后将结果写入审计与回放链路。其主要实现由 \texttt{chat\_service.py}、\texttt{agent\_safety.py}、\texttt{agent\_tools.py} 以及与上下文和审计相关的辅助文件共同支撑。因此，本节不是对“Agent 理论”的再次抽象，而是对当前代码中真实存在的治理主链进行归纳。
 
-\texttt{ClinicalView} 与 \texttt{DashboardView} 分别对应异构数据录入与风险可视化展示，是前端交互流程中的两个核心页面。
+\subsection{Agent整体执行流程}
 
-\subsubsection*{ClinicalView：异构多源数据的四层智能融合}
+\texttt{ChatService} 的 \texttt{chat()} 和 \texttt{stream\_chat()} 最终都汇聚到 \texttt{\_chat\_events()} 这一主执行链中。该链路首先建立或恢复会话，随后执行安全分类，读取用户画像摘要，检索 RAG 上下文，构造规划上下文，选择允许调用的只读工具，再根据工具输出与检索质量进行后置证据评估，最后组织回答文本、治理摘要、证据面板和接管提示等结构化输出。换言之，\texttt{\_chat\_events()} 承担了 Agent 运行时“总装配器”的角色，它把原本分散在不同文件中的分流、检索、工具、预算、门控和回放逻辑串接成一条可追踪的对话执行路径。
 
-临床档案录入页（\texttt{ClinicalView}）需要同时处理用户手动输入、OCR 回填结果与后端返回的风险推断结果。为降低不同数据源之间的覆盖冲突，前端实现了四层 OCR 融合机制：
+从接口形态看，聊天接口文件 \texttt{chat.py} 同时提供普通请求和流式请求两种访问方式，并将消息结构、证据面板、响应裁决和接管提示定义为显式的数据模型。这意味着当前 Agent 的输出不是单一的纯文本回复，而是“回答文本 + 治理元数据”的复合结果。该设计与前端的逐步展示逻辑相匹配，也让审计与测试环节更容易验证每一步运行状态。
 
-\begin{itemize}
-    \item \textbf{选择性合并}：当用户触发 OCR 解析后，组件仅将识别结果写入仍为空值的字段；若对应字段已存在人工录入结果，则保留原值不覆盖。
-    \item \textbf{差异高亮}：系统将本轮 OCR 更新字段记录在 \texttt{ocrUpdatedFields} 中，并通过 \texttt{ocr-updated} 样式提示用户重点核查自动回填内容。
-    \item \textbf{快照回退}：在 OCR 执行前，组件先保存当前表单快照。若识别结果存在较大偏差，用户可通过 \texttt{handleUndoOcr} 恢复至解析前状态。
-    \item \textbf{缺失提示}：对于 OCR 未能提取的关键字段，界面依据 \texttt{isOcrNotFound} 状态给出补录提示，以避免关键指标长期缺失。
-\end{itemize}
+\subsection{意图分流与工具调用约束}
+\label{sec:lane_engine_impl}
 
-\subsubsection*{DashboardView：ECharts 数据驱动型响应式渲染}
+在进入模型生成前，系统先由 \texttt{agent\_safety.py} 中的 \texttt{classify\_query\_safety()} 执行安全分类，输出当前查询所属的车道、路由方式与风险等级。当前实现采用规则驱动而非独立分类模型：它通过模式表和优先级顺序，将查询归入健康咨询、报告解读、趋势回顾、用药相关、诊断敏感和急症分流等车道，并在急症场景下直接短路到安全引导回复。这样的实现方式虽然不属于高复杂度语义分类器，但具有边界清晰、易审计和便于人工规则修正的优势。
 
-主总览面板视图（\texttt{DashboardView}）负责展示模型输出的多维风险结果，并使用 \texttt{ECharts} 绘制雷达图等可视化组件。
+在完成车道划分后，系统并不会把全部工具都交给大模型自由探索，而是由 \texttt{ChatService.\_plan\_tools()} 与工具注册表共同决定可调用的受限工具集合。具体来说，规划函数会根据车道默认种子和查询关键词生成候选工具列表，再与按车道返回的白名单求交，并将数量截断在较小上限内。由此，工具调用约束在当前实现中体现为“服务侧先做车道相关筛选，再允许模型在受控集合内调用”，而不是开放式工具自治规划。
 
-在实现层面，系统采用 Vue 的数据驱动渲染模式，并通过 \texttt{watch} 监听 Pinia 容器中的 \texttt{riskReport} 状态。当风险报告对象发生变化时，组件在 \texttt{nextTick} 周期内调用 \texttt{renderRadar} 进行图表刷新。该机制避免了直接操作原始 DOM，有利于降低重复渲染带来的额外开销。
+\subsection{证据门控与回答策略控制}
+\label{sec:evidence_policy_impl}
 
-\begin{figure}[htbp]
-    \centering
-    % TODO: 核心页面交互时序图
-    \caption{多源异构视图复杂操作（Clinical 表单、Dashboard 雷达展现）状态流向驱动时序}
-    \label{fig:page_interactions}
-\end{figure}
+完成工具调用后，系统进一步通过后置充分性评估函数和会话策略评估函数对现有上下文执行检查。前者综合工具输出、用户画像、报告摘要、趋势信息和 \texttt{rag\_quality\_summary}，判定当前证据属于 \texttt{sufficient}、\texttt{limited} 还是 \texttt{insufficient}；后者再结合车道与策略压力，确定回答模式、免责声明风格以及是否需要接管提示。配套的上下文构建模块则负责在规划阶段和最终回答阶段分别裁剪历史消息、画像摘要、检索文本和工具证据，使有限上下文预算优先服务于当前问题。
 
-% ---------------------------------------------------------------
-\subsection{集中式状态管理与数据同步机制}
+从实现边界看，当前系统中的“证据门控”并不是基于医学知识图谱或复杂因果推理的真实性判断，而是围绕结构化工具结果、检索质量和风险车道开展的规则化后置控制。因此，本节在论文中更适合表述为“面向医疗健康问答的运行时受控生成机制”。这种表达既能体现 Agent 模块的亮点，也不会超出代码真实能力。
 
-\subsubsection*{全局数据中枢与界面状态组件解耦分离}
+\subsection{审计与回放机制}
+\label{sec:audit_replay_impl}
 
-\texttt{Props} 逐层传递在多页面医疗应用中容易引入状态分散与重复请求问题。为降低前端状态管理复杂度，系统采用 Pinia 构建集中式状态容器，并将认证状态与健康数据分别收敛至 \texttt{authStore} 与 \texttt{healthStore}。
+为提升对话链路的可追溯性，系统在回答生成后将关键信息写入审计记录与答案回放快照。审计侧由 \texttt{agent\_audit.py} 负责构造和持久化运行记录，内容包括车道、规则版本、工具计划来源、上下文预算摘要、风险等级和模型名等；回放侧由 \texttt{agent\_answer\_replay.py} 负责保存面向前端和后续检索的回答快照，其中包含回答文本、证据充分性公开摘要、工具结果摘要和来源引用等信息。两者共同构成了当前 Agent 运行链的“责任留痕层”。
 
-\texttt{healthStore} 统一维护静态画像（\texttt{userProfile}）、营养结果（\texttt{dietNutrition}）、风险报告（\texttt{riskReport}）与物联数据（\texttt{iotData}）等核心状态。页面层通过 Action 调用这些状态，而不直接拼装底层 \texttt{axios} 请求，从而降低了界面组件与接口实现之间的耦合度。
+值得注意的是，平台中还存在 \texttt{payload\_normalization.py} 等用于 OCR 摘要、风险快照和药物事实规范化的支撑代码，但它们在本章中不再作为独立主节展开，而被视作审计、工具读取和上下文构建的共享数据底座。这种处理有助于压缩篇幅，也更符合正文主线应围绕“实现了什么关键能力”而不是“支撑模块如何逐一设计”的写作原则。
 
-\subsubsection*{数据汇聚拉取推流的全域网络强一致闭环同步}
-
-\texttt{healthStore} 进一步封装了两类关键同步操作：一类是从服务端拉取最新画像的 \texttt{fetchRemoteProfile()}，另一类是将本地修改写回后端的 \texttt{saveProfileToCloud()}。二者分别对应读取一致性与写入一致性的基本控制面。
-
-这种集中式设计使体征录入、OCR 回填与风险分析前的数据准备能够汇聚到统一状态入口，减少局部页面各自维护副本所带来的偏差风险，也为后续接口调用提供了更稳定的输入边界。
-
-\subsubsection*{登录态全链路数据并发装填机制}
-
-为降低登录后页面首屏渲染与后续分析页面之间的状态断裂风险，\texttt{authStore} 在核心 \texttt{login} 流程中联动执行画像拉取。
-
-在用户完成认证并获得会话 Token 后，前端先调用 \texttt{authStore.fetchProfile()} 获取基础身份信息，再调用 \texttt{healthStore.fetchRemoteProfile()} 读取画像与健康相关数据。该顺序化拉取机制虽然增加了登录后的首轮请求数，但有助于在进入分析与控制页面前完成核心状态预热，减少因数据尚未返回而导致的界面状态不一致。
-
-\begin{figure}[htbp]
-    \centering
-    % [图 5-X 前端全局状态管理与数据流向图]
-    \caption{跨状态容器 Pinia 组件集成的请求闭环网与控制向时流同步拓扑}
-    \label{fig:store_dataflow}
-\end{figure}
-
-
-\section{系统集成、部署与全生命周期安全机制}
+\section{系统部署与运行流程}
 \label{sec:deploy_security_impl}
 
-本节主要论述系统的工程部署架构与安全防护机制。涵盖内容包括微服务容灾与编排下的架构隔离方案、网关流量代理模型，以及针对敏感医学数据全生命周期的密码学防护策略。
+平台的部署实现以 \texttt{docker-compose.yml} 为中心，将系统组织为前端、后端和 Redis 三个核心容器。其中，后端容器运行 FastAPI 应用并挂载数据库、上传目录和 RAG 知识库目录；前端容器使用 Nginx 承载构建后的 Vue 单页应用；Redis 容器用于缓存高频对话结果和部分运行态状态。这一部署方式说明当前系统在工程上已经具备“单机容器化集成运行”的能力，但尚不应被描述为大规模生产级微服务集群。
 
-\subsection{基于 Docker Compose 的微服务容器化拓扑}
+\subsection{系统集成方案}
 
-系统采用 Docker 技术实现了微服务的容器化部署。\texttt{docker-compose.yml} 配置文件将应用体系逻辑解耦为三个独立的容器计算实例：前端交互层（\texttt{healthai-frontend}）、核心后端计算引擎（\texttt{healthai-backend}）以及高速缓存实例（\texttt{healthai-redis}）。
+在集成关系上，前端所有页面统一通过 Nginx 反向代理访问后端接口，核心代理规则配置在 \texttt{frontend/nginx.conf} 中：\texttt{/api/} 路径转发到 FastAPI，认证、用户、分析、聊天等直连路径也被统一代理到后端服务，而静态上传文件则经由 \texttt{/static/} 暴露。这样的配置确保了 Vue 路由刷新、前后端通信以及上传文件访问能够在同一入口下协同工作，是当前原型系统可直接部署运行的关键基础。
 
-\begin{itemize}
-\item \textbf{网络隔离与流量代理}：所有容器实例均被放置于受控的自定义隔离网桥（\texttt{healthai-network}）中，后端接口及缓存节点不直接向外部暴露宿主端口。系统主要通过容器网络隔离与反向代理组织内网访问边界。
-    \item \textbf{基于探针的依赖编排}：针对容器化启动过程中的异步并发依赖问题，系统在编排配置内加入了 \texttt{healthcheck} 探针机制。业务后端节点必须在捕获到 \texttt{redis} 返回健康信号（\texttt{condition: service\_healthy}）后才执行启动逻辑，从而避免了基础服务未就绪导致的挂载失效与调用溢出。
-\end{itemize}
+\subsection{容器化部署与运行流程}
 
-\begin{figure}[htbp]
-    \centering
-    % [图 5-Y 基于 Docker Compose 的容器化拓扑架构图]
-    \caption{HealthAI Platform 容器网络化拓扑与流量隔离架构图}
-    \label{fig:docker_topology}
-\end{figure}
+从运行流程看，系统启动时首先由后端 \texttt{lifespan} 钩子完成模型和服务初始化，随后开放风险分析、OCR 和聊天等核心接口；前端在用户登录后通过统一状态仓库获取画像、风险结果与问答上下文；Redis 则承担部分对话缓存和结果复用任务。与原稿中较大篇幅的“全生命周期安全机制”和“治理中枢”描述相比，当前版本更适合概括为：平台已实现面向论文原型系统的容器化部署、接口代理和基础状态持久化，但安全、监控、热更新与运维能力仍属于受限实现，不宜在正文中写成完整的平台级中台体系。
 
-% ---------------------------------------------------------------
-\subsection{前端多阶段构建与反向代理网关}
+\section{本章小结}
 
-\subsubsection*{多阶段构建（Multi-stage Build）对攻击面的缩减}
+本章从代码实现角度说明了平台各核心模块的落地方式。后端部分以 FastAPI 为统一入口，将风险评估、OCR 报告解析与后台任务调度组织为可调用的服务链；前端部分围绕健康档案、风险展示、干预交互和问答流程实现用户侧体验；Agent 部分则通过分流、受限工具调用、证据门控以及审计回放构成受控问答运行链；部署部分以 Docker Compose、Nginx 和 Redis 完成单机容器化集成。
 
-为最大化提升容器分发效率及封锁运行态安全漏洞，前端 \texttt{Dockerfile} 实施了严格的多阶段构建策略。在 Stage 1（\texttt{builder}）阶段，载入重型的 Node.js 完整工具链以完成 Vue 3 SPA 应用和依赖模块的编译打包过程。随后在 Stage 2（生产运行时）阶段，系统仅抽取编译析出的静态分发成品（\texttt{/dist}），并将其托管于彻底剥离了 Node 运行时的轻量级 \texttt{nginx:alpine} 微内核镜像中。这种"用后即焚"的编译时构件销毁策略，将最终镜像体积缩减了数个数量级，并彻底根除了因 npm 组件漏洞导致的容器越权提权风险。
-
-\subsubsection*{反向代理（Reverse Proxy）的流量接管与跨域化解}
-
-\texttt{nginx.conf} 作为容器化部署场景下的统一入口，负责静态资源分发与部分 API 反向代理。Nginx 将前端构建产物托管在同一入口下，并可将特定路径转发至后端服务 \texttt{http://backend:8000}。该设计有助于收敛部署入口与静态资源访问路径，但并不替代应用层自身的 CORS 与接口地址配置。
-
-% ---------------------------------------------------------------
-\subsection{后端环境抽象与混合数据持久化策略}
-
-针对容器的无状态计算特性与核心数据库静态存档的文件读写要求，后台服务在资源配置层面采用了 Docker Volume 的分级分离挂载模型对系统数据生命周期进行协同管理：
-
-\begin{itemize}
-    \item \textbf{业务状态数据的持久化映射}：应用层的核心 SQLite 数据文件（\texttt{health\_ai\_v2.db}）与检查化验影像系统分析节点采取全连通映射配置；将宿主机路径锚定至容器虚拟环境的 \texttt{/app/data} 目录中。该设计实现了医学存档数据与底层执行环境配置间的解耦，保障了应用服务重组更新周期的持续连贯访问。
-    \item \textbf{文献指模数据的只读性锁定（Read-Only Mount）}：承载 RAG 功能运作底层的源头临床通则语料文件集（\texttt{guidelines} 目录结构内）均标注并强制设定了 \texttt{:ro}（Read-Only）只读限制策略。任何针对于映射地址节点下产生的非法操作修改会在宿主文件系统层面予以拦截，从而规避了系统应用遭入侵时引致分析参考库底层遭污染的风险。
-    \item \textbf{计算频次高载的内存限流降维释放}：面对在重负荷与多维查询并行下存在的系统资源触顶危险，在微服务 Redis 环节的编排预设引入了 \texttt{maxmemory-policy allkeys-lru} 调控机制。该设定能在系统达到内存限制前依资源被冷落频率降序展开存储池清算，自我收放容纳容量借以平滑抗拒内存耗尽及雪崩效应。
-\end{itemize}
-
-% ---------------------------------------------------------------
-\subsection{全生命周期安全防护与加密机制}
-
-鉴于系统涉及对个人受保护健康信息（PHI）的存储管理任务，平台在认证机制、凭证传输和数据库架构加密隔离层部署了严谨的安全策略。
-
-\subsubsection*{环境要素隔行配置（Secrets Management）}
-
-系统对 OpenAI 推理凭证（\texttt{OPENAI\_API\_KEY}）等敏感配置优先采用 \texttt{.env} 环境变量注入方式，以降低将密钥直接写入业务代码的风险。需要说明的是，当前认证模块仍保留默认 \texttt{SECRET\_KEY} 回退值，因此更准确的表述应为“环境变量优先的配置隔离”，而非完全意义上的零硬编码密钥。
-
-\subsubsection*{基于 Bcrypt 哈希计算的身份抗窃放结构}
-
-系统的会话管理依赖于标准 JSON Web Token (JWT) 执行授权核验。在认证凭证存储层面，系统全面弃用直接保存模式或简单采用哈希。其选用带有工作因子（Work Factor）设计的单向 \texttt{bcrypt} 算法实施加密计算。通过算法运转调参生成随机盐值（Salt）伴随计算的同时进一步增大算力所需开销耗时响应，极大提升了针对系统密码资源发起查询对比匹配及彩虹表搜索攻击的技术难度门槛。
-
-\subsubsection*{面向源结构特征采用 AEAD 标准设防}
-
-对于数据库中暴露风险较高的敏感字段，系统在基因相关数据存储路径上实施了基于 AES-256-GCM 认证加密模式（Authenticated Encryption with Associated Data, AEAD）的保护：
-
-\begin{itemize}
-    \item \textbf{密钥派生}：系统以配置注入的 \texttt{SECRET\_KEY} 为基础，采用 \texttt{PBKDF2HMAC} 执行密钥伸展，生成 256 位对称加密密钥。
-    \item \textbf{随机扰动与认证}：每次加密均引入独立的 \texttt{Nonce}，并结合 GCM 模式生成认证标签。若密文在存储或传输过程中发生篡改，底层解密过程将无法通过认证校验，从而拦截异常数据进入业务链路。
-\end{itemize}
-
-
-\section{面向数据治理与模型热更新的管控中枢设计}
-\label{sec:governance_impl}
-
-管理后台（Admin Dashboard）不仅是常规的业务运维模块，更是本系统中承担计算资源配置、医学模型迭代和合规数据出口的核心枢纽。本节详细阐述该模块如何作为异构算力集群的调度中心，在医疗人工智能系统中实现高阶的 MLOps 与 LLMOps 的交互与管理。
-
-\subsection{医学数据的自动化流转与隐私合规验证}
-
-临床研究需要大规模医学数据的稳定支持，但这一过程必须遵循保护健康信息（PHI）的安全规范。通过管理员导出接口（\texttt{/api/v1/admin/research/export}），后台构建了强制性隐私审查管道。在任意批量提取指令执行前，核准服务会实施条件拦截验证：
-
-仅具备 \texttt{UserProfile.allow\_research == True} 授权标签的电子病历记录被允许进入脱敏抽取流程。系统将自动抹除个人可识别信息（PII）；为解决由此带来的数据断层问题，系统采用 SHA256 算法对唯一用户标识（\texttt{User\_ID}）与系统独立盐值（\texttt{RESEARCH\_SALT}）进行哈希运算，生成一次性不可逆映射 $H(User\_ID \parallel Salt)$ 为伪匿名化 ID。这一方法不仅从根本上防止了数据的逆向重识别，并在跨期批次的科研样本抽样流程中，保障了统一研究对象在长期观察记录上的链接一致性（Longitudinal Linkability）。
-
-\subsection{异构计算引擎的端到端管线分发架构}
-
-管理后台视图（\texttt{DataCenterView}）被设计为 MLOps 的调度中枢。基于状态化事件驱动模型，操作员发出的控制指令将通过管理网关完成资源的触发调配。系统可分类调度涵盖四大业务维度的微服务计算组：
-
-\begin{itemize}
-    \item \textbf{临床预警模型参数重组}：抽取核心数据库中的历史就诊记录与表征状态指标，多维提取及并行整合清洗后，指令后台启动轻量预测模块（LightGBM）执行参数增量重训调校。
-    \item \textbf{基因重组表征自动映射}：针对外部引入的标准全基因组分析结果源文件（\texttt{.tsv}），平台提供输入清洗与特征值寻源校验，生成致病因表格并执行特定突变特征（SNP）的基础字典映射更新。
-    \item \textbf{结构化诊疗标准树刷新}：系统以定向请求提取新版本发布的标准参考档案文件（XML 等格式）；采用降维解析和词簇关联分类操作生成重组结果后，迭代加载并覆盖现存判定框架节点。
-    \item \textbf{影像视觉参数反馈强化}：将经过二次校验和确认标记的特征图像集再次送入训练序列（Hot-feeding），进而驱动视觉网络特征权重的持续微调与诊断泛化能力提升。
-\end{itemize}
-
-\begin{figure}[htbp]
-    \centering
-    % [图 5-Z 数据中心异构引擎调度界面图]
-    \caption{数据中心基于事件驱动与人工响应的聚合管理视图面板}
-    \label{fig:datacenter_pipeline}
-\end{figure}
-
-\subsection{RAG 循证知识库的动态演进机制}
-
-针对临床医学指南的定期更迭，为缓解大型语言模型（LLM）由于训练状态固化引发的领域幻觉（Domain-specific Hallucination），系统设计了面向知识库的后台重建机制，实现新增文档的规范化汇入与向量索引更新。
-
-当有新版医疗指南（PDF）传入后，系统通过 \texttt{BackgroundTasks} 在后台执行知识库重建。该策略将高耗时的文本切分、向量化与索引生成过程从前台请求路径中分离出来，以降低知识更新操作对在线问答接口的直接干扰。
-
-\subsection{长效进程计算监控与轮询管理策略}
-
-在处理参数矩阵重铸与机器学习任务队列执行期间不可回避了高硬件负载及时序消耗的约束状态。这类后台操作由于耗时长且进度感知性弱，亟需在前端操作层实施有效的观测。
-
-为避免 WebSocket 长连接带来的额外状态维护开销，系统采用轻量级 HTTP 轮询（Polling）机制获取任务进度。该设计使任务可视化能力建立在常规请求-响应模型之上，适合当前低频管理任务的监控需求。
-
-在前端展示层，管理界面根据接口返回的 \texttt{taskLogs} 渲染任务日志，并在轮询过程中持续刷新显示内容。由于任务状态当前保存在进程内存中，该机制主要服务于单实例部署下的任务可观测性需求。
-
-\begin{figure}[htbp]
-    \centering
-    % [图 5-W 虚拟终端异步轮询状态时序图]
-    \caption{运维虚拟控制端状态的获取探针应用及追踪时序图}
-    \label{fig:admin_polling}
-\end{figure}
+结合第 4 章的方法设计可以看到，平台在实现层已经形成“算法模型 $\rightarrow$ 服务封装 $\rightarrow$ 前端交互 $\rightarrow$ 运行治理”的闭环结构。下一章将在此基础上进一步验证风险评估、系统功能与 Agent 运行行为的实际效果。
