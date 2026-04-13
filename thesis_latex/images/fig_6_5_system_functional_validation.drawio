@@ -1,0 +1,93 @@
+<mxfile host="embed.diagrams.net">
+  <diagram id="-F1YM02tS00h_EjRIzBW" name="第 1 页">
+    <mxGraphModel dx="1004" dy="797" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="560" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#FFFFFF;fontSize=18;fontStyle=1;fontColor=#1B2631;" value="系统功能验证双层证据链" vertex="1">
+          <mxGeometry height="36" width="380" x="210" y="40" as="geometry" />
+        </mxCell>
+        <mxCell id="left-bg" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#F7F9FB;strokeColor=#ECEFF1;strokeWidth=1;fontSize=13;fontStyle=1;fontColor=#263238;verticalAlign=top;spacingTop=10;" value="测试入口" vertex="1">
+          <mxGeometry height="330" width="150" x="28" y="84" as="geometry" />
+        </mxCell>
+        <mxCell id="entry-backend" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;strokeWidth=1.5;fontSize=12;fontColor=#263238;spacing=6;align=center;verticalAlign=middle;" value="&lt;div&gt;后端回归&lt;/div&gt;&lt;div&gt;pytest&lt;/div&gt;&lt;div&gt;232/232&lt;/div&gt;" vertex="1">
+          <mxGeometry height="72" width="116" x="46" y="136" as="geometry" />
+        </mxCell>
+        <mxCell id="entry-ui" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1976D2;strokeWidth=1.5;fontSize=12;fontColor=#263238;spacing=6;align=center;verticalAlign=middle;" value="&lt;div&gt;浏览器回归&lt;/div&gt;&lt;div&gt;Playwright&lt;/div&gt;&lt;div&gt;21/21&lt;/div&gt;" vertex="1">
+          <mxGeometry height="72" width="116" x="46" y="322" as="geometry" />
+        </mxCell>
+        <mxCell id="backend-lane" parent="1" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#F8FBFF;strokeColor=#EDF3F8;strokeWidth=1;fontSize=13;fontStyle=1;fontColor=#263238;verticalAlign=top;spacingTop=10;" value="后端/API 回归层" vertex="1">
+          <mxGeometry height="150" width="415" x="198" y="84" as="geometry" />
+        </mxCell>
+        <mxCell id="ui-lane" parent="1" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FCF7FD;strokeColor=#F1E7F5;strokeWidth=1;fontSize=13;fontStyle=1;fontColor=#263238;verticalAlign=top;spacingTop=10;" value="浏览器/UI 场景层" vertex="1">
+          <mxGeometry height="150" width="415" x="198" y="270" as="geometry" />
+        </mxCell>
+        <mxCell id="b1" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#90CAF9;strokeWidth=1.2;fontSize=12;fontColor=#37474F;align=center;verticalAlign=middle;" value="&lt;div&gt;主路由&lt;/div&gt;&lt;div&gt;认证/权限&lt;/div&gt;" vertex="1">
+          <mxGeometry height="58" width="112" x="222" y="143" as="geometry" />
+        </mxCell>
+        <mxCell id="b2" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#FFB74D;strokeWidth=1.2;fontSize=12;fontColor=#37474F;align=center;verticalAlign=middle;" value="&lt;div&gt;OCR上传&lt;/div&gt;&lt;div&gt;状态回传&lt;/div&gt;" vertex="1">
+          <mxGeometry height="58" width="112" x="358" y="143" as="geometry" />
+        </mxCell>
+        <mxCell id="b3" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#90CAF9;strokeWidth=1.2;fontSize=12;fontColor=#37474F;align=center;verticalAlign=middle;" value="&lt;div&gt;综合分析&lt;/div&gt;&lt;div&gt;上下文输出&lt;/div&gt;" vertex="1">
+          <mxGeometry height="58" width="112" x="494" y="143" as="geometry" />
+        </mxCell>
+        <mxCell id="u1" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFF8E1;strokeColor=#FFB74D;strokeWidth=1.2;fontSize=12;fontColor=#37474F;align=center;verticalAlign=middle;" value="&lt;div&gt;OCR状态&lt;/div&gt;&lt;div&gt;引导补全&lt;/div&gt;" vertex="1">
+          <mxGeometry height="58" width="112" x="222" y="329" as="geometry" />
+        </mxCell>
+        <mxCell id="u2" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CE93D8;strokeWidth=1.2;fontSize=12;fontColor=#37474F;align=center;verticalAlign=middle;" value="&lt;div&gt;主要页面&lt;/div&gt;&lt;div&gt;可加载性&lt;/div&gt;" vertex="1">
+          <mxGeometry height="58" width="112" x="358" y="329" as="geometry" />
+        </mxCell>
+        <mxCell id="u3" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#CE93D8;strokeWidth=1.2;fontSize=12;fontColor=#37474F;align=center;verticalAlign=middle;" value="&lt;div&gt;Dr.&amp;nbsp;AI&lt;/div&gt;&lt;div&gt;接管提示&lt;/div&gt;" vertex="1">
+          <mxGeometry height="58" width="112" x="494" y="329" as="geometry" />
+        </mxCell>
+        <mxCell id="right-bg" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#F7FAF7;strokeColor=#ECEFF1;strokeWidth=1;fontSize=13;fontStyle=1;fontColor=#263238;verticalAlign=top;spacingTop=10;" value="验证结论" vertex="1">
+          <mxGeometry height="330" width="137" x="635" y="84" as="geometry" />
+        </mxCell>
+        <mxCell id="r1" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#43A047;strokeWidth=1.3;fontSize=12;fontColor=#263238;align=center;verticalAlign=middle;" value="&lt;div&gt;接口契约稳定&lt;/div&gt;&lt;div&gt;状态语义可回传&lt;/div&gt;" vertex="1">
+          <mxGeometry height="72" width="110" x="648.5" y="136" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#43A047;strokeWidth=1.3;fontSize=12;fontColor=#263238;align=center;verticalAlign=middle;" value="&lt;div&gt;页面交互稳定&lt;/div&gt;&lt;div&gt;关键状态可见&lt;/div&gt;" vertex="1">
+          <mxGeometry height="72" width="110" x="648.5" y="322" as="geometry" />
+        </mxCell>
+        <mxCell id="conclusion" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E0F2F1;strokeColor=#00897B;strokeWidth=1.5;fontSize=13;fontStyle=1;fontColor=#004D40;spacing=8;align=center;verticalAlign=middle;" value="&lt;div&gt;结果摘要&lt;/div&gt;&lt;div&gt;数据输入 → 风险分析 → 健康问答链路可回归&lt;/div&gt;" vertex="1">
+          <mxGeometry height="62" width="395" x="210" y="430" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" parent="1" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=#ECEFF1;fontSize=10;fontColor=#546E7A;" value="蓝线：测试入口　深灰线：同层覆盖顺序　橙色虚线：状态语义下沉　绿线：验证输出" vertex="1">
+          <mxGeometry height="20" width="490" x="155" y="510" as="geometry" />
+        </mxCell>
+        <mxCell id="e-entry-backend" edge="1" parent="1" source="entry-backend" style="endArrow=classic;html=1;rounded=0;strokeColor=#1976D2;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="b1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-entry-ui" edge="1" parent="1" source="entry-ui" style="endArrow=classic;html=1;rounded=0;strokeColor=#1976D2;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="u1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-b1-b2" edge="1" parent="1" source="b1" style="endArrow=classic;html=1;rounded=0;strokeColor=#455A64;strokeWidth=1.5;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="b2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-b2-b3" edge="1" parent="1" source="b2" style="endArrow=classic;html=1;rounded=0;strokeColor=#455A64;strokeWidth=1.5;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="b3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-u1-u2" edge="1" parent="1" source="u1" style="endArrow=classic;html=1;rounded=0;strokeColor=#455A64;strokeWidth=1.5;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="u2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-u2-u3" edge="1" parent="1" source="u2" style="endArrow=classic;html=1;rounded=0;strokeColor=#455A64;strokeWidth=1.5;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="u3" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-b3-r1" edge="1" parent="1" source="b3" style="endArrow=classic;html=1;rounded=0;strokeColor=#43A047;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="r1" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-u3-r2" edge="1" parent="1" source="u3" style="endArrow=classic;html=1;rounded=0;strokeColor=#43A047;strokeWidth=2;edgeStyle=orthogonalEdgeStyle;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="r2" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-b3-u1" edge="1" parent="1" source="b2" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=4 4;strokeColor=#FF9800;strokeWidth=1.3;fontSize=10;fontColor=#795548;edgeStyle=orthogonalEdgeStyle;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="u1" value="OCR状态语义下沉">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="414" y="250" />
+              <mxPoint x="278" y="250" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

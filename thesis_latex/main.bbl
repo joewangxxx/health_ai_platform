@@ -1,4 +1,4 @@
-\begin{thebibliography}{12}
+\begin{thebibliography}{21}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{#1}
 \expandafter\ifx\csname urlstyle\endcsname\relax\else
@@ -37,6 +37,13 @@ ZAHEDANI A~D, MCLAUGHLIN T, VELUVALI A, et~al.
 \newblock npj Digital Medicine, 2023, 6\allowbreak (1): 216.
 \newblock DOI: \doi{10.1038/s41746-023-00956-y}.
 
+\bibitem[Tang et~al.(2024)Tang, Woldemariam, Miramontes, Norgeot, Oskotsky, and
+  Sirota]{tang2024ehr}
+TANG A~S, WOLDEMARIAM S~R, MIRAMONTES S, et~al.
+\newblock Harnessing {EHR} data for health research\allowbreak[J/OL].
+\newblock Nature Medicine, 2024, 30\allowbreak (7): 1847-1855.
+\newblock DOI: \doi{10.1038/s41591-024-03074-8}.
+
 \bibitem[Ambalavanan et~al.(2025)Ambalavanan, Snead, Marczika, Towett,
   Malioukis, and Mbogori-Kairichi]{ambalavanan2025ecosystem}
 AMBALAVANAN R, SNEAD R~S, MARCZIKA J, et~al.
@@ -50,9 +57,9 @@ AMBALAVANAN R, SNEAD R~S, MARCZIKA J, et~al.
   Nassiri, Ogino, Patel, Suciu, Temple-Smolkin, Zehir, and
   Roy]{carter2022ehrgenomics}
 CARTER A~B, ABRUZZO L~V, HIRSCHHORN J~W, et~al.
-\newblock Electronic health records and genomics: perspectives from the
-  association for molecular pathology electronic health record (EHR)
-  interoperability for clinical genomics data working group\allowbreak[J/OL].
+\newblock {Electronic Health Records and Genomics}: perspectives from the
+  {Association for Molecular Pathology} electronic health record ({EHR})
+  interoperability for {Clinical Genomics Data} working group\allowbreak[J/OL].
 \newblock The Journal of Molecular Diagnostics, 2022, 24\allowbreak (1): 1-17.
 \newblock DOI: \doi{10.1016/j.jmoldx.2021.09.009}.
 
@@ -87,6 +94,13 @@ CHOI S~W, O'REILLY P~F.
 \newblock GigaScience, 2019, 8\allowbreak (7): giz082.
 \newblock DOI: \doi{10.1093/gigascience/giz082}.
 
+\bibitem[Singhal et~al.(2023)Singhal, Azizi, Tu, Mahdavi, Wei, Chung, Scales,
+  et~al.]{singhal2023clinicalllm}
+SINGHAL K, AZIZI S, TU T, et~al.
+\newblock Large language models encode clinical knowledge\allowbreak[J/OL].
+\newblock Nature, 2023, 620\allowbreak (7972): 172-180.
+\newblock DOI: \doi{10.1038/s41586-023-06291-2}.
+
 \bibitem[Yao et~al.(2023)Yao, Zhao, Yu, Du, Shafran, Narasimhan, and
   Cao]{yao2023react}
 YAO S, ZHAO J, YU D, et~al.
@@ -108,10 +122,67 @@ SCHICK T, DWIVEDI-YU J, DESSI R, et~al.
 \bibitem[Chen et~al.(2025)Chen, Zhen, Wang, Liu, Li, Huo, Yang, Xu, Dong, and
   Gao]{chen2025medsentry}
 CHEN K, ZHEN T, WANG H, et~al.
-\newblock MedSentry: understanding and mitigating safety risks in medical LLM
-  multi-agent systems\allowbreak[A/OL].
+\newblock {MedSentry}: understanding and mitigating safety risks in medical
+  {LLM} multi-agent systems\allowbreak[A/OL].
 \newblock arXiv (2025).
 \newblock \url{https://arxiv.org/abs/2505.20824}.
 \newblock DOI: \doi{10.48550/arXiv.2505.20824}.
+
+\bibitem[Arora et~al.(2023)Arora, Alderman, Palmer, Ganapathi, Laws, McCradden,
+  Oakden-Rayner, et~al.]{arora2023healthdatasetstandards}
+ARORA A, ALDERMAN J~E, PALMER J, et~al.
+\newblock The value of standards for health datasets in artificial
+  intelligence-based applications\allowbreak[J/OL].
+\newblock Nature Medicine, 2023, 29\allowbreak (11): 2929-2938.
+\newblock DOI: \doi{10.1038/s41591-023-02608-w}.
+
+\bibitem[Zhang et~al.(2025)Zhang, Xu, Jin, Chen, Fang, Liu, Rousseau,
+  et~al.]{zhang2025medicalrag}
+ZHANG G, XU Z, JIN Q, et~al.
+\newblock Leveraging long context in retrieval augmented language models for
+  medical question answering\allowbreak[J/OL].
+\newblock npj Digital Medicine, 2025, 8\allowbreak (1): 239.
+\newblock DOI: \doi{10.1038/s41746-025-01651-w}.
+
+\bibitem[Inker et~al.(2021)Inker, Eneanya, Coresh, Tighiouart, Wang, Sang,
+  Crews, et~al.]{inker2021egfr}
+INKER L~A, ENEANYA N~D, CORESH J, et~al.
+\newblock New creatinine- and cystatin {C}-based equations to estimate {GFR}
+  without race\allowbreak[J/OL].
+\newblock New England Journal of Medicine, 2021, 385\allowbreak (19):
+  1737-1749.
+\newblock DOI: \doi{10.1056/NEJMoa2102953}.
+
+\bibitem[{Kidney Disease: Improving Global Outcomes (KDIGO) CKD Work
+  Group}(2024)]{kdigo2024ckd}
+{Kidney Disease: Improving Global Outcomes (KDIGO) CKD Work Group}.
+\newblock {KDIGO} 2024 clinical practice guideline for the evaluation and
+  management of chronic kidney disease\allowbreak[J/OL].
+\newblock Kidney International, 2024, 105\allowbreak (4): S117-S314.
+\newblock DOI: \doi{10.1016/j.kint.2023.10.018}.
+
+\bibitem[Sollis et~al.(2023)Sollis, Mosaku, Abid, Buniello, Cerezo, Gil, Groza,
+  et~al.]{sollis2023gwascatalog}
+SOLLIS E, MOSAKU A, ABID A, et~al.
+\newblock The {NHGRI-EBI} {GWAS} catalog: knowledgebase and deposition
+  resource\allowbreak[J/OL].
+\newblock Nucleic Acids Research, 2023, 51\allowbreak (D1): D977-D985.
+\newblock DOI: \doi{10.1093/nar/gkac1010}.
+
+\bibitem[Ndumele et~al.(2023)Ndumele, Rangaswami, Chow, Neeland, Tuttle, Khan,
+  Coresh, et~al.]{ndumele2023ckm}
+NDUMELE C~E, RANGASWAMI J, CHOW S~L, et~al.
+\newblock {Cardiovascular-Kidney-Metabolic Health}: a presidential advisory
+  from the {American Heart Association}\allowbreak[J/OL].
+\newblock Circulation, 2023, 148\allowbreak (20): 1606-1635.
+\newblock DOI: \doi{10.1161/CIR.0000000000001184}.
+
+\bibitem[{Polygenic Risk Score Task Force of the International Common Disease
+  Alliance}(2021)]{icda2021prs}
+{Polygenic Risk Score Task Force of the International Common Disease Alliance}.
+\newblock Responsible use of polygenic risk scores in the clinic: potential
+  benefits, risks and gaps\allowbreak[J/OL].
+\newblock Nature Medicine, 2021, 27\allowbreak (11): 1876-1884.
+\newblock DOI: \doi{10.1038/s41591-021-01549-6}.
 
 \end{thebibliography}

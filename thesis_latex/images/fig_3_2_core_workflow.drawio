@@ -1,0 +1,109 @@
+<mxfile host="embed.diagrams.net">
+  <diagram id="oqcYyvnPfcJI0WHtcuZa" name="第 1 页">
+    <mxGraphModel dx="1004" dy="797" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FB;strokeColor=#6C8EBF;strokeWidth=1.6;fontSize=13;align=center;verticalAlign=middle;" value="体检表/健康档案" vertex="1">
+          <mxGeometry height="56" width="130" x="40" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFF1DB;strokeColor=#D79B3B;strokeWidth=1.6;fontSize=12;align=center;verticalAlign=middle;" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;OCR解析 / 临床字段整理&lt;/font&gt;" vertex="1">
+          <mxGeometry height="56" width="150" x="210" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FB;strokeColor=#6C8EBF;strokeWidth=1.6;fontSize=13;align=center;verticalAlign=middle;" value="基因数据" vertex="1">
+          <mxGeometry height="56" width="130" x="40" y="220" as="geometry" />
+        </mxCell>
+        <mxCell id="5" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FB;strokeColor=#6C8EBF;strokeWidth=1.6;fontSize=13;align=center;verticalAlign=middle;" value="&lt;font style=&quot;font-size: 14px;&quot;&gt;IoT行为数据&lt;/font&gt;" vertex="1">
+          <mxGeometry height="56" width="130" x="40" y="330" as="geometry" />
+        </mxCell>
+        <mxCell id="6" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#D6E6FA;strokeColor=#3F72AF;strokeWidth=2.4;fontSize=16;fontStyle=1;align=center;verticalAlign=middle;" value="综合风险分析" vertex="1">
+          <mxGeometry height="96" width="175" x="400" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="7" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FB;strokeColor=#6C8EBF;strokeWidth=1.6;fontSize=12;align=center;verticalAlign=middle;" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;风险报告 / 可视化展示&lt;/font&gt;" vertex="1">
+          <mxGeometry height="56" width="150" x="610" y="200" as="geometry" />
+        </mxCell>
+        <mxCell id="8" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FB;strokeColor=#6C8EBF;strokeWidth=1.6;fontSize=12;align=center;verticalAlign=middle;" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;情景推演 / 方案比较&lt;/font&gt;" vertex="1">
+          <mxGeometry height="56" width="150" x="610" y="100" as="geometry" />
+        </mxCell>
+        <mxCell id="9" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E8F1FB;strokeColor=#6C8EBF;strokeWidth=1.6;fontSize=12;align=center;verticalAlign=middle;" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;智能问答反馈&lt;/font&gt;" vertex="1">
+          <mxGeometry height="56" width="150" x="610" y="300" as="geometry" />
+        </mxCell>
+        <mxCell id="10" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F4EA;strokeColor=#7AA874;strokeWidth=1.5;fontSize=12;align=center;verticalAlign=middle;" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;用户确认 / 缺失补录&lt;/font&gt;" vertex="1">
+          <mxGeometry height="46" width="160" x="240" y="405" as="geometry" />
+        </mxCell>
+        <mxCell id="11" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E7F4EA;strokeColor=#7AA874;strokeWidth=1.5;fontSize=12;align=center;verticalAlign=middle;" value="&lt;font style=&quot;font-size: 13px;&quot;&gt;历史记录回写 / 时间线更新&lt;/font&gt;" vertex="1">
+          <mxGeometry height="46" width="190" x="570" y="405" as="geometry" />
+        </mxCell>
+        <mxCell id="12" edge="1" parent="1" source="2" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#5F6B7A;strokeWidth=1.6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="13" edge="1" parent="1" source="3" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#5F6B7A;strokeWidth=1.6;exitX=1;exitY=0.5;entryX=0;entryY=0.2;" target="6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="380" y="138" />
+              <mxPoint x="380" y="220" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="14" edge="1" parent="1" source="4" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#5F6B7A;strokeWidth=1.6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="210" y="248" />
+              <mxPoint x="380" y="248" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="15" edge="1" parent="1" source="5" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#5F6B7A;strokeWidth=1.6;exitX=1;exitY=0.5;entryX=0;entryY=0.75;entryDx=0;entryDy=0;exitDx=0;exitDy=0;" target="6">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="170" y="357" />
+              <mxPoint x="380" y="357" />
+              <mxPoint x="380" y="272" />
+            </Array>
+            <mxPoint x="150" y="357.2" as="sourcePoint" />
+            <mxPoint x="380" y="276" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="16" edge="1" parent="1" source="6" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#5F6B7A;strokeWidth=1.6;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="17" edge="1" parent="1" source="7" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#5F6B7A;strokeWidth=1.5;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" target="8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="18" edge="1" parent="1" source="7" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#5F6B7A;strokeWidth=1.5;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="9">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="19" edge="1" parent="1" source="7" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#6E9F6D;strokeWidth=1.4;dashed=1;dashPattern=5 4;exitX=0.18;exitY=1;entryX=0.82;entryY=0;" target="10">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="637" y="280" />
+              <mxPoint x="590" y="280" />
+              <mxPoint x="590" y="380" />
+              <mxPoint x="371" y="380" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="20" edge="1" parent="1" source="10" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#6E9F6D;strokeWidth=1.4;dashed=1;dashPattern=5 4;exitX=0.5;exitY=0;entryX=0.5;entryY=1;" target="3">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="320" y="380" />
+              <mxPoint x="285" y="380" />
+              <mxPoint x="285" y="176" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="21" edge="1" parent="1" source="7" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#6E9F6D;strokeWidth=1.4;dashed=1;dashPattern=5 4;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="11">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="690" y="256" />
+              <mxPoint x="690" y="270" />
+              <mxPoint x="770" y="270" />
+              <mxPoint x="770" y="390" />
+              <mxPoint x="665" y="390" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

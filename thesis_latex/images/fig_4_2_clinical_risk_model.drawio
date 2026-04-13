@@ -1,0 +1,169 @@
+<mxfile host="embed.diagrams.net">
+  <diagram id="zoGyYuk_CG56Z8AQwWur" name="第 1 页">
+    <mxGraphModel dx="975" dy="523" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="800" pageHeight="600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontFamily=Microsoft YaHei;fontSize=18;fontStyle=1;fontColor=#263238;" value="临床疾病风险模型训练与在线推理流程" vertex="1">
+          <mxGeometry height="34" width="580" x="110" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-train" parent="1" style="rounded=1;arcSize=4;html=1;whiteSpace=wrap;fillColor=#F7FAFC;strokeColor=#B0BEC5;strokeWidth=1;fontFamily=Microsoft YaHei;fontSize=12;fontStyle=1;fontColor=#455A64;align=left;verticalAlign=top;spacingLeft=14;spacingTop=8;" value="离线训练链路" vertex="1">
+          <mxGeometry height="182" width="730" x="35" y="72" as="geometry" />
+        </mxCell>
+        <mxCell id="lane-runtime" parent="1" style="rounded=1;arcSize=4;html=1;whiteSpace=wrap;fillColor=#FAFAFA;strokeColor=#B0BEC5;strokeWidth=1;fontFamily=Microsoft YaHei;fontSize=12;fontStyle=1;fontColor=#455A64;align=left;verticalAlign=top;spacingLeft=14;spacingTop=8;" value="在线推理链路" vertex="1">
+          <mxGeometry height="228" width="730" x="37" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="train-data" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#ECEFF1;strokeColor=#90A4AE;strokeWidth=1.2;fontFamily=Microsoft YaHei;fontSize=11;fontStyle=1;fontColor=#263238;align=center;verticalAlign=middle;spacing=6;" value="NHANES队列数据&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;人口学/体检/生化指标&lt;/font&gt;" vertex="1">
+          <mxGeometry height="62" width="120" x="55" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="train-feature" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#CFD8DC;strokeColor=#78909C;strokeWidth=1.2;fontFamily=Microsoft YaHei;fontSize=11;fontStyle=1;fontColor=#263238;align=center;verticalAlign=middle;spacing=6;" value="特征与标签构造&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;肾功能/胰岛素抵抗指标&lt;/font&gt;" vertex="1">
+          <mxGeometry height="62" width="132" x="190" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="train-leakage" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#FFB74A;strokeColor=#EF6C00;strokeWidth=1.3;fontFamily=Microsoft YaHei;fontSize=11;fontStyle=1;fontColor=#5D4037;align=center;verticalAlign=middle;spacing=6;" value="目标泄漏防护&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;时序泄漏剔除&lt;/font&gt;" vertex="1">
+          <mxGeometry height="62" width="128" x="337" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="train-model" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#E8EAF6;strokeColor=#5C6BC0;strokeWidth=1.3;fontFamily=Microsoft YaHei;fontSize=11;fontStyle=1;fontColor=#283593;align=center;verticalAlign=middle;spacing=6;" value="LightGBM训练评估&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;数据划分 / AUC / Acc&lt;/font&gt;" vertex="1">
+          <mxGeometry height="62" width="128" x="480" y="130" as="geometry" />
+        </mxCell>
+        <mxCell id="artifact" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#5C6BC0;strokeColor=#3949AB;strokeWidth=1.4;fontFamily=Microsoft YaHei;fontSize=11;fontStyle=1;fontColor=#FFFFFF;align=center;verticalAlign=middle;spacing=6;" value="模型包持久化&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;模型集合 / 特征映射&lt;/font&gt;" vertex="1">
+          <mxGeometry height="74" width="125" x="625" y="124" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime-profile" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#ECEFF1;strokeColor=#90A4AE;strokeWidth=1.2;fontFamily=Microsoft YaHei;fontSize=11;fontStyle=1;fontColor=#263238;align=center;verticalAlign=middle;spacing=6;" value="用户健康画像&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;体检表 / 档案字段&lt;/font&gt;" vertex="1">
+          <mxGeometry height="62" width="120" x="55" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime-clean" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#CFD8DC;strokeColor=#78909C;strokeWidth=1.2;fontFamily=Microsoft YaHei;fontSize=11;fontStyle=1;fontColor=#263238;align=center;verticalAlign=middle;spacing=6;" value="字段标准化&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;输入字段统一命名&lt;/font&gt;" vertex="1">
+          <mxGeometry height="62" width="132" x="190" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime-align" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#CFD8DC;strokeColor=#78909C;strokeWidth=1.2;fontFamily=Microsoft YaHei;fontSize=11;fontStyle=1;fontColor=#263238;align=center;verticalAlign=middle;spacing=6;" value="特征对齐与补缺&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;缺失值统一填充&lt;/font&gt;" vertex="1">
+          <mxGeometry height="62" width="128" x="337" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime-core" parent="1" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#303F9F;gradientColor=#1A237E;gradientDirection=south;strokeColor=#1A237E;strokeWidth=2.2;fontFamily=Microsoft YaHei;fontSize=12;fontStyle=1;fontColor=#FFFFFF;align=center;verticalAlign=top;spacing=8;spacingTop=10;shadow=1;" value="多疾病模型集群 ★&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;多病种概率输出&lt;/font&gt;&lt;br&gt;&lt;font style=&quot;font-size:8px&quot;&gt;输出：predict_proba[N]&lt;/font&gt;" vertex="1">
+          <mxGeometry height="110" width="180" x="480" y="315" as="geometry" />
+        </mxCell>
+        <mxCell id="runtime-report" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#00897B;strokeColor=#00695C;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=11;fontStyle=1;fontColor=#FFFFFF;align=center;verticalAlign=middle;spacing=6;" value="临床风险报告&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;风险概率&lt;br&gt;风险等级&lt;br&gt;主要病种&lt;/font&gt;" vertex="1">
+          <mxGeometry height="88" width="90" x="665" y="326" as="geometry" />
+        </mxCell>
+        <mxCell id="explain" parent="1" style="rounded=1;arcSize=8;html=1;whiteSpace=wrap;fillColor=#FFF8E1;strokeColor=#FFB300;strokeWidth=1.2;fontFamily=Microsoft YaHei;fontSize=10;fontStyle=1;fontColor=#6D4C41;align=center;verticalAlign=middle;spacing=5;" value="风险因子解释&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;Top N 特征重要性&lt;/font&gt;" vertex="1">
+          <mxGeometry height="50" width="140" x="500" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="ckm" parent="1" style="rounded=1;arcSize=8;dashed=1;dashPattern=3 3;html=1;whiteSpace=wrap;fillColor=#FFF8E1;strokeColor=#BDBDBD;strokeWidth=1.2;fontFamily=Microsoft YaHei;fontSize=10;fontStyle=1;fontColor=#546E7A;align=center;verticalAlign=middle;spacing=5;" value="CKM规则分期&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;临床知识辅助评估&lt;/font&gt;" vertex="1">
+          <mxGeometry height="50" width="128" x="337" y="440" as="geometry" />
+        </mxCell>
+        <mxCell id="fallback" parent="1" style="rounded=1;arcSize=8;dashed=1;dashPattern=3 3;html=1;whiteSpace=wrap;fillColor=#FFF8E1;strokeColor=#BDBDBD;strokeWidth=1;fontFamily=Microsoft YaHei;fontSize=9;fontStyle=1;fontColor=#757575;align=center;verticalAlign=middle;spacing=4;" value="模型不可用&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;返回错误状态&lt;/font&gt;" vertex="1">
+          <mxGeometry height="42" width="105" x="645" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-main" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=9;fontColor=#607D8B;" value="数据/推理主线" vertex="1">
+          <mxGeometry height="18" width="90" x="82" y="535" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-artifact" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=9;fontColor=#607D8B;" value="模型加载" vertex="1">
+          <mxGeometry height="18" width="70" x="242" y="535" as="geometry" />
+        </mxCell>
+        <mxCell id="legend-side" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=9;fontColor=#607D8B;" value="辅助分支" vertex="1">
+          <mxGeometry height="18" width="95" x="378" y="535" as="geometry" />
+        </mxCell>
+        <mxCell id="e1" edge="1" parent="1" source="train-data" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#455A64;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="train-feature" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e2" edge="1" parent="1" source="train-feature" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#455A64;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="train-leakage" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e3" edge="1" parent="1" source="train-leakage" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#455A64;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="train-model" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e4" edge="1" parent="1" source="train-model" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#455A64;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="artifact" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e5" edge="1" parent="1" source="runtime-profile" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#455A64;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="runtime-clean" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e6" edge="1" parent="1" source="runtime-clean" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#455A64;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="runtime-align" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e7" edge="1" parent="1" source="runtime-align" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#455A64;strokeWidth=2;exitX=1;exitY=0.5;entryX=0;entryY=0.6;" target="runtime-core" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e8" edge="1" parent="1" source="runtime-core" style="endArrow=classic;html=1;rounded=0;edgeStyle=orthogonalEdgeStyle;strokeColor=#00897B;strokeWidth=1.8;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="runtime-report" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e9" edge="1" parent="1" source="artifact" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=4 3;edgeStyle=orthogonalEdgeStyle;strokeColor=#5C6BC0;strokeWidth=1.5;fontFamily=Microsoft YaHei;fontSize=9;fontColor=#5C6BC0;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.7;entryY=0;" target="runtime-core" value="模型加载">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="688" y="270" />
+              <mxPoint x="606" y="270" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e10" edge="1" parent="1" source="runtime-core" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=3 3;edgeStyle=orthogonalEdgeStyle;strokeColor=#FFB300;strokeWidth=1.2;entryX=0.5;entryY=0;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" target="explain" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="570" y="430" />
+              <mxPoint x="570" y="430" />
+            </Array>
+            <mxPoint x="570" y="430" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e11" edge="1" parent="1" source="explain" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=3 3;edgeStyle=orthogonalEdgeStyle;strokeColor=#FFB300;strokeWidth=1.2;exitX=1;exitY=0.25;entryX=0.5;entryY=1;" target="runtime-report" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="645" y="452" />
+              <mxPoint x="710" y="452" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e12" edge="1" parent="1" source="ckm" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=3 3;edgeStyle=orthogonalEdgeStyle;strokeColor=#9E9E9E;strokeWidth=1.2;fontFamily=Microsoft YaHei;fontSize=9;fontColor=#546E7A;labelBackgroundColor=#FFFFFF;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="explain" value="">
+          <mxGeometry relative="1" x="1" y="-27" as="geometry">
+            <mxPoint x="17" y="25" as="offset" />
+            <Array as="points">
+              <mxPoint x="480" y="465" />
+              <mxPoint x="480" y="465" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e13" edge="1" parent="1" source="runtime-align" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=3 3;edgeStyle=orthogonalEdgeStyle;strokeColor=#9E9E9E;strokeWidth=1.2;fontFamily=Microsoft YaHei;fontSize=9;fontColor=#546E7A;labelBackgroundColor=#FFFFFF;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="ckm" value="可选">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e14" edge="1" parent="1" source="artifact" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=3 3;edgeStyle=orthogonalEdgeStyle;strokeColor=#BDBDBD;strokeWidth=1;fontFamily=Microsoft YaHei;fontSize=9;fontColor=#757575;labelBackgroundColor=#FFFFFF;exitX=0.92;exitY=1;entryX=1;entryY=0.5;" target="fallback" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="760" y="270" />
+              <mxPoint x="760" y="481" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="e15" edge="1" parent="1" source="fallback" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=3 3;edgeStyle=orthogonalEdgeStyle;strokeColor=#BDBDBD;strokeWidth=1;exitX=0.5;exitY=0;entryX=0.75;entryY=1;" target="runtime-report" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="leg1" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;strokeColor=#455A64;strokeWidth=2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="45" y="544" as="sourcePoint" />
+            <mxPoint x="77" y="544" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg2" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=4 3;strokeColor=#5C6BC0;strokeWidth=1.5;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="205" y="544" as="sourcePoint" />
+            <mxPoint x="237" y="544" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="leg3" edge="1" parent="1" style="endArrow=classic;html=1;rounded=0;dashed=1;dashPattern=3 3;strokeColor=#FFB300;strokeWidth=1.2;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <mxPoint x="340" y="544" as="sourcePoint" />
+            <mxPoint x="372" y="544" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="core-card-diabetes" parent="1" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#E8EAF6;strokeColor=#9FA8DA;strokeWidth=1;fontFamily=Microsoft YaHei;fontSize=9;fontStyle=1;fontColor=#283593;align=center;verticalAlign=middle;spacing=3;" value="糖尿病&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;0.23&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="60" x="500" y="384" as="geometry" />
+        </mxCell>
+        <mxCell id="core-card-cardio" parent="1" style="rounded=1;arcSize=6;html=1;whiteSpace=wrap;fillColor=#E8EAF6;strokeColor=#9FA8DA;strokeWidth=1;fontFamily=Microsoft YaHei;fontSize=9;fontStyle=1;fontColor=#283593;align=center;verticalAlign=middle;spacing=3;" value="心血管&lt;br&gt;&lt;font style=&quot;font-size:9px&quot;&gt;0.15&lt;/font&gt;" vertex="1">
+          <mxGeometry height="30" width="62" x="580" y="384" as="geometry" />
+        </mxCell>
+        <mxCell id="2" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=9;fontColor=#607D8B;" value="缺失" vertex="1">
+          <mxGeometry height="18" width="20" x="747" y="308" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontFamily=Microsoft YaHei;fontSize=9;fontColor=#607D8B;" value="规则辅助" vertex="1">
+          <mxGeometry height="18" width="40" x="460" y="470" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

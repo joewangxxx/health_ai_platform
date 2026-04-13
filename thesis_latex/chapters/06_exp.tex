@@ -2,19 +2,21 @@
 
 \chapter{实验与测试分析}
 
-本章围绕“模型效果、系统功能与 Agent 运行稳定性”三条证据链，对前文提出的方法与实现进行验证。考虑到本科论文正文篇幅限制，本章不再保留过细的压测脚本说明、缓存时序拆解和大段测试框架实现细节，而是仅保留能够直接支撑论文结论的实验结果与分析。整体上，本章重点回答三个问题：多模态风险评估链路是否具备有效性，平台关键业务路径是否可稳定运行，以及 Agent 问答模块是否能够在固定输入条件下保持可回归、可解释的行为边界。
+本章围绕当前代码版本能够直接获得的验证材料，对前文提出的方法与实现进行复核。与前几章的设计和实现说明不同，本章更强调证据层级的区分：训练脚本侧主要用于说明模型构建约束与在线服务输入是否对齐，仓库级回归和浏览器场景测试用于验证平台关键路径能否稳定运行，受控 Harness 评测则用于检查 Agent 在固定输入条件下是否能够维持可回归的行为边界。考虑到正文篇幅限制，本章不再展开压测脚本、缓存时序和测试框架内部实现，而只保留能够直接支撑论文结论的实验结果与分析。
 
 \section{实验环境与评价指标}
 \begin{table}[htbp]
 \centering
-\caption{实验与测试环境配置}
+\bitabcaption
+    {实验与测试环境配置}
+    {Experimental and Testing Environment Configuration}
 \label{tab:test_env}
 \begin{tabular}{lll}
 \toprule
 类别 & 组件 & 配置 \\
 \midrule
 硬件环境 & CPU & Intel Core i9 \\
-硬件环境 & 内存 & 16GB \\
+硬件环境 & 内存 & 16 GB \\
 硬件环境 & GPU & NVIDIA RTX 3070 Ti \\
 软件环境 & Python & 3.11 \\
 软件环境 & Web 后端 & FastAPI \\
@@ -29,63 +31,100 @@
 \end{tabular}
 \end{table}
 
-实验环境采用本地开发与容器化部署协同方式。后端服务运行于 Python 3.11，前后端与 Redis 通过 Docker Compose 统一组织；前端浏览器验证基于 Playwright，测试配置覆盖 Chromium、Firefox 与 WebKit 三类浏览器内核。评价指标按验证目标分为三类：风险模型部分重点关注 AUC、Accuracy、Recall、F1、Brier Score 与校准特性；系统功能部分重点关注回归通过率、关键场景可达性和接口行为一致性；Agent 模块部分重点关注场景通过率、裁决一致性和基线匹配结果。
+实验环境采用本地开发与容器化部署协同方式。后端服务运行于 Python 3.11，前后端与 Redis 通过 Docker Compose 统一组织；前端浏览器验证基于 Playwright，当前本地回归已覆盖 Chromium、Firefox 与 WebKit 三类浏览器内核。评价方式按证据来源分为三类：训练脚本侧，\codeid{train_risk_models.py} 当前直接输出 $AUC$ 和 Accuracy，用于检查疾病模型训练是否满足基本区分能力；系统功能侧，重点关注 \codeid{pytest} 回归通过数、Playwright 场景通过数以及关键页面和接口的可达性；Agent 模块侧，重点关注 \codeid{scenario_count}、\codeid{passed_count}、\codeid{failed_count} 与 \codeid{baseline_match} 等结构化指标。由于本轮未重新执行完整的多病种离线训练，不在正文中补写缺乏当前日志支撑的逐病种排行榜或校准曲线结论。
 
-\section{风险预测与融合效果分析}
-\subsection{疾病风险预测结果分析}
-慢病风险预测模型由 \texttt{ai\_core/train\_risk\_models.py} 训练完成，针对各目标病种独立构建 LightGBM 二分类器。训练阶段采用分层抽样划分训练集与测试集，并通过 \texttt{is\_unbalance=True} 处理阳性样本占比较低的问题。与仅追求分类分数不同，当前实验特别强调防泄漏控制：脚本在每个病种训练前依据 \texttt{LEAKAGE\_MAPPING} 剔除与目标诊断高度重叠的变量，从而避免将诊断同义特征直接作为预测依据。该设置保证了实验结果更接近真实筛查场景，也使在线服务输出与训练阶段的特征边界保持一致。
+\section{综合风险分析链路验证}
+\subsection{疾病风险建模与训练侧验证}
+慢病风险预测模型由 \codeid{ai_core/train_risk_models.py} 训练完成，针对各目标病种独立构建 LightGBM 二分类器。训练阶段采用分层抽样划分训练集与测试集，并通过 \codeid{is_unbalance=True} 处理阳性样本占比较低的问题。与单纯追求分类分数相比，当前训练过程更强调防泄漏控制：脚本在每个病种训练前依据 \codeid{LEAKAGE_MAPPING} 剔除与目标诊断高度重叠的变量，从而避免把诊断同义特征直接作为预测依据。该设置使训练输出更接近真实筛查场景，也保证了在线服务与训练阶段的特征边界保持一致。
 
-结合训练脚本与服务侧运行逻辑可以看到，临床风险模型的主要价值不在于追求某一疾病的极端高分，而在于为后续融合模块提供稳定、可解释的初始风险输入。与此相对应，行为风险模型和营养视觉模型在当前系统中主要承担辅助修正与扩展输入作用：前者为行为风险修正因子提供支持，后者为饮食与营养记录补充可结构化信息。因此，本章不再将二者作为与临床主模型并列的独立实验重点，而是将其视作多模态融合链路中的辅助证据来源。
+\codeid{train_risk_models.py} 当前会直接输出 $AUC$ 与 Accuracy，用于给出训练侧的基础性能反馈；不过就本轮可复核材料而言，更重要的结论并不是某一病种是否取得极高分数，而是训练阶段保存的模型、特征集合与服务侧实际消费的输入保持了一致。与此相对应，行为风险模型和营养视觉模型在当前系统中主要承担辅助修正与扩展输入作用：前者为行为风险修正因子提供支持，后者为饮食与营养记录补充可结构化信息。因此，本章不再将二者作为与临床主模型并列的独立 benchmark，而是将其视作多模态融合链路中的辅助证据来源。
 
-\subsection{多模态融合消融实验}
-多模态融合部分围绕“仅临床风险”“临床风险叠加遗传因子”“临床风险叠加遗传与行为因子”三种设置展开比较，其核心目标不是重复证明 LightGBM 分类器本身的有效性，而是考察融合后概率输出是否更适合作为健康管理平台中的综合风险信号。与第 4 章的方法定义一致，融合服务在 \texttt{fusion\_service.py} 中对临床风险结果、遗传修正因子和行为修正因子进行乘性整合，并通过 \texttt{clip([0.1,99.9])} 保持结果稳定。
+\subsection{多模态融合链路验证}
+多模态融合部分的目标，不是重复证明 LightGBM 分类器本身的有效性，而是检查临床主风险、遗传修正因子和行为修正因子能否在同一服务链中被稳定组织为综合风险信号。与第 4 章的方法定义一致，融合服务在 \codeid{fusion_service.py} 中对临床风险结果、遗传修正因子和行为修正因子进行乘性整合，并通过概率裁剪保持输出稳定。
 
-本研究在实验分析上更关注融合后的概率质量而非单一阈值下的命中率，因此采用 Brier Score 与校准特性作为重点参考指标。现有实验设计表明，引入遗传和行为证据后，系统能够在保持临床主模型可解释性的同时，进一步区分“当前临床表型尚未明显异常但遗传易感性偏高”的潜在风险个体。服务侧的 \texttt{Potential} 标签正是对这一场景的工程化表达。换言之，融合模块的主要收益并不只是抬高某一项分数，而是使风险输出更适合面向主动健康管理的分层筛查与持续跟踪。
+就本轮能够直接复核的证据而言，融合模块的验证主要体现为输出结构和服务行为的一致性，而不是离线消融分数的重新计算。综合分析接口会返回可供前端展示和后续推演复用的风险报告，服务侧也保留了对潜在高风险情形的工程化标签表达。因此，这部分更适合得出的结论是：融合链路已经能够把临床、遗传和行为证据组织为统一的综合风险输出；至于更细粒度的离线消融优劣排序，仍需依赖完整训练日志和专门实验表格支持，不宜在本轮正文中写成定量结论。
 
 \subsection{干预推演案例分析}
-干预推演验证对应 \texttt{backend/services/projection\_service.py} 的两类场景：一类是自然老化场景，通过增加年龄并对收缩压、空腹血糖和 BMI 施加缓慢上升趋势，观察未来风险变化；另一类是生活方式干预场景，通过设定如 \texttt{weight\_loss\_percent} 等可控变量，模拟体重下降后对血压、血糖和综合风险的联动影响。服务返回结果同时包含 \texttt{base\_risk\_max}、\texttt{new\_risk\_max} 和 \texttt{risk\_reduction\_percent} 等字段，说明系统不仅能够给出静态风险快照，还能够输出干预前后风险差异。
+干预推演验证对应 \codeid{backend/services/projection_service.py} 的两类场景：一类是自然老化场景，通过增加年龄并对收缩压、空腹血糖和 BMI 施加缓慢上升趋势，观察未来风险变化；另一类是生活方式干预场景，通过设定如 \codeid{weight_loss_percent} 等可控变量，模拟体重下降后对血压、血糖和综合风险的联动影响。服务返回结果同时包含 \codeid{base_risk_max}、\codeid{new_risk_max} 和 \codeid{risk_reduction_percent} 等字段，说明系统不仅能够给出静态风险快照，还能够输出干预前后风险差异。
 
 从代码与结果结构的一致性看，当前干预推演更适合被理解为“规则化情景模拟”而非严格因果模型求解。其优势在于能够直接复用第 4 章中的融合风险链路，为用户提供具有方向性的对比结果；其边界在于结果主要用于辅助解释和方案比选，而不应被表述为临床级疗效预测。对于本科论文而言，这种定位既符合实现真实能力，也能体现平台从风险识别向干预支持延伸的价值。
 
 \section{系统功能测试与结果分析}
 \label{sec:functional_test}
 \subsection{平台核心功能测试}
-系统功能验证采用“仓库级回归 + 浏览器场景验证”的双层结构。后端部分使用 \texttt{pytest} 与 FastAPI TestClient 对主路由、OCR 上传、综合分析、RAG 检索、聊天接口、会话回放和运行时降级路径进行回归验证；浏览器部分使用 Playwright 对 Dr. AI 接管提示、OCR 引导补全和主要页面可加载性进行真实交互验证。与旧版本测试章节不同，本节不再展开依赖注入、内存数据库和 Mock 细节，而仅保留能够直接说明系统可运行性的结果。
+系统功能验证采用“仓库级回归 + 浏览器场景验证”的双层结构。后端部分使用 \codeid{pytest} 与 FastAPI TestClient 对主路由、OCR 上传、综合分析、RAG 检索、聊天接口、会话回放和运行时降级路径进行回归验证；浏览器部分使用 Playwright 对 Dr. AI 接管提示、OCR 引导补全和主要页面可加载性进行场景回归。与旧版本测试章节不同，本节不再展开依赖注入、内存数据库和 Mock 细节，而只保留能够直接说明系统可运行性的结果。
 
-在当前本地环境中，仓库级回归命令 \texttt{python -m pytest tests -q} 的执行结果为 \(232/232\) 全部通过；浏览器端在 Chromium 环境下运行 \texttt{dr-ai-takeover.spec.js} 与 \texttt{ocr-guided-completion.spec.js} 两组关键场景测试，共 \(7/7\) 通过。这说明系统不仅在接口层保持了稳定契约，也能在真实页面交互中完成 OCR 状态展示、引导补全、接管提示渲染和主要页面加载等核心链路。
+在当前本地环境中，仓库级回归命令 \codeid{python -m pytest tests -q} 的执行结果为 \(232/232\) 全部通过；浏览器端运行 \codeid{dr-ai-takeover.spec.js} 与 \codeid{ocr-guided-completion.spec.js} 两组关键场景测试，在 Chromium、Firefox 与 WebKit 三类浏览器内核下共 \(21/21\) 通过。这说明系统不仅在接口层保持了稳定契约，也能在页面交互层稳定完成 OCR 状态展示、引导补全、接管提示渲染和主要页面加载等核心链路。
+
+图~\ref{fig:system_functional_validation} 展示了系统功能验证中后端回归与浏览器场景回归之间的证据关系。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{fig_6_5_system_functional_validation_flat.png}
+    \bifigcaption
+        {系统功能验证双层证据链}
+        {Dual-Layer Evidence Chain for System Functional Validation}
+    \label{fig:system_functional_validation}
+\end{figure}
 
 \begin{table}[htbp]
 \centering
-\caption{系统功能测试矩阵（当前本地验证结果）}
+\bitabcaption
+    {系统功能测试矩阵（当前本地验证结果）}
+    {System Functional Test Matrix (Current Local Verification Results)}
 \label{tab:api_test_matrix}
 \begin{tabular}{p{3.2cm}p{6.0cm}p{4.0cm}}
 \toprule
 测试层 & 覆盖目标 & 结果 \\
 \midrule
 仓库级后端回归 & 主路由、OCR 上传、综合分析、聊天接口、会话回放、RAG 与运行时降级路径 & \texttt{232/232} 通过 \\
-浏览器场景验证 & Dr. AI 接管提示、OCR 引导补全、主要页面可加载性与权限边界 & \texttt{7/7} 通过 \\
+浏览器场景验证 & Dr. AI 接管提示、OCR 引导补全、主要页面可加载性与权限边界 & \texttt{21/21} 通过 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \subsection{OCR与健康问答功能测试}
-从业务链路看，平台的关键功能验证可归纳为三类代表性场景。其一，用户通过档案录入和体检报告上传形成画像输入，系统完成 OCR 状态回传、结构化摘要保存以及分析上下文刷新，验证了“文档感知$\rightarrow$风险分析”的前置链路。其二，用户在聊天界面发起健康咨询后，系统能够返回包含回答文本、裁决摘要、证据标签和接管提示的结构化结果，验证了第 5 章 Agent 运行链在真实接口中的可执行性。其三，当用户画像或报告信息发生更新时，前后端状态能够同步刷新并驱动后续分析结果变化，验证了平台并非静态页面集合，而是具备连续交互能力的健康管理原型系统。
+需要说明的是，本节测试重点在于验证 OCR 上传、状态回传、结构化结果回填和问答链路的系统行为，并不单独评测第三方 OCR 或大语言模型服务本身的识别率与医学回答能力。
 
-与第 5 章的实现描述相对应，这些功能测试并不追求覆盖所有页面与所有异常组合，而是围绕论文主线选取最能体现“平台闭环”的关键路径进行验证。由此，本节的结论可以概括为：系统已具备从数据输入、风险分析到受控问答输出的基本闭环能力，且关键交互在当前代码版本中可重复执行。
+从业务链路看，平台的关键功能验证可以归纳为三类代表性场景。其一，根据现有 QA 记录，真实 PDF 上传在 OCR provider 不可用的环境下能够返回 \codeid{stored_unprocessed} 并触发“已保存待识别”状态展示，这说明文档上传链路在降级条件下仍能完成入库和状态回传。其二，本轮本地 Playwright 回归进一步验证了 \codeid{partial_success}、\codeid{analysis_context} 横幅、缺失字段提示和页面主路由加载等界面行为，说明 OCR 引导补全路径和主要页面状态切换具有可重复的前端回归覆盖。其三，Dr. AI 相关浏览器回归验证了接管提示、历史消息回放和结构化元数据渲染，说明第 5 章所述的受控问答链已经能够在真实页面交互中被稳定消费。
+
+与第 5 章的实现描述相对应，这些功能测试并不追求覆盖所有页面与全部异常组合，而是围绕论文主线选取最能体现主业务链的关键路径进行验证。由此，本节更稳妥的结论是：在当前代码版本中，平台从数据输入、风险分析到受控问答输出的主要交互链可重复执行，且 OCR 降级状态、引导补全语义和问答结构化结果都已有明确的回归测试覆盖。不过，真实 OCR 自动回填仍然受当前 provider 可用性限制，因而不宜把该部分写成已在本轮环境下完整验证的事实。
 
 \section{Agent模块补充验证}
 \label{sec:agent_harness_eval}
 \subsection{典型场景行为验证}
-除系统级功能验证外，本文还对 Agent 运行语义进行了受控补充评测。相关评测由行为评测脚本、场景清单和基线产物共同完成，其中核心脚本为 \path{agent_behavior_eval.py}。场景集合固定覆盖急症分流、报告解读、趋势解释、用药问答、证据不足拒答和工具失败降级六类关键语义路径。该设计的重点不在于比较开放世界下的医学正确率，而在于验证固定输入条件下，Agent 是否能够稳定输出预期的车道、裁决、回答模式、证据充分性与接管标记。
+除系统级功能验证外，本文还对 Agent 运行语义进行了受控补充评测。相关评测由行为评测脚本、场景清单和基线产物共同完成，其中核心脚本为 \codeid{agent_behavior_eval.py}。场景集合固定覆盖急症分流、报告解读、趋势解释、用药问答、证据不足拒答和工具失败降级六类关键语义路径。该设计的重点不在于比较开放世界下的医学正确率，而在于验证固定输入条件下，Agent 是否能够稳定输出预期的车道、裁决、回答模式、证据充分性与接管标记。
 
-在当前本地环境中，Harness 运行结果显示 \texttt{scenario\_count=6}、\texttt{passed\_count=6}、\texttt{failed\_count=0}。这说明第 5 章提出的意图分流、工具约束、证据门控与回答策略控制，在受控测试条件下能够维持稳定行为边界。对于毕业论文而言，这类结果的意义在于证明 Agent 模块不是不可回归的黑箱问答，而是可以进行结构化验证的受控运行链。
+图~\ref{fig:agent_behavior_harness_eval} 展示了 Agent 行为评测 Harness 的输入、执行、断言和结果产物之间的关系。
+
+\begin{figure}[htbp]
+    \centering
+    \includegraphics[width=0.98\textwidth]{fig_6_4_agent_behavior_harness_flat.png}
+    \bifigcaption
+        {Agent行为评测Harness证据链}
+        {Evidence Chain of the Agent Behavior Evaluation Harness}
+    \label{fig:agent_behavior_harness_eval}
+\end{figure}
+
+在当前本地环境中，\codeid{python -m pytest tests/test_agent_behavior_eval_harness.py -q} 的结果为 \(4/4\) 全部通过，随后运行 \codeid{python backend/scripts/agent_behavior_eval.py --baseline backend/eval/baselines/agent_behavior_baseline.json} 得到 \codeid{scenario_count=6}、\codeid{passed_count=6}、\codeid{failed_count=0}。这说明第 5 章提出的意图分流、工具约束、证据门控与回答策略控制，在受控测试条件下能够维持稳定行为边界。对于毕业论文而言，这类结果的意义在于证明 Agent 模块不是不可回归的黑箱问答，而是可以进行结构化验证的受控运行链。
 
 \subsection{安全性与一致性分析}
-进一步地，\texttt{backend/eval/artifacts/agent\_behavior\_results.json} 中记录的 \texttt{baseline\_match=true} 表明当前运行结果与冻结基线快照保持一致。结合测试文件 \texttt{tests/test\_agent\_behavior\_eval\_harness.py} 可以看出，该评测框架能够区分“运行时行为失败”和“基线陈旧失配”两类情形，从而更适合承担回归一致性验证任务，而非临床正确性验证任务。
+进一步地，\codeid{backend/eval/artifacts/agent_behavior_results.json} 中记录的 \codeid{baseline_match=true} 表明当前运行结果与冻结基线快照保持一致。结合测试文件 \codeid{tests/test_agent_behavior_eval_harness.py} 可以看出，该评测框架能够区分“运行时行为失败”和“基线偏差”两类情形，从而更适合承担回归一致性验证任务，而非临床正确性验证任务。图~\ref{fig:agent_consistency_decision} 进一步概括了该评测链路的判定逻辑。
 
-\begin{table}[htbp]
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.90\textwidth]{fig_6_6_agent_consistency_decision_flat.png}
+    \bifigcaption
+        {Agent行为一致性判定流程}
+        {Decision Flow for Agent Behavior Consistency}
+    \label{fig:agent_consistency_decision}
+\end{figure}
+
+\begin{table}[H]
 \centering
-\caption{Harness 行为评测结果摘要}
+\bitabcaption
+    {Harness 行为评测结果摘要}
+    {Summary of Harness-Based Behavioral Evaluation Results}
 \label{tab:agent_harness_summary}
 \begin{tabular}{lll}
 \toprule
@@ -102,4 +141,4 @@
 因此，Agent 模块的实验结论应当被理解为“策略语义可回归、运行链路可审计、关键风险场景可控”，而不是“已覆盖全部真实医疗问答场景”。这种表述既保留了 Agent 作为论文亮点的价值，也与当前实现和测试证据保持一致。
 
 \section{本章小结}
-本章从模型效果、系统功能和 Agent 补充验证三个层面给出了论文系统的实验依据。风险模型与融合分析表明，平台已具备将临床、遗传和行为证据组织为综合风险信号的能力；系统功能测试表明，画像输入、OCR 解析、综合分析与健康问答等核心路径在当前代码版本中能够稳定运行；Agent 补充验证则进一步说明其运行语义具备可回归、可审计和可解释特征。综合而言，本论文系统已经形成“模型可用、平台可运行、问答可受控”的实验支撑，为后续总结与展望提供了较为稳固的依据。
+本章从训练侧验证、系统功能测试和 Agent 补充评测三个层面给出了系统验证材料。训练脚本与融合服务的核对表明，平台已具备组织临床、遗传和行为证据的综合风险分析基础；系统功能测试表明，画像输入、OCR 状态回传、综合分析与健康问答等核心路径在当前代码版本中能够稳定运行；Agent 补充验证则说明其运行语义具备可回归、可审计和可解释特征。综合来看，当前证据支持“综合风险分析主链可运行、关键交互可回归、问答策略受控”这一结论，同时保留 OCR 实时结构化解析和完整离线 benchmark 仍受环境与日志材料限制的边界。

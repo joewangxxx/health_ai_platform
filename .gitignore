@@ -175,6 +175,7 @@ Desktop.ini
 
 # PDF reports (generated)
 *.pdf
+!thesis_latex/frontmatter/cover_declaration.pdf
 
 # Backup files
 *.bak

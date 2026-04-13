@@ -56,37 +56,30 @@ implementation_agents = ["fe", "be", "ai-data"]
 qa_gate = "integration_ready"
 release_gate = "qa_passed"
 
-[[agents]]
-name = "pm"
+[agents.pm]
 config = ".codex/agents/pm.toml"
 skill = ".agents/skills/pm.md"
 
-[[agents]]
-name = "architect"
+[agents.architect]
 config = ".codex/agents/architect.toml"
 skill = ".agents/skills/architect.md"
 
-[[agents]]
-name = "fe"
+[agents.fe]
 config = ".codex/agents/fe.toml"
 skill = ".agents/skills/fe.md"
 
-[[agents]]
-name = "be"
+[agents.be]
 config = ".codex/agents/be.toml"
 skill = ".agents/skills/be.md"
 
-[[agents]]
-name = "ai-data"
+[agents.ai-data]
 config = ".codex/agents/ai-data.toml"
 skill = ".agents/skills/ai-data.md"
 
-[[agents]]
-name = "qa"
+[agents.qa]
 config = ".codex/agents/qa.toml"
 skill = ".agents/skills/qa.md"
 
-[[agents]]
-name = "general"
+[agents.general]
 config = ".codex/agents/general.toml"
 skill = ".agents/skills/general.md"

@@ -1,0 +1,177 @@
+<mxfile host="embed.diagrams.net">
+  <diagram id="Uv_S6ZzqdP5y4ZxRBZKO" name="第 1 页">
+    <mxGraphModel dx="1178" dy="633" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" parent="1" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#E0E0E0;strokeWidth=1;fontSize=13;fontStyle=1;fontColor=#212121;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;shadow=0;" value="健康数据实体" vertex="1">
+          <mxGeometry height="475" width="260" x="230" y="55" as="geometry" />
+        </mxCell>
+        <mxCell id="3" parent="1" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#E0E0E0;strokeWidth=1;fontSize=13;fontStyle=1;fontColor=#212121;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;shadow=0;" value="问答与治理实体" vertex="1">
+          <mxGeometry height="430" width="335" x="500" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="4" parent="1" style="rounded=1;arcSize=4;whiteSpace=wrap;html=1;fillColor=#FAFAFA;strokeColor=#B0BEC5;strokeWidth=1;dashed=1;dashPattern=3 3;fontSize=13;fontStyle=1;fontColor=#212121;align=left;verticalAlign=top;spacingLeft=12;spacingTop=8;shadow=0;" value="扩展协同实体" vertex="1">
+          <mxGeometry height="145" width="170" x="35.5" y="386" as="geometry" />
+        </mxCell>
+        <mxCell id="10" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E3F2FD;strokeColor=#1565C0;strokeWidth=1.5;fontSize=12;align=center;verticalAlign=middle;spacing=6;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#212121&quot; style=&quot;font-size: 12px;&quot;&gt;User&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;用户账户&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;id / username&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="82" width="140" x="50" y="252" as="geometry" />
+        </mxCell>
+        <mxCell id="11" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#E0E0E0;strokeWidth=1;fontSize=10;align=center;verticalAlign=middle;spacing=5;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#424242&quot; style=&quot;font-size: 10px;&quot;&gt;UserProfile&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;临床画像/遗传信息&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;user_id / extra_data&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="74" width="140" x="290" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="12" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#E8F5E9;strokeColor=#E0E0E0;strokeWidth=1;fontSize=10;align=center;verticalAlign=middle;spacing=5;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#424242&quot; style=&quot;font-size: 10px;&quot;&gt;HealthRecord&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;历史观测快照&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;user_id / risk_snapshot&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="74" width="140" x="290" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="13" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E0E0E0;strokeWidth=1;fontSize=10;align=center;verticalAlign=middle;spacing=5;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#424242&quot; style=&quot;font-size: 10px;&quot;&gt;MedicalDocument&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;上传文档/OCR结果&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;user_id / ocr_summary&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="74" width="140" x="290" y="305" as="geometry" />
+        </mxCell>
+        <mxCell id="14" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#FFF3E0;strokeColor=#E0E0E0;strokeWidth=1;fontSize=10;align=center;verticalAlign=middle;spacing=5;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#424242&quot; style=&quot;font-size: 10px;&quot;&gt;IoTHealthData&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;设备行为数据&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;user_id / metric_value&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="74" width="140" x="290" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="15" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#E0E0E0;strokeWidth=1;fontSize=10;align=center;verticalAlign=middle;spacing=5;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#424242&quot; style=&quot;font-size: 10px;&quot;&gt;ChatConversation&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;问答会话&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;user_id&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="74" width="140" x="590" y="105" as="geometry" />
+        </mxCell>
+        <mxCell id="16" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#E0E0E0;strokeWidth=1;fontSize=10;align=center;verticalAlign=middle;spacing=5;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#424242&quot; style=&quot;font-size: 10px;&quot;&gt;ChatMessage&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;逐条消息/证据面板&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;conversation_id&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="74" width="140" x="590" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="17" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#E0E0E0;strokeWidth=1;fontSize=10;align=center;verticalAlign=middle;spacing=5;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#424242&quot; style=&quot;font-size: 10px;&quot;&gt;AgentAuditEvent&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;治理审计事件&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;user_id / conversation_id&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="74" width="140" x="520" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="18" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#F3E5F5;strokeColor=#E0E0E0;strokeWidth=1;fontSize=10;align=center;verticalAlign=middle;spacing=5;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#424242&quot; style=&quot;font-size: 10px;&quot;&gt;AgentAnswerReplay&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;回答回放快照&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;message_id / audit_id&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="74" width="140" x="685" y="335" as="geometry" />
+        </mxCell>
+        <mxCell id="19" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#ECEFF1;strokeColor=#E0E0E0;strokeWidth=1;fontSize=10;align=center;verticalAlign=middle;spacing=5;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#424242&quot; style=&quot;font-size: 10px;&quot;&gt;FamilyLink&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;家庭授权关系&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;manager_id / member_id&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="52" width="140" x="50.5" y="416" as="geometry" />
+        </mxCell>
+        <mxCell id="20" parent="1" style="rounded=1;arcSize=6;whiteSpace=wrap;html=1;fillColor=#ECEFF1;strokeColor=#E0E0E0;strokeWidth=1;fontSize=10;align=center;verticalAlign=middle;spacing=5;shadow=0;" value="&lt;div&gt;&lt;b&gt;&lt;font color=&quot;#424242&quot; style=&quot;font-size: 10px;&quot;&gt;FamilyInvite&lt;/font&gt;&lt;/b&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#616161&quot; style=&quot;font-size: 10px;&quot;&gt;家庭邀请码&lt;/font&gt;&lt;/div&gt;&lt;div&gt;&lt;font color=&quot;#757575&quot; style=&quot;font-size: 9px;&quot;&gt;user_id / invite_code&lt;/font&gt;&lt;/div&gt;" vertex="1">
+          <mxGeometry height="52" width="140" x="50.5" y="476" as="geometry" />
+        </mxCell>
+        <mxCell id="30" edge="1" parent="1" source="10" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#37474F;strokeWidth=1.5;exitX=1;exitY=0.12;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="11" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="190" y="250" />
+              <mxPoint x="210" y="250" />
+              <mxPoint x="210" y="132" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="31" edge="1" parent="1" source="10" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#37474F;strokeWidth=1.5;exitX=1;exitY=0.37;entryX=0;entryY=0.5;" target="12" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="190" y="250" />
+              <mxPoint x="210" y="250" />
+              <mxPoint x="210" y="227" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="32" edge="1" parent="1" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#37474F;strokeWidth=1.5;entryX=0;entryY=0.5;" target="13" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="190" y="290" />
+              <mxPoint x="210" y="290" />
+              <mxPoint x="210" y="342" />
+            </Array>
+            <mxPoint x="190" y="280" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="33" edge="1" parent="1" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#37474F;strokeWidth=1.5;entryX=0;entryY=0.5;" target="14" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="190" y="290" />
+              <mxPoint x="210" y="290" />
+              <mxPoint x="210" y="457" />
+            </Array>
+            <mxPoint x="190" y="290" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="34" edge="1" parent="1" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#37474F;strokeWidth=1.5;entryX=0;entryY=0.5;" target="15" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="190" y="270" />
+              <mxPoint x="520" y="270" />
+              <mxPoint x="520" y="142" />
+            </Array>
+            <mxPoint x="190" y="290" as="sourcePoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="35" edge="1" parent="1" source="15" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#546E7A;strokeWidth=1;exitX=0.5;exitY=1;entryX=0.5;entryY=0;" target="16" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="36" edge="1" parent="1" source="16" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#546E7A;strokeWidth=1;exitX=0.25;exitY=1;entryX=0.5;entryY=0;" target="17" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="625" y="305" />
+              <mxPoint x="590" y="305" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="37" edge="1" parent="1" source="16" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#BDBDBD;strokeWidth=1;dashed=1;dashPattern=1 3;exitX=0.75;exitY=1;entryX=0.5;entryY=0;" target="18" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="695" y="305" />
+              <mxPoint x="755" y="305" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="38" edge="1" parent="1" source="17" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#546E7A;strokeWidth=1;exitX=1;exitY=0.5;entryX=0;entryY=0.5;" target="18" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="39" edge="1" parent="1" source="10" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9E9E9E;strokeWidth=1;dashed=1;dashPattern=3 3;exitX=0.42;exitY=1;entryX=0.75;entryY=0;entryDx=0;entryDy=0;" target="19" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="109" y="380" />
+              <mxPoint x="156" y="380" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="40" edge="1" parent="1" source="10" style="endArrow=classic;edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;strokeColor=#9E9E9E;strokeWidth=1;dashed=1;dashPattern=3 3;exitX=0.16;exitY=1;" value="">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="72" y="350" />
+              <mxPoint x="40" y="350" />
+              <mxPoint x="40" y="500" />
+              <mxPoint x="50" y="500" />
+            </Array>
+            <mxPoint x="50" y="500" as="targetPoint" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="41" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;fontSize=11;fontColor=#4B5563;" value="线型说明：&lt;font style=&quot;color: rgb(55, 71, 79);&quot;&gt;主外键关系为深灰 1.5px 实线&lt;/font&gt;；&lt;font style=&quot;color: rgb(84, 110, 122);&quot;&gt;实体间关联为中灰 1px 实线&lt;/font&gt;；扩展关系为灰色虚线；派生快照为浅灰点线。" vertex="1">
+          <mxGeometry height="24" width="590" x="205.5" y="528" as="geometry" />
+        </mxCell>
+        <mxCell id="50" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=9;fontColor=#616161;align=center;verticalAlign=middle;spacing=1;" value="1:1" vertex="1">
+          <mxGeometry height="16" width="28" x="242" y="120" as="geometry" />
+        </mxCell>
+        <mxCell id="51" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=9;fontColor=#616161;align=center;verticalAlign=middle;spacing=1;" value="1:N" vertex="1">
+          <mxGeometry height="16" width="28" x="250" y="210" as="geometry" />
+        </mxCell>
+        <mxCell id="52" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=9;fontColor=#616161;align=center;verticalAlign=middle;spacing=1;" value="1:N" vertex="1">
+          <mxGeometry height="16" width="28" x="242" y="340" as="geometry" />
+        </mxCell>
+        <mxCell id="53" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=9;fontColor=#616161;align=center;verticalAlign=middle;spacing=1;" value="1:N" vertex="1">
+          <mxGeometry height="16" width="28" x="242" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="54" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=9;fontColor=#616161;align=center;verticalAlign=middle;spacing=1;" value="1:N" vertex="1">
+          <mxGeometry height="16" width="28" x="548" y="124" as="geometry" />
+        </mxCell>
+        <mxCell id="55" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=9;fontColor=#616161;align=center;verticalAlign=middle;spacing=1;" value="1:N" vertex="1">
+          <mxGeometry height="16" width="28" x="657" y="187" as="geometry" />
+        </mxCell>
+        <mxCell id="56" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#FFFFFF;strokeColor=none;fontSize=9;fontColor=#616161;align=center;verticalAlign=middle;spacing=1;" value="审计关联" vertex="1">
+          <mxGeometry height="16" width="54" x="535" y="307" as="geometry" />
+        </mxCell>
+        <mxCell id="57" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=9;fontColor=#757575;align=center;verticalAlign=middle;spacing=1;" value="派生快照" vertex="1">
+          <mxGeometry height="16" width="54" x="709" y="307" as="geometry" />
+        </mxCell>
+        <mxCell id="58" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=9;fontColor=#616161;align=center;verticalAlign=middle;spacing=1;gradientColor=none;" value="1:1" vertex="1">
+          <mxGeometry height="16" width="28" x="662" y="350" as="geometry" />
+        </mxCell>
+        <mxCell id="59" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=9;fontColor=#757575;align=center;verticalAlign=middle;spacing=1;" value="授权扩展" vertex="1">
+          <mxGeometry height="16" width="54" x="100.5" y="366" as="geometry" />
+        </mxCell>
+        <mxCell id="60" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=none;strokeColor=none;fontSize=9;fontColor=#757575;align=center;verticalAlign=middle;spacing=1;" value="邀请码" vertex="1">
+          <mxGeometry height="16" width="42" x="34.5" y="366" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
