@@ -1,4 +1,4 @@
-\begin{thebibliography}{21}
+\begin{thebibliography}{27}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{#1}
 \expandafter\ifx\csname urlstyle\endcsname\relax\else
@@ -143,6 +143,37 @@ ZHANG G, XU Z, JIN Q, et~al.
   medical question answering\allowbreak[J/OL].
 \newblock npj Digital Medicine, 2025, 8\allowbreak (1): 239.
 \newblock DOI: \doi{10.1038/s41746-025-01651-w}.
+
+\bibitem[{中华医学会糖尿病学分会}(2021)]{cds2020t2d_guideline}
+{中华医学会糖尿病学分会}.
+\newblock 中国2型糖尿病防治指南（2020年版）\allowbreak[J].
+\newblock 中华糖尿病杂志, 2021, 13\allowbreak (4): 315-409.
+
+\bibitem[{中国高血压防治指南修订委员会}(2024)]{hypertension2024cn}
+{中国高血压防治指南修订委员会}.
+\newblock 中国高血压防治指南（2024年修订版）\allowbreak[J].
+\newblock 中华高血压杂志, 2024, 32\allowbreak (7): 603-700.
+
+\bibitem[{中国血脂管理指南修订联合专家委员会}(2023)]{lipid2023cn}
+{中国血脂管理指南修订联合专家委员会}.
+\newblock 中国血脂管理指南（2023年）\allowbreak[J].
+\newblock 中华心血管病杂志, 2023, 51\allowbreak (3): 221-255.
+
+\bibitem[{上海市肾内科临床质量控制中心专家组}(2022)]{ckd2022cn}
+{上海市肾内科临床质量控制中心专家组}.
+\newblock
+  慢性肾脏病早期筛查、诊断及防治指南（2022年版）\allowbreak[J].
+\newblock 中华肾脏病杂志, 2022, 38\allowbreak (5): 453-464.
+
+\bibitem[{中国营养学会}(2022)]{dietary2022cn}
+{中国营养学会}.
+\newblock 中国居民膳食指南（2022）\allowbreak[M].
+\newblock 北京: 人民卫生出版社, 2022.
+
+\bibitem[{《中国人群身体活动指南》编写委员会}(2022)]{physicalactivity2021cn}
+{《中国人群身体活动指南》编写委员会}.
+\newblock 中国人群身体活动指南（2021）\allowbreak[J].
+\newblock 中华流行病学杂志, 2022, 43\allowbreak (1): 5-6.
 
 \bibitem[Inker et~al.(2021)Inker, Eneanya, Coresh, Tighiouart, Wang, Sang,
   Crews, et~al.]{inker2021egfr}

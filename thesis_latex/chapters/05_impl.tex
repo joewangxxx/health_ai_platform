@@ -79,7 +79,7 @@ Agent 模块是本论文在系统实现层的重要交互部分。与常见“�
 
 \subsection{Agent整体执行流程}
 
-\codeid{ChatService} 的 \codeid{chat()} 和 \codeid{stream_chat()} 最终都汇聚到 \codeid{_chat_events()} 这一主执行链中。该链路首先建立或恢复会话，随后执行安全分类，读取用户画像摘要，检索 RAG 上下文\cite{zhang2025medicalrag}，构造规划上下文，选择允许调用的只读工具，再根据工具输出与检索质量进行后置证据评估，最后组织回答文本、治理摘要、证据面板和接管提示等结构化输出。换言之，\codeid{_chat_events()} 承担了 Agent 运行时的总装配角色，把原本分散在不同文件中的分流、检索、工具、预算、门控和回放逻辑串接成一条可追踪的对话执行路径。
+\codeid{ChatService} 的 \codeid{chat()} 和 \codeid{stream_chat()} 最终都汇聚到 \codeid{_chat_events()} 这一主执行链中。该链路首先建立或恢复会话，随后执行安全分类，读取用户画像摘要，检索 RAG 上下文\cite{zhang2025medicalrag}，构造规划上下文，选择允许调用的只读工具，再根据工具输出与检索质量进行后置证据评估，最后组织回答文本、治理摘要、证据面板和接管提示等结构化输出。就语料来源而言，当前 \codeid{backend/rag/docs} 目录主要收录公开中文指南类 PDF，知识库构建阶段会保留来源文件、页码与分块元数据，以支持后续检索结果的来源提示与证据质量判断\cite{cds2020t2d_guideline,hypertension2024cn,lipid2023cn,ckd2022cn,dietary2022cn,physicalactivity2021cn}。换言之，\codeid{_chat_events()} 承担了 Agent 运行时的总装配角色，把原本分散在不同文件中的分流、检索、工具、预算、门控和回放逻辑串接成一条可追踪的对话执行路径。
 
 从接口形态看，聊天路由不仅提供 \codeid{/chat/send} 和 \codeid{/chat/stream}，还提供历史会话列表、消息回放、重命名、归档恢复和置顶等接口。这意味着当前 Agent 的输出和状态管理都不是单一的纯文本回复，而是“回答文本 + 会话元数据 + 运行元数据”的复合结果。这样的接口组织与前端的历史会话侧边栏和增量展示逻辑相匹配，也让审计与测试环节更容易验证每一步运行状态。
 
