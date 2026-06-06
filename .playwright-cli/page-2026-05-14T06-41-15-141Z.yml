@@ -1,0 +1,55 @@
+- generic [ref=e3]:
+  - generic [ref=e50]:
+    - generic [ref=e51]:
+      - generic [ref=e52]:
+        - heading "HealthAI Platform" [level=2] [ref=e53]
+        - generic [ref=e55]: Bayesian Fusion
+      - generic [ref=e56]:
+        - generic [ref=e59]: 设备在线
+        - button "Open user menu" [ref=e61]:
+          - generic [ref=e63]: J
+    - generic [ref=e64]:
+      - complementary [ref=e65]:
+        - menubar [ref=e69]:
+          - generic [ref=e70]: User Panel
+          - menuitem "仪表盘 Dashboard" [ref=e71] [cursor=pointer]:
+            - img [ref=e73]
+            - generic [ref=e77]: 仪表盘 Dashboard
+          - menuitem "临床体检 Clinical" [ref=e78] [cursor=pointer]:
+            - img [ref=e80]
+            - generic [ref=e84]: 临床体检 Clinical
+          - menuitem "基因组学 Genomics" [ref=e85] [cursor=pointer]:
+            - img [ref=e87]
+            - generic [ref=e89]: 基因组学 Genomics
+          - menuitem "行为视觉 Lifestyle" [ref=e90] [cursor=pointer]:
+            - img [ref=e92]
+            - generic [ref=e94]: 行为视觉 Lifestyle
+          - menuitem "Dr. AI 健康顾问" [ref=e95] [cursor=pointer]:
+            - img [ref=e97]
+            - generic [ref=e100]: Dr. AI 健康顾问
+          - menuitem "全周期慢病管理" [ref=e101] [cursor=pointer]:
+            - img [ref=e103]
+            - generic [ref=e105]: 全周期慢病管理
+          - menuitem "智能药房 Pharmacy" [ref=e106] [cursor=pointer]:
+            - img [ref=e108]
+            - generic [ref=e111]: 智能药房 Pharmacy
+          - menuitem "AI 营养师 Nutrition" [ref=e112] [cursor=pointer]:
+            - img [ref=e114]
+            - generic [ref=e116]: AI 营养师 Nutrition
+      - main [ref=e117]:
+        - generic [ref=e119]:
+          - img [ref=e122]
+          - heading "👋 欢迎来到 HealthAI Platform" [level=2] [ref=e124]
+          - paragraph [ref=e125]:
+            - text: 请先前往
+            - strong [ref=e126]: "[临床体检]"
+            - text: 页面完善您的健康档案，以获取精准的 AI 风险评估。
+          - button "前往完善档案" [ref=e129] [cursor=pointer]:
+            - generic [ref=e130]:
+              - text: 前往完善档案
+              - img [ref=e132]
+  - generic:
+    - status [ref=e1]: 登录成功
+    - generic [ref=e138]:
+      - img [ref=e139]
+      - paragraph [ref=e142]: 登录成功

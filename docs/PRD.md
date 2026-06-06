@@ -284,3 +284,66 @@ graph TD
 ---
 
 *文档生成时间: 2026-02-04*
+
+---
+
+## PM Slice Addendum: Lifestyle Behavior Import Flow (2026-05-13)
+
+### Product Intent
+
+The current Lifestyle "demo patient day timeline" is valuable for defense/demo storytelling, but it is too static for users who want to bring their own behavior evidence into the platform. This slice replaces or augments the static demo with a user-uploaded, platform-standard behavior CSV/JSON import flow, while preserving two important boundaries:
+
+- The existing example/demo fallback remains available when the user has no file or wants to inspect the feature quickly.
+- A real-device API placeholder remains visible as a future integration path, but it must not be represented as a live device sync in this slice.
+
+### User Value
+
+- As a user, I can upload a behavior-day CSV or JSON file and see my own meals, activity, sleep, vitals-like observations, and daily summary events rendered in the Lifestyle timeline instead of only seeing the built-in demo patient.
+- As a clinician, PM reviewer, or defense-demo presenter, I can demonstrate the platform-standard behavior-data shape using either a user-provided sample file or the existing built-in demo fallback.
+- As a future integration owner, I can see where real device import will connect later without this slice pretending that live wearable, BLE, or remote device ingestion is complete.
+
+### Scope
+
+- Add a Lifestyle behavior import entry point for platform-standard CSV and JSON files.
+- Validate that uploaded files are behavior-day timeline inputs before rendering them in the Lifestyle page.
+- Show import success, parse/validation errors, and fallback-to-example states in user-readable language.
+- Render imported behavior data through the same timeline/replay/analysis-facing experience used by the existing demo where feasible.
+- Preserve the existing example/demo scenario as a fallback and quick-start sample.
+- Keep a real-device API placeholder or disabled entry point that clearly communicates "planned/not connected yet".
+- Preserve demo/source provenance in the user experience so imported files, built-in examples, and future real-device data are distinguishable.
+
+### Non-Goals
+
+- No final API route, request/response schema, database schema, or model I/O contract is approved by this PM note.
+- No live wearable, BLE, Apple Health, Health Connect, cloud device vendor, or background sync integration is required.
+- No automatic persistence of imported behavior events into the user's long-term medical record is required unless architect explicitly approves that contract.
+- No retraining or changing of behavior-recognition, nutrition-vision, risk, or fusion models is required.
+- No replacement of the existing demo fallback with a file-only experience; the fallback must remain available.
+- No broad redesign of the Lifestyle module outside the import, fallback, provenance, and placeholder behaviors.
+
+### Acceptance Criteria
+
+- A user can start from the Lifestyle module and choose a CSV or JSON behavior file to import.
+- The UI communicates the expected platform-standard behavior file purpose without requiring the user to understand backend contracts.
+- A valid platform-standard CSV file can populate the Lifestyle day timeline with imported events.
+- A valid platform-standard JSON file can populate the Lifestyle day timeline with imported events.
+- Invalid files, unsupported file types, missing required behavior-day content, or malformed rows/objects produce a clear error state and do not corrupt the current timeline.
+- When import fails or no file is provided, the existing example/demo fallback remains available and usable.
+- Imported file data is visually distinguishable from built-in example/demo data.
+- The real-device API placeholder is present but disabled or clearly marked as not connected in this slice.
+- Imported behavior context may be passed into the existing analysis/demo flow only through architect-approved contracts; if no approved contract exists, the UI must stop at preview/replay and clearly avoid implying risk-model ingestion.
+- The slice must not silently save imported behavior events into clinical profile, risk history, IoT history, or long-term records unless the architect approves that behavior.
+
+### Priority Notes
+
+- Priority: P1 current-stage Lifestyle enhancement.
+- This strengthens the existing Lifestyle Digital Twin demo by making the behavior timeline user-supplied and repeatable, but it does not redefine the P0 clinical/OCR/RAG/risk core loop.
+- This slice should route to architect next because CSV/JSON parsing shape, source provenance, validation rules, optional analysis handoff, and no-persistence boundaries create contract pressure.
+
+### PM Contract Pressure for Architect
+
+- Define whether import is frontend-only preview, backend parse/validate, or a mixed flow.
+- Define the platform-standard behavior CSV/JSON fields, event taxonomy, required/optional fields, and error envelope.
+- Define source provenance labels for `uploaded_csv`, `uploaded_json`, existing `simulated_demo`, and future `real_device_placeholder`.
+- Define whether imported behavior data can be sent to `/analyze/comprehensive` as `lifestyle_context` and under what no-persistence rules.
+- Define whether any uploaded file metadata, parsed event, validation report, or analysis output may be stored.

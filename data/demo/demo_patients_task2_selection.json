@@ -1,0 +1,168 @@
+{
+  "schema_version": "demo_patients_task2_selection.v1",
+  "source_directory": "C:\\Users\\JoeWang\\Downloads\\synthea_sample_data_csv_apr2020\\csv",
+  "selection_date": "2026-05-02",
+  "recommended_primary_patient_id": "8505e011-20cb-4bc5-8a66-5900111fb04b",
+  "patients": [
+    {
+      "rank": 1,
+      "patient_id": "8505e011-20cb-4bc5-8a66-5900111fb04b",
+      "demo_role": "primary_metabolic_syndrome_diabetes_management",
+      "name": "Belinda283 Kilback373",
+      "age": 60,
+      "gender": "F",
+      "status": "alive",
+      "city": "Fairhaven",
+      "target_field_count": 18,
+      "story_tags": [
+        "diabetes",
+        "metabolic_syndrome",
+        "hyperlipidemia",
+        "hypertension",
+        "obesity_history"
+      ],
+      "key_conditions": [
+        "Diabetes",
+        "Metabolic syndrome X (disorder)",
+        "Hypertriglyceridemia (disorder)",
+        "Hyperglycemia (disorder)",
+        "Hyperlipidemia",
+        "Hypertension",
+        "Neuropathy due to type 2 diabetes mellitus (disorder)"
+      ],
+      "key_medications": [
+        "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet",
+        "Simvastatin 10 MG Oral Tablet",
+        "amLODIPine 5 MG / Hydrochlorothiazide 12.5 MG / Olmesartan medoxomil 20 MG Oral Tablet"
+      ],
+      "clinical_profile": {
+        "Height": 162.5,
+        "Weight": 77.9,
+        "BMI": 29.5,
+        "SBP": 188,
+        "DBP": 116,
+        "Glucose_Fasting": 4.46,
+        "HbA1c": 5.9,
+        "Cholesterol_Total": 4.39,
+        "Triglycerides": 1.62,
+        "Cholesterol_HDL": 1.62,
+        "Cholesterol_LDL": 2.03,
+        "Creatinine": 61.9,
+        "eGFR": 148.5,
+        "ALT": 59,
+        "ALP": 139.5,
+        "WBC": 7.9,
+        "Platelet": 412.2,
+        "Smoking": "Never smoker"
+      }
+    },
+    {
+      "rank": 2,
+      "patient_id": "066c0f3d-90bb-4082-99ec-f307c4759f50",
+      "demo_role": "cardiovascular_heart_failure_multimodal_risk",
+      "name": "Floyd420 Conroy74",
+      "age": 63,
+      "gender": "M",
+      "status": "alive",
+      "city": "Uxbridge",
+      "target_field_count": 18,
+      "story_tags": [
+        "chronic_congestive_heart_failure",
+        "hypertension",
+        "prediabetes",
+        "hyperlipidemia",
+        "obesity_history"
+      ],
+      "key_conditions": [
+        "Chronic congestive heart failure (disorder)",
+        "Prediabetes",
+        "Hyperlipidemia",
+        "Hypertension",
+        "Body mass index 30+ - obesity (finding)"
+      ],
+      "key_medications": [
+        "Furosemide 40 MG Oral Tablet",
+        "24 HR metoprolol succinate 100 MG Extended Release Oral Tablet [Toprol]",
+        "Hydrochlorothiazide 12.5 MG",
+        "Simvastatin 10 MG Oral Tablet"
+      ],
+      "clinical_profile": {
+        "Height": 172.9,
+        "Weight": 84,
+        "BMI": 28.1,
+        "SBP": 133,
+        "DBP": 82,
+        "Glucose_Fasting": 4.74,
+        "HbA1c": 6.4,
+        "Cholesterol_Total": 4.27,
+        "Triglycerides": 1.62,
+        "Cholesterol_HDL": 1.62,
+        "Cholesterol_LDL": 3.18,
+        "Creatinine": 79.6,
+        "eGFR": 67.8,
+        "ALT": 59.7,
+        "ALP": 109,
+        "WBC": 5.3,
+        "Platelet": 210,
+        "Smoking": "Never smoker"
+      }
+    },
+    {
+      "rank": 3,
+      "patient_id": "4a52ea9c-d410-4b78-a4da-6053e2ed0787",
+      "demo_role": "younger_cardiometabolic_respiratory_risk",
+      "name": "Aundrea980 Mertz280",
+      "age": 45,
+      "gender": "F",
+      "status": "alive",
+      "city": "Waltham",
+      "target_field_count": 18,
+      "story_tags": [
+        "hypertension",
+        "prediabetes",
+        "hyperlipidemia",
+        "pulmonary_emphysema",
+        "former_smoker"
+      ],
+      "key_conditions": [
+        "Hypertension",
+        "Prediabetes",
+        "Hyperlipidemia",
+        "Pulmonary emphysema (disorder)"
+      ],
+      "key_medications": [
+        "amLODIPine 5 MG / Hydrochlorothiazide 12.5 MG / Olmesartan medoxomil 20 MG Oral Tablet",
+        "Simvastatin 10 MG Oral Tablet",
+        "60 ACTUAT Fluticasone propionate 0.25 MG/ACTUAT / salmeterol 0.05 MG/ACTUAT Dry Powder Inhaler"
+      ],
+      "clinical_profile": {
+        "Height": 155.7,
+        "Weight": 68.5,
+        "BMI": 28.2,
+        "SBP": 148,
+        "DBP": 110,
+        "Glucose_Fasting": 3.92,
+        "HbA1c": 6.1,
+        "Cholesterol_Total": 5.16,
+        "Triglycerides": 1.38,
+        "Cholesterol_HDL": 1.57,
+        "Cholesterol_LDL": 2.96,
+        "Creatinine": 70.7,
+        "eGFR": 71.9,
+        "ALT": 54.7,
+        "ALP": 96.7,
+        "WBC": 5.9,
+        "Platelet": 186.2,
+        "Smoking": "Former smoker"
+      }
+    }
+  ],
+  "known_gaps_for_next_tasks": [
+    "waist circumference",
+    "sleep hours",
+    "diet pattern",
+    "alcohol frequency",
+    "exercise level",
+    "genomic data binding"
+  ]
+}

@@ -1,0 +1,13 @@
+# Reproducible ML dependency baseline (2026-04-23)
+# Scope: model training, model re-export, and runtime compatibility checks.
+#
+# Notes:
+# - scikit-learn is pinned to 1.6.1 to match current serialized sklearn artifacts.
+# - xgboost / torch / torchvision are required for full model compatibility validation.
+# - Use this file with: pip install -r ai_core/requirements-ml-baseline.txt
+
+scikit-learn==1.6.1
+joblib==1.5.3
+xgboost==2.1.4
+torch==2.5.1
+torchvision==0.20.1

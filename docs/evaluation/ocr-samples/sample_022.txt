@@ -1,0 +1,26 @@
+HealthAI Platform Synthetic Physical Examination Report
+Sample ID: sample_022
+姓名: 测试用户022
+年龄: 71
+性别: 女
+身高: 173 cm
+体重: 89.1 kg
+血压: 132/68 mmHg
+---- 检验项目 ----
+BMI    29.8
+WBC 6.8 10^9/L
+HGB 148 g/L
+PLT    342
+ALT 63 U/L
+AST: 53
+GGT    25
+Glu: 5.97
+TC: 3.31
+TG    2.46
+UA    294
+糖化血红蛋白 6.3 %
+Creatinine 74 umol/L
+eGFR 75 ml/min/1.73m2
+---- 医生提示 ----
+本报告为阶段3自动生成的合成样本，仅用于结构化抽取评估。
+No real patient information is included.

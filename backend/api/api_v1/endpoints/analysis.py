@@ -34,6 +34,14 @@ class pdf_error(Exception):
 def _get_projection_service():
     try:
         from backend.services.projection_service import projection_service
+        try:
+            from backend import main as app_main
+
+            loaded_fusion_engine = getattr(app_main, "fusion_engine", None)
+            if loaded_fusion_engine is not None:
+                projection_service.set_fusion_engine(loaded_fusion_engine)
+        except Exception:
+            pass
 
         return projection_service
     except Exception as exc:

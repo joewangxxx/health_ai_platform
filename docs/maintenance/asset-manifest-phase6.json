@@ -1,0 +1,170 @@
+{
+  "phase": "maintenance_phase6_asset_acceptance",
+  "generated_on": "2026-04-24",
+  "workspace": "E:\\health_ai_platform_2.0",
+  "policy": {
+    "direct_delete_allowed": false,
+    "requires_owner_review_before_archive": true,
+    "requires_regeneration_command_for_generated_assets": true,
+    "requires_checksum_for_externalized_assets": true,
+    "requires_privacy_review_for_upload_samples": true
+  },
+  "assets": [
+    {
+      "asset_class": "raw_data",
+      "path": "data_warehouse/raw_data",
+      "owner": "ai-data",
+      "retention_decision": "keep_with_manifest",
+      "externalization_strategy": "Move bulky public datasets to documented external storage or dataset download scripts after owner review; keep only manifests, checksums, and small reproducible samples in Git.",
+      "demo_boundary": "Use summarized dataset provenance and small synthetic/public-safe samples during defense; do not open large raw files live.",
+      "acceptance_rule": "No deletion until dataset source, regeneration path, and sample replacement are documented.",
+      "exists": true,
+      "file_count": 285736,
+      "size_mb": 148691.12,
+      "tracked_count": 0,
+      "examples": [
+        "data_warehouse/raw_data/gene_source/T2D/T2D_GCST90018706.tsv",
+        "data_warehouse/raw_data/gene_source/T2D/T2D_GCST007847.txt",
+        "data_warehouse/raw_data/gene_source/T2D/T2D_GCST010118.txt",
+        "data_warehouse/raw_data/gene_source/T2D/T2D_GCST90274723.tsv",
+        "data_warehouse/raw_data/gene_source/Obesity/Obesity_GCST90079763.tsv"
+      ]
+    },
+    {
+      "asset_class": "processed_data",
+      "path": "data_warehouse/processed_data",
+      "owner": "ai-data",
+      "retention_decision": "review_before_externalize",
+      "externalization_strategy": "Classify processed tables as reproducible outputs or canonical evaluation fixtures; externalize bulky reproducible outputs after ETL command and checksum are recorded.",
+      "demo_boundary": "Show aggregate metrics and schema examples, not full processed tables.",
+      "acceptance_rule": "Keep files required by tests or thesis metrics until replacement fixtures are validated.",
+      "exists": true,
+      "file_count": 24,
+      "size_mb": 38.88,
+      "tracked_count": 0,
+      "examples": [
+        "data_warehouse/processed_data/lifestyle_training_data.csv",
+        "data_warehouse/processed_data/food_nutrition_labels.csv",
+        "data_warehouse/processed_data/knowledge_base/GWAS_T2D_weights.csv",
+        "data_warehouse/processed_data/knowledge_base/GWAS_Obesity_weights.csv",
+        "data_warehouse/processed_data/knowledge_base/GWAS_UricAcid_weights.csv"
+      ]
+    },
+    {
+      "asset_class": "model_artifacts",
+      "path": "models",
+      "owner": "ai-data",
+      "retention_decision": "keep_with_manifest",
+      "externalization_strategy": "Store large model weights in release assets or external model storage with version, dependency baseline, checksum, and re-export command.",
+      "demo_boundary": "Show model cards, metrics, and compatibility evidence instead of raw binary files.",
+      "acceptance_rule": "Do not delete model artifacts needed for smoke tests, compatibility checks, or thesis reproduction.",
+      "exists": true,
+      "file_count": 8,
+      "size_mb": 76.5,
+      "tracked_count": 0,
+      "examples": [
+        "models/stress_xgboost.pkl",
+        "models/food_resnet_model.pth",
+        "models/glucose_lstm_model.pth",
+        "models/nutrition_efficientnet.pth",
+        "models/feature_importance_top30.png"
+      ]
+    },
+    {
+      "asset_class": "rag_documents",
+      "path": "backend/rag/docs",
+      "owner": "ai-data",
+      "retention_decision": "keep_with_manifest",
+      "externalization_strategy": "Keep authoritative medical PDFs under a documented source list; externalize only if retrieval rebuild scripts and checksums are available.",
+      "demo_boundary": "Show document titles, source provenance, and retrieval evidence; avoid scrolling huge PDFs during live demo.",
+      "acceptance_rule": "RAG source PDFs remain protected assets because they define knowledge-base provenance.",
+      "exists": true,
+      "file_count": 9,
+      "size_mb": 107.2,
+      "tracked_count": 0,
+      "examples": [
+        "backend/rag/docs/成人高尿酸血症与痛风食养指南_2024.pdf",
+        "backend/rag/docs/肥胖症诊疗指南_2024.pdf",
+        "backend/rag/docs/慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+        "backend/rag/docs/脂肪性肝病诊疗规范化的专家建_2019.pdf",
+        "backend/rag/docs/中国2型糖尿病防治指_2020.pdf"
+      ]
+    },
+    {
+      "asset_class": "vector_store",
+      "path": "backend/rag/vector_store",
+      "owner": "ai-data",
+      "retention_decision": "review_before_externalize",
+      "externalization_strategy": "Prefer rebuildable vector-store artifacts generated from RAG documents; keep rebuild command, embedding model version, and index checksum.",
+      "demo_boundary": "Show retrieval metrics and rebuild status, not SQLite internals.",
+      "acceptance_rule": "Do not delete unless RAG build command and smoke retrieval pass without the existing index.",
+      "exists": true,
+      "file_count": 6,
+      "size_mb": 22.68,
+      "tracked_count": 0,
+      "examples": [
+        "backend/rag/vector_store/chroma.sqlite3",
+        "backend/rag/vector_store/6f237717-bef4-4dd1-b8c1-c53ab08f9c68/header.bin",
+        "backend/rag/vector_store/6f237717-bef4-4dd1-b8c1-c53ab08f9c68/data_level0.bin",
+        "backend/rag/vector_store/6f237717-bef4-4dd1-b8c1-c53ab08f9c68/length.bin",
+        "backend/rag/vector_store/6f237717-bef4-4dd1-b8c1-c53ab08f9c68/link_lists.bin"
+      ]
+    },
+    {
+      "asset_class": "upload_samples",
+      "path": "temp_uploads",
+      "owner": "orchestrator",
+      "retention_decision": "review_before_externalize",
+      "externalization_strategy": "Separate public demo samples from private or bulky upload remnants; keep synthetic demo samples, archive or externalize owner-approved bulky remnants.",
+      "demo_boundary": "Use synthetic or privacy-safe samples only; never display real personal health uploads.",
+      "acceptance_rule": "Requires privacy review and owner approval before archive or deletion.",
+      "exists": true,
+      "file_count": 7,
+      "size_mb": 7616.68,
+      "tracked_count": 0,
+      "examples": [
+        "temp_uploads/0776eee7_InsulinResist_GCST90002237",
+        "temp_uploads/57370b3d_InsulinResist_GCST90002238",
+        "temp_uploads/ee1b10ee_InsulinResist_GCST90002240",
+        "temp_uploads/27e41396_InsulinResist_GCST90002237",
+        "temp_uploads/33f46efd_InsulinResist_GCST90002238"
+      ]
+    },
+    {
+      "asset_class": "runtime_databases",
+      "path": "backend/health_ai_v2.db",
+      "owner": "be",
+      "retention_decision": "review_before_externalize",
+      "externalization_strategy": "Replace local runtime databases with migrations, seed scripts, or sanitized demo DB snapshots when needed.",
+      "demo_boundary": "Use resettable demo DB or seeded fixtures; avoid exposing user records.",
+      "acceptance_rule": "Do not delete until migrations and seed path can recreate the expected demo state.",
+      "exists": true,
+      "file_count": 1,
+      "size_mb": 0.18,
+      "tracked_count": 0,
+      "examples": [
+        "backend/health_ai_v2.db"
+      ]
+    },
+    {
+      "asset_class": "thesis_artifacts",
+      "path": "thesis_latex",
+      "owner": "general",
+      "retention_decision": "keep",
+      "externalization_strategy": "Keep thesis source and intentional figures in repository; generated build byproducts may be governed separately only after LaTeX build policy is documented.",
+      "demo_boundary": "Show compiled thesis sections or selected figures, not temporary LaTeX build files.",
+      "acceptance_rule": "Do not delete thesis figures or source files without explicit thesis owner approval.",
+      "exists": true,
+      "file_count": 91,
+      "size_mb": 10.4,
+      "tracked_count": 102,
+      "examples": [
+        "thesis_latex/main.tex",
+        "thesis_latex/references.bib",
+        "thesis_latex/main.log",
+        "thesis_latex/main.bbl",
+        "thesis_latex/main.out"
+      ]
+    }
+  ]
+}

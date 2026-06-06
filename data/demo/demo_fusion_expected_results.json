@@ -1,0 +1,380 @@
+{
+  "schema_version": "demo_fusion_expected_results.v1",
+  "generated_at": "2026-05-07",
+  "endpoint": "POST /analyze/comprehensive",
+  "data_mode": "defense_demo_expected_output",
+  "patients": [
+    {
+      "id": "synthea_8505e011",
+      "title": "代谢与糖尿病高风险主线患者",
+      "scenario_id": "metabolic_day_001",
+      "clinical_csv": "data/demo/platform_demo_profile_synthea_8505e011.csv",
+      "gene_txt": "data/demo/demo_gene_synthea_8505e011.txt",
+      "clinical_key_fields": {
+        "Age": 60,
+        "Gender": 2,
+        "BMI": 29.5,
+        "SBP": 188,
+        "DBP": 116,
+        "Glucose_Fasting": 4.46,
+        "HbA1c": 5.9,
+        "Cholesterol_Total": 4.39,
+        "Triglycerides": 1.62,
+        "Cholesterol_HDL": 1.62,
+        "eGFR": 148.5,
+        "Sleep_Hours": 6
+      },
+      "gene_snp_count": 50000,
+      "behavior_title": "Metabolic and diabetes high-risk demo day",
+      "behavior_summary": {
+        "steps": 4100,
+        "active_minutes": 18,
+        "sedentary_minutes": 610,
+        "sleep_hours": 5.7,
+        "diet_pattern": "high_sodium_high_carbohydrate",
+        "estimated_calories": 2200,
+        "estimated_sodium_mg": 5050
+      },
+      "api_status": "success",
+      "analysis_mode": "final",
+      "top_risks": [
+        {
+          "disease": "Hypertension",
+          "risk": 99.9,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "71.5%",
+            "gene_modifier": "x1.5",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "HighLipid",
+          "risk": 99.9,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "73.9%",
+            "gene_modifier": "x1.5",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "CKD",
+          "risk": 99.9,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "74.8%",
+            "gene_modifier": "x1.5",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "IronDef",
+          "risk": 99.9,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "78.2%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "CoronaryHeart",
+          "risk": 97.7,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "50.1%",
+            "gene_modifier": "x1.5",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "PoorHealth",
+          "risk": 95.5,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "73.5%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "HeartAttack",
+          "risk": 85.7,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "65.9%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "InsulinResist",
+          "risk": 78.6,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "40.3%",
+            "gene_modifier": "x1.5",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        }
+      ]
+    },
+    {
+      "id": "synthea_066c0f3d",
+      "title": "心血管与心衰监测备用患者",
+      "scenario_id": "cardio_hf_day_001",
+      "clinical_csv": "data/demo/platform_demo_profile_synthea_066c0f3d.csv",
+      "gene_txt": "data/demo/demo_gene_synthea_066c0f3d.txt",
+      "clinical_key_fields": {
+        "Age": 63,
+        "Gender": 1,
+        "BMI": 28.1,
+        "SBP": 133,
+        "DBP": 82,
+        "Glucose_Fasting": 4.74,
+        "HbA1c": 6.4,
+        "Cholesterol_Total": 4.27,
+        "Triglycerides": 1.62,
+        "Cholesterol_HDL": 1.62,
+        "eGFR": 67.8,
+        "Sleep_Hours": 6.5
+      },
+      "gene_snp_count": 50000,
+      "behavior_title": "Cardiovascular and heart-failure monitoring demo day",
+      "behavior_summary": {
+        "steps": 5200,
+        "active_minutes": 26,
+        "sedentary_minutes": 540,
+        "sleep_hours": 6.2,
+        "diet_pattern": "high_sodium_moderate_carbohydrate",
+        "estimated_calories": 1850,
+        "estimated_sodium_mg": 4280
+      },
+      "api_status": "success",
+      "analysis_mode": "final",
+      "top_risks": [
+        {
+          "disease": "Hypertension",
+          "risk": 99.9,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "92.4%",
+            "gene_modifier": "x1.5",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "HighLipid",
+          "risk": 99.9,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "72.4%",
+            "gene_modifier": "x1.5",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "CKD",
+          "risk": 99.9,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "69.4%",
+            "gene_modifier": "x1.5",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "CoronaryHeart",
+          "risk": 99.9,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "82.2%",
+            "gene_modifier": "x1.5",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "HeartAttack",
+          "risk": 96.2,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "74.0%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "PoorHealth",
+          "risk": 76.8,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "59.1%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "IronDef",
+          "risk": 72.7,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "55.9%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "IronOverload",
+          "risk": 62.4,
+          "level": "高 (High)",
+          "breakdown": {
+            "base_clinical": "48.0%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "高 (High)"
+        }
+      ]
+    },
+    {
+      "id": "synthea_4a52ea9c",
+      "title": "年轻心代谢与呼吸改善对照患者",
+      "scenario_id": "younger_improvement_day_001",
+      "clinical_csv": "data/demo/platform_demo_profile_synthea_4a52ea9c.csv",
+      "gene_txt": "data/demo/demo_gene_synthea_4a52ea9c.txt",
+      "clinical_key_fields": {
+        "Age": 45,
+        "Gender": 2,
+        "BMI": 28.2,
+        "SBP": 148,
+        "DBP": 110,
+        "Glucose_Fasting": 3.92,
+        "HbA1c": 6.1,
+        "Cholesterol_Total": 5.16,
+        "Triglycerides": 1.38,
+        "Cholesterol_HDL": 1.57,
+        "eGFR": 71.9,
+        "Sleep_Hours": 6
+      },
+      "gene_snp_count": 50000,
+      "behavior_title": "Younger cardiometabolic and respiratory improvement demo day",
+      "behavior_summary": {
+        "steps": 9200,
+        "active_minutes": 58,
+        "sedentary_minutes": 360,
+        "sleep_hours": 7.3,
+        "diet_pattern": "lower_sodium_high_fiber_balanced",
+        "estimated_calories": 1740,
+        "estimated_sodium_mg": 1840
+      },
+      "api_status": "success",
+      "analysis_mode": "final",
+      "top_risks": [
+        {
+          "disease": "PoorHealth",
+          "risk": 89.6,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "68.9%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "IronDef",
+          "risk": 83.2,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "64.0%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "CKD",
+          "risk": 76.7,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "59.0%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "CoronaryHeart",
+          "risk": 73.4,
+          "level": "极高 (Very High)",
+          "breakdown": {
+            "base_clinical": "61.4%",
+            "gene_modifier": "x0.92",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "极高 (Very High)"
+        },
+        {
+          "disease": "Hypertension",
+          "risk": 54.3,
+          "level": "高 (High)",
+          "breakdown": {
+            "base_clinical": "52.2%",
+            "gene_modifier": "x0.8",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "高 (High)"
+        },
+        {
+          "disease": "IronOverload",
+          "risk": 53.6,
+          "level": "高 (High)",
+          "breakdown": {
+            "base_clinical": "41.2%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "高 (High)"
+        },
+        {
+          "disease": "HeartAttack",
+          "risk": 53.3,
+          "level": "高 (High)",
+          "breakdown": {
+            "base_clinical": "41.0%",
+            "gene_modifier": "x1.0",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "高 (High)"
+        },
+        {
+          "disease": "HighLipid",
+          "risk": 46.2,
+          "level": "高 (High)",
+          "breakdown": {
+            "base_clinical": "44.4%",
+            "gene_modifier": "x0.8",
+            "lifestyle_modifier": "x1.2999999523162842"
+          },
+          "level_display": "高 (High)"
+        }
+      ]
+    }
+  ]
+}

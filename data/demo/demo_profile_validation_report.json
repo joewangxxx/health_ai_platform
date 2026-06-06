@@ -1,0 +1,60 @@
+{
+  "schema_version": "demo_profile_validation_report.v1",
+  "generated_at": "2026-05-02T13:09:20",
+  "patients_checked": 3,
+  "minimum_fill_rate": 0.9545,
+  "all_core_risk_fields_present": true,
+  "patients": [
+    {
+      "synthea_patient_id": "8505e011-20cb-4bc5-8a66-5900111fb04b",
+      "demo_patient_id": "synthea_8505e011",
+      "fill_rate": 0.9545,
+      "non_null_profile_fields": 21,
+      "missing_fields": [
+        "GGT"
+      ],
+      "checks": {
+        "age_present": true,
+        "gender_encoded": true,
+        "core_risk_fields_present": true,
+        "unit_conversion_applied": true,
+        "source_tags_present": true,
+        "gaps_not_fabricated": true
+      }
+    },
+    {
+      "synthea_patient_id": "066c0f3d-90bb-4082-99ec-f307c4759f50",
+      "demo_patient_id": "synthea_066c0f3d",
+      "fill_rate": 0.9545,
+      "non_null_profile_fields": 21,
+      "missing_fields": [
+        "GGT"
+      ],
+      "checks": {
+        "age_present": true,
+        "gender_encoded": true,
+        "core_risk_fields_present": true,
+        "unit_conversion_applied": true,
+        "source_tags_present": true,
+        "gaps_not_fabricated": true
+      }
+    },
+    {
+      "synthea_patient_id": "4a52ea9c-d410-4b78-a4da-6053e2ed0787",
+      "demo_patient_id": "synthea_4a52ea9c",
+      "fill_rate": 0.9545,
+      "non_null_profile_fields": 21,
+      "missing_fields": [
+        "GGT"
+      ],
+      "checks": {
+        "age_present": true,
+        "gender_encoded": true,
+        "core_risk_fields_present": true,
+        "unit_conversion_applied": true,
+        "source_tags_present": true,
+        "gaps_not_fabricated": true
+      }
+    }
+  ]
+}

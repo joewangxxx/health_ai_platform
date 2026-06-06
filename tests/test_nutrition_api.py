@@ -5,6 +5,7 @@ from sqlmodel import Session, select
 
 from backend.auth import create_access_token
 from backend.models import User, UserProfile
+from backend.services.nutrition_service import DietOptimizer
 
 
 @pytest.fixture
@@ -116,3 +117,16 @@ def test_generate_plan_unauthorized(client):
     payload = {"target_calories": 2000}
     response = client.post("/nutrition/generate", json=payload)
     assert response.status_code == 401
+
+
+def test_fallback_plan_matches_response_contract():
+    plan = DietOptimizer()._fallback_plan(target_calories=1800, restrictions=["diabetes"])
+
+    assert plan["status"] == "success"
+    assert plan["target_calories"] == 1800
+    assert plan["actual_calories"] > 0
+    assert plan["macros"].keys() >= {"protein_g", "fat_g", "carbs_g", "sodium_mg"}
+    assert plan["macro_ratios"].keys() >= {"protein", "fat", "carbs"}
+    assert plan["warnings"] == ["diabetes"]
+    assert plan["foods"]
+    assert plan["recipe_suggestion"]["dish_name"]

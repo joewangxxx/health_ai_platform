@@ -5,6 +5,7 @@ Task 96: NHANES Diet Pattern Clustering Model
 例如：健康均衡、高糖高脂、高蛋白、低热量贫瘠、高盐等。
 """
 import os
+import sys
 import json
 import pandas as pd
 import numpy as np
@@ -14,11 +15,17 @@ from sklearn.preprocessing import StandardScaler
 import warnings
 warnings.filterwarnings('ignore')
 
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+sys.path.append(PROJECT_ROOT)
+
+from backend.config import DATA_WAREHOUSE_DIR, MODELS_DIR
+
 # ================= 配置区域 =================
-BASE_DIR = r"F:\health_ai_platform_2.0\data_warehouse\raw_data\NHANES"
+BASE_DIR = os.path.join(DATA_WAREHOUSE_DIR, "raw_data", "NHANES")
 DATA_FILE = os.path.join(BASE_DIR, "P_DR1TOT.xpt")
 
-MODEL_DIR = r"F:\health_ai_platform_2.0\backend\data\models"
+MODEL_DIR = MODELS_DIR
 os.makedirs(MODEL_DIR, exist_ok=True)
 
 KMEANS_PATH = os.path.join(MODEL_DIR, "diet_kmeans.pkl")

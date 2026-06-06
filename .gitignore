@@ -1,10 +1,9 @@
 # ===========================================
-# Health AI Platform 2.0 - .gitignore
-# Task 117: Production-Grade Git Ignore Rules
+# Health AI Platform 2.0 - Git Ignore Rules
 # ===========================================
 
 # ==========================
-# 1. 敏感信息 (CRITICAL - 绝对禁止上传)
+# 1. 敏感信息
 # ==========================
 .env
 .env.*
@@ -16,7 +15,7 @@
 secrets/
 credentials/
 
-# API Keys and Tokens (防止硬编码泄露)
+# API Keys and Tokens
 *_secret*
 *_token*
 *.secret
@@ -24,21 +23,18 @@ credentials/
 # ==========================
 # 2. Python 环境与依赖
 # ==========================
-# Virtual Environments
 venv/
 .venv/
 env/
 ENV/
 .python-version
 
-# Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 *.pyc
 *.pyo
 
-# Distribution / Packaging
 build/
 develop-eggs/
 dist/
@@ -55,17 +51,17 @@ wheels/
 .installed.cfg
 *.egg
 
-# Installer logs
 pip-log.txt
 pip-delete-this-directory.txt
 
 # ==========================
-# 3. 前端 (Vue/Node.js)
+# 3. 前端构建与 Node 依赖
 # ==========================
 frontend/node_modules/
 frontend/dist/
 frontend/.output/
 frontend/.nuxt/
+frontend/.tmp/
 *.local
 npm-debug.log*
 yarn-debug.log*
@@ -73,32 +69,28 @@ yarn-error.log*
 .pnpm-debug.log*
 
 # ==========================
-# 4. 数据仓库 (本地保留，不传云端)
+# 4. 数据仓库与本地上传资产
 # ==========================
-# 原始数据 (NHANES, 食物数据等)
+# 原始数据和处理后的数据通常体积较大，按资产清单管理，不进入普通代码提交。
 data_warehouse/raw_data/
 data_warehouse/raw/
-
-# 处理后数据 (CSV, 中间文件)
 data_warehouse/processed_data/
 data_warehouse/processed/
 
-# 向量数据库 (ChromaDB, FAISS)
+# 向量库和本地上传目录属于运行时资产。
 backend/rag/vector_store/
 backend/rag/chroma_db/
 *.index
 *.faiss
 
-# 忽略临时上传文件
 temp_uploads/
 backend/temp_uploads/
 uploads/
 backend/uploads/
 
 # ==========================
-# 5. 模型文件 (GitHub 限制 100MB)
+# 5. 模型文件
 # ==========================
-# Machine Learning Models
 *.pkl
 *.pickle
 *.pth
@@ -109,12 +101,9 @@ backend/uploads/
 *.onnx
 *.safetensors
 
-# Model directories
 models/
 ai_core/models/
 backend/data/models/
-
-# PaddleOCR Models (Auto-downloaded)
 ~/.paddleocr/
 
 # ==========================
@@ -126,7 +115,7 @@ backend/data/models/
 health_ai.db
 
 # ==========================
-# 7. 日志与缓存
+# 7. 日志、缓存与临时产物
 # ==========================
 *.log
 logs/
@@ -134,15 +123,16 @@ logs/
 .cache/
 *.tmp
 *.temp
+.tmp/
+tmp_doc_extract/
+output/
 
-# Pytest
 .pytest_cache/
 .coverage
 htmlcov/
 .tox/
 .nox/
 
-# Jupyter Notebooks Checkpoints
 .ipynb_checkpoints/
 
 # ==========================
@@ -168,18 +158,15 @@ ehthumbs.db
 Desktop.ini
 
 # ==========================
-# 10. 其他项目特定
+# 10. 项目特定产物
 # ==========================
-# Brain artifacts (Gemini Agent)
 .gemini/
 
-# PDF reports (generated)
+# 生成型 PDF 默认不提交；论文封面声明保留为例外。
 *.pdf
 !thesis_latex/frontmatter/cover_declaration.pdf
 
-# Backup files
 *.bak
 *.backup
 
-# Test outputs
 test_output/

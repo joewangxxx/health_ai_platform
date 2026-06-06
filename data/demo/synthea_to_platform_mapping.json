@@ -1,0 +1,95 @@
+{
+  "schema_version": "synthea_to_platform_mapping.v1",
+  "mappings": {
+    "Body Height": {
+      "platform_field": "Height",
+      "source_unit": "cm",
+      "target_unit": "cm"
+    },
+    "Body Weight": {
+      "platform_field": "Weight",
+      "source_unit": "kg",
+      "target_unit": "kg"
+    },
+    "Body Mass Index": {
+      "platform_field": "BMI",
+      "source_unit": "kg/m2",
+      "target_unit": "kg/m2"
+    },
+    "Systolic Blood Pressure": {
+      "platform_field": "SBP",
+      "source_unit": "mm[Hg]",
+      "target_unit": "mmHg"
+    },
+    "Diastolic Blood Pressure": {
+      "platform_field": "DBP",
+      "source_unit": "mm[Hg]",
+      "target_unit": "mmHg"
+    },
+    "Glucose": {
+      "platform_field": "Glucose_Fasting",
+      "source_unit": "mg/dL",
+      "target_unit": "mmol/L"
+    },
+    "Hemoglobin A1c/Hemoglobin.total in Blood": {
+      "platform_field": "HbA1c",
+      "source_unit": "%",
+      "target_unit": "%"
+    },
+    "Total Cholesterol": {
+      "platform_field": "Cholesterol_Total",
+      "source_unit": "mg/dL",
+      "target_unit": "mmol/L"
+    },
+    "Triglycerides": {
+      "platform_field": "Triglycerides",
+      "source_unit": "mg/dL",
+      "target_unit": "mmol/L"
+    },
+    "High Density Lipoprotein Cholesterol": {
+      "platform_field": "Cholesterol_HDL",
+      "source_unit": "mg/dL",
+      "target_unit": "mmol/L"
+    },
+    "Low Density Lipoprotein Cholesterol": {
+      "platform_field": "Cholesterol_LDL",
+      "source_unit": "mg/dL",
+      "target_unit": "mmol/L"
+    },
+    "Creatinine": {
+      "platform_field": "Creatinine",
+      "source_unit": "mg/dL",
+      "target_unit": "umol/L"
+    },
+    "Estimated Glomerular Filtration Rate": {
+      "platform_field": "eGFR",
+      "source_unit": "mL/min",
+      "target_unit": "mL/min"
+    },
+    "Alanine aminotransferase": {
+      "platform_field": "ALT",
+      "source_unit": "U/L",
+      "target_unit": "U/L"
+    },
+    "Leukocytes": {
+      "platform_field": "WBC",
+      "source_unit": "10*3/uL",
+      "target_unit": "10^9/L"
+    },
+    "Platelets": {
+      "platform_field": "Platelet",
+      "source_unit": "10*3/uL",
+      "target_unit": "10^9/L"
+    },
+    "Alkaline phosphatase": {
+      "platform_field": "ALP",
+      "source_unit": "U/L",
+      "target_unit": "U/L"
+    },
+    "Tobacco smoking status NHIS": {
+      "platform_field": "Smoking_Status",
+      "source_unit": null,
+      "target_unit": null
+    }
+  }
+}

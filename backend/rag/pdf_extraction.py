@@ -18,6 +18,7 @@ from backend.core.config import settings
 
 logger = logging.getLogger(__name__)
 
+# 中文注释：本模块负责 PDF 文本提取与 OCR 兜底，不承担向量化或检索逻辑。
 DEFAULT_OCR_PAGE_LIMIT = 10
 DEFAULT_OCR_DPI = 200
 LOW_TEXT_DENSITY_PAGE_CHAR_THRESHOLD = 15
@@ -32,6 +33,7 @@ def _import_langchain_pypdf_loader():
 
 
 def _normalize_text(value: object) -> str:
+    """中文说明：_normalize_text 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not isinstance(value, str):
         return ""
     return value.replace("\x0c", "").strip()
@@ -49,6 +51,7 @@ _SECTION_TITLE_PATTERNS = (
 
 
 def _sanitize_section_title(value: object) -> Optional[str]:
+    """中文说明：_sanitize_section_title 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     text = _normalize_text(value)
     if not text:
         return None
@@ -68,6 +71,7 @@ def _contains_cjk_characters(value: str) -> bool:
 
 
 def _extract_section_title_from_text(page_content: str) -> Optional[str]:
+    """中文说明：_extract_section_title_from_text 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not isinstance(page_content, str):
         return None
 
@@ -102,6 +106,7 @@ def _extract_section_title_from_text(page_content: str) -> Optional[str]:
 
 
 def resolve_section_title(source_metadata: dict, page_content: str) -> Optional[str]:
+    """中文说明：resolve_section_title 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     for key in ("section_title", "title"):
         section_title = _sanitize_section_title(source_metadata.get(key))
         if section_title:
@@ -125,6 +130,7 @@ def _normalize_page_bound(value: object) -> Optional[int]:
 
 
 def resolve_page_range(source_metadata: dict) -> Optional[str]:
+    """中文说明：resolve_page_range 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     page_range = source_metadata.get("page_range")
     if isinstance(page_range, (list, tuple)) and len(page_range) == 2:
         start_page = _normalize_page_bound(page_range[0])
@@ -169,6 +175,7 @@ def _resolve_page_number(document_index: int) -> int:
 
 
 def _build_pypdf_loader_factory() -> Callable[[str], Any]:
+    """中文说明：_build_pypdf_loader_factory 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     def _loader_factory(file_path: str):
         try:
             from pypdf import PdfReader
@@ -204,6 +211,8 @@ def _build_pypdf_loader_factory() -> Callable[[str], Any]:
 
 @lru_cache(maxsize=1)
 def resolve_pdf_loader_factory() -> Callable[[str], Any]:
+    # 中文注释：优先使用 langchain loader；不可用时回退到 pypdf，避免硬依赖阻塞流程。
+    """中文说明：resolve_pdf_loader_factory 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     try:
         loader_cls = _import_langchain_pypdf_loader()
     except Exception:
@@ -214,6 +223,8 @@ def resolve_pdf_loader_factory() -> Callable[[str], Any]:
 
 
 def describe_ocr_fallback_capability() -> dict[str, Any]:
+    # 中文注释：只描述当前进程能力，不在此处触发网络调用或重试副作用。
+    """中文说明：describe_ocr_fallback_capability 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     pdftoppm_available = shutil.which("pdftoppm") is not None
     ocr_credentials_available = bool(
         settings.BAIDU_APP_ID and settings.BAIDU_API_KEY and settings.BAIDU_SECRET_KEY
@@ -253,6 +264,7 @@ def _load_documents_with_pypdf(file_path: str) -> list[Any]:
 
 
 def _render_pdf_page_to_png_bytes(file_path: str, page_number: int, dpi: int = DEFAULT_OCR_DPI) -> bytes:
+    """中文说明：_render_pdf_page_to_png_bytes 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     pdftoppm = shutil.which("pdftoppm")
     if not pdftoppm:
         logger.info("pdftoppm is unavailable; skipping OCR render for %s page %s", file_path, page_number)
@@ -292,6 +304,7 @@ def _render_pdf_page_to_png_bytes(file_path: str, page_number: int, dpi: int = D
 
 
 def _build_baidu_access_token() -> Optional[str]:
+    """中文说明：_build_baidu_access_token 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not (settings.BAIDU_APP_ID and settings.BAIDU_API_KEY and settings.BAIDU_SECRET_KEY):
         return None
 
@@ -322,6 +335,7 @@ def _get_baidu_access_token() -> Optional[str]:
 
 
 def _ocr_page_with_baidu(file_path: str, page_number: int) -> str:
+    """中文说明：_ocr_page_with_baidu 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     image_bytes = _render_pdf_page_to_png_bytes(file_path, page_number)
     if not image_bytes:
         return ""
@@ -378,6 +392,7 @@ def load_pdf_documents_with_ocr_fallback(
     ocr_text_extractor: Callable[[str, int], str] | None = None,
     ocr_page_limit: int = DEFAULT_OCR_PAGE_LIMIT,
 ) -> list[Any]:
+    # 中文注释：仅对前 N 页执行 OCR 兜底，控制耗时并避免大文件放大延迟。
     loader = loader_factory(file_path) if loader_factory is not None else None
     documents = list(loader.load()) if loader is not None else _load_documents_with_pypdf(file_path)
 
@@ -393,6 +408,7 @@ def load_pdf_documents_with_ocr_fallback(
             break
 
         page_content = getattr(document, "page_content", "")
+        # 中文注释：页面已有足量文本时跳过 OCR，避免重复识别与额外成本。
         if _has_meaningful_text(page_content) and not _is_low_text_density(page_content):
             continue
 

@@ -1,4 +1,4 @@
-﻿from typing import Any, List
+from typing import Any, List
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 from backend.database import get_session
@@ -11,7 +11,10 @@ import logging
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
+
 class IoTDataCreate(BaseModel):
+    """中文说明：IoTDataCreate 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
+
     device_type: str
     value: float
     unit: str
@@ -28,13 +31,14 @@ async def sync_iot_batch(
     Trigger alert if HR is abnormal.
     """
     try:
+        # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
         new_records = []
         abnormal_detected = False
         hr_sum = 0
         hr_count = 0
-        
+
         for item in data_list:
-            # Create DB Record
+            # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
             record = IoTHealthData(
                 user_id=current_user.id,
                 device_type=item.device_type,
@@ -44,28 +48,28 @@ async def sync_iot_batch(
                 recorded_at=datetime.fromisoformat(item.recorded_at.replace("Z", "+00:00"))
             )
             new_records.append(record)
-            
-            # Simple Rule Engine Trigger
+
+            # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
             if item.device_type == "BLE_HRM" and item.unit == "bpm":
                 hr_sum += item.value
                 hr_count += 1
                 if item.value > 120 or item.value < 40:
                     abnormal_detected = True
 
-        # Batch Insert
+        # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
         db.add_all(new_records)
         db.commit()
-        
-        # 鈿?Trigger Fusion Engine (Real-time Bayesian Update)
+
+        # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
         fusion_result = None
         if hr_count > 0:
             try:
-                # Lazy import to avoid circular dependency
-                # Note: 'backend.main' imports this router, so we must import 'backend.main' inside function
+                # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
+                # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
                 from backend.main import fusion_engine
-                
+
                 avg_hr = hr_sum / hr_count
-                # Ensure profile is loaded
+                # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
                 if not current_user.profile:
                      # Refresh or something if needed, but SQLModel relationship should handle valid session
                      pass
@@ -77,8 +81,8 @@ async def sync_iot_batch(
                     )
             except Exception as e:
                 logger.warning("Fusion trigger failed: %s", e)
-                # Don't fail the upload just because fusion failed
-        
+                # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
+
         return {
             "status": "success", 
             "count": len(new_records),

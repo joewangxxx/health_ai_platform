@@ -1,0 +1,32 @@
+{
+  "schema_version": "nhanes_lifestyle_supplement.v1",
+  "supplements": {
+    "8505e011-20cb-4bc5-8a66-5900111fb04b": {
+      "WaistCircum": 99.0,
+      "Sleep_Hours": 6.0,
+      "Alcohol_Frequency": "occasional",
+      "Physical_Activity": "low",
+      "Diet_Pattern": "high_sodium_high_carbohydrate",
+      "Family_History_Diabetes": true,
+      "Family_History_CVD": true
+    },
+    "066c0f3d-90bb-4082-99ec-f307c4759f50": {
+      "WaistCircum": 101.0,
+      "Sleep_Hours": 6.5,
+      "Alcohol_Frequency": "none",
+      "Physical_Activity": "low",
+      "Diet_Pattern": "high_sodium_moderate_carbohydrate",
+      "Family_History_Diabetes": true,
+      "Family_History_CVD": true
+    },
+    "4a52ea9c-d410-4b78-a4da-6053e2ed0787": {
+      "WaistCircum": 91.0,
+      "Sleep_Hours": 6.0,
+      "Alcohol_Frequency": "occasional",
+      "Physical_Activity": "low",
+      "Diet_Pattern": "high_sodium_high_fat",
+      "Family_History_Diabetes": true,
+      "Family_History_CVD": false
+    }
+  }
+}

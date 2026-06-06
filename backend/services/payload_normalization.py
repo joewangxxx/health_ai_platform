@@ -19,11 +19,26 @@ OCR_RESERVED_KEYS = {
     "extra_data",
 }
 OCR_ALIAS_MAP = {
+    "FPG": "Glucose_Fasting",
+    "GLU": "Glucose_Fasting",
+    "Glucose": "Glucose_Fasting",
     "Glu": "Glucose_Fasting",
+    "HbA1C": "HbA1c",
+    "A1c": "HbA1c",
     "TC": "Cholesterol_Total",
     "TG": "Triglycerides",
     "HDL": "Cholesterol_HDL",
+    "HDL-C": "Cholesterol_HDL",
+    "HDL_C": "Cholesterol_HDL",
+    "HDLC": "Cholesterol_HDL",
     "LDL": "Cholesterol_LDL",
+    "LDL-C": "Cholesterol_LDL",
+    "LDL_C": "Cholesterol_LDL",
+    "LDLC": "Cholesterol_LDL",
+    "Cr": "Creatinine",
+    "CREA": "Creatinine",
+    "Scr": "Creatinine",
+    "GFR": "eGFR",
     "PLT": "Platelet",
 }
 OCR_CANONICAL_METRIC_KEYS = {
@@ -36,10 +51,13 @@ OCR_CANONICAL_METRIC_KEYS = {
     "eGFR",
     "Creatinine",
     "WBC",
+    "HGB",
     "Platelet",
     "GGT",
     "ALP",
     "ALT",
+    "AST",
+    "UA",
     "BMI",
     "SBP",
     "DBP",
@@ -79,6 +97,7 @@ RISK_LEVEL_MAP = {
 
 
 def _parse_json_payload(payload: Any) -> Any:
+    """中文说明：_parse_json_payload 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if isinstance(payload, str):
         try:
             return json.loads(payload)
@@ -92,6 +111,7 @@ def _is_non_empty_mapping(value: Any) -> bool:
 
 
 def _normalize_metric_object(value: Any) -> Dict[str, Any]:
+    """中文说明：_normalize_metric_object 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if isinstance(value, dict):
         normalized: Dict[str, Any] = {}
         for key in ("value", "unit", "ref_range", "hospital_flag"):
@@ -99,11 +119,30 @@ def _normalize_metric_object(value: Any) -> Dict[str, Any]:
                 normalized[key] = value[key]
         if "value" not in normalized:
             normalized["value"] = value.get("value")
+        if "unit" in normalized:
+            normalized["unit"] = _normalize_unit(normalized["unit"])
         return normalized
     return {"value": value}
 
 
+def _normalize_unit(unit: Any) -> Any:
+    if not isinstance(unit, str):
+        return unit
+    normalized = unit.strip()
+    replacements = {
+        "μ": "u",
+        "µ": "u",
+        "ｍ": "m",
+        "ｌ": "l",
+        "Ｌ": "L",
+    }
+    for src, target in replacements.items():
+        normalized = normalized.replace(src, target)
+    return normalized
+
+
 def _normalize_metric_mapping(mapping: Any) -> Dict[str, Dict[str, Any]]:
+    """中文说明：_normalize_metric_mapping 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not isinstance(mapping, dict):
         return {}
 
@@ -116,6 +155,7 @@ def _normalize_metric_mapping(mapping: Any) -> Dict[str, Dict[str, Any]]:
 
 
 def _normalize_patient_context(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """中文说明：_normalize_patient_context 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if isinstance(payload.get("patient_context"), dict):
         context = payload["patient_context"]
     else:
@@ -159,6 +199,7 @@ def _collect_ocr_metric_entries(payload: Dict[str, Any]) -> Tuple[Dict[str, Dict
 
 
 def normalize_ocr_summary_payload(payload: Any) -> Optional[Dict[str, Any]]:
+    """中文说明：normalize_ocr_summary_payload 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     parsed = _parse_json_payload(payload)
     if not isinstance(parsed, dict):
         return None
@@ -178,6 +219,7 @@ def normalize_ocr_summary_payload(payload: Any) -> Optional[Dict[str, Any]]:
 
 
 def has_structured_ocr_summary_data(payload: Any) -> bool:
+    """中文说明：has_structured_ocr_summary_data 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     normalized = normalize_ocr_summary_payload(payload)
     if not normalized:
         return False
@@ -202,6 +244,7 @@ def normalize_ocr_processing_status_payload(
     saved_at: Optional[str] = None,
     processed_at: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
+    """中文说明：当前单元 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     parsed = _parse_json_payload(payload)
     if parsed is None:
         if default_status is None:
@@ -233,6 +276,7 @@ def normalize_ocr_processing_status_payload(
 
 
 def project_ocr_summary_for_tool(payload: Any, *, metric_limit: int = 5) -> Optional[Dict[str, Any]]:
+    """中文说明：project_ocr_summary_for_tool 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     normalized = normalize_ocr_summary_payload(payload)
     if normalized is None:
         return None
@@ -262,6 +306,7 @@ def project_ocr_summary_for_tool(payload: Any, *, metric_limit: int = 5) -> Opti
 
 
 def _normalize_medication_item(value: Any) -> Optional[Dict[str, Any]]:
+    """中文说明：_normalize_medication_item 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not isinstance(value, dict):
         return None
 
@@ -283,6 +328,7 @@ def _normalize_medication_item(value: Any) -> Optional[Dict[str, Any]]:
 
 
 def _collect_medication_items(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """中文说明：_collect_medication_items 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     candidates: List[Any] = []
     for key in MEDICATION_SOURCE_KEYS:
         value = payload.get(key)
@@ -324,6 +370,7 @@ def project_medication_summary_for_tool(
     summary_source: Optional[str] = None,
     limit: int = 5,
 ) -> Optional[Dict[str, Any]]:
+    """中文说明：当前单元 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     parsed = _parse_json_payload(payload)
     if not isinstance(parsed, dict):
         return None
@@ -359,6 +406,7 @@ def project_medication_summary_for_tool(
 
 
 def _coerce_probability(value: Any) -> Optional[float]:
+    """中文说明：_coerce_probability 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if value in (None, ""):
         return None
     try:
@@ -371,6 +419,7 @@ def _coerce_probability(value: Any) -> Optional[float]:
 
 
 def _normalize_risk_level_value(payload: Dict[str, Any]) -> Optional[str]:
+    """中文说明：_normalize_risk_level_value 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     risk_level = payload.get("risk_level")
     if isinstance(risk_level, str) and risk_level.strip():
         return RISK_LEVEL_MAP.get(risk_level.strip().lower(), risk_level.strip().lower())
@@ -382,6 +431,7 @@ def _normalize_risk_level_value(payload: Dict[str, Any]) -> Optional[str]:
 
 
 def _normalize_ckm(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """中文说明：_normalize_ckm 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     for key in ("ckm", "ckm_stage", "CKM", "CKM_stage"):
         value = payload.get(key)
         if isinstance(value, dict):
@@ -396,6 +446,7 @@ def _normalize_ckm(payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
 
 
 def _normalize_finding(key: str, value: Any) -> Optional[Dict[str, Any]]:
+    """中文说明：_normalize_finding 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if isinstance(value, dict):
         normalized = {
             "key": key,
@@ -419,6 +470,7 @@ def _normalize_finding(key: str, value: Any) -> Optional[Dict[str, Any]]:
 
 
 def _rank_finding(finding: Dict[str, Any]) -> Tuple[int, float, str]:
+    """中文说明：_rank_finding 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     risk_level = str(finding.get("risk_level") or "").lower()
     risk_weight = {
         "very_high": 4,
@@ -431,6 +483,7 @@ def _rank_finding(finding: Dict[str, Any]) -> Tuple[int, float, str]:
 
 
 def _compare_metric_values(baseline_value: Any, comparison_value: Any) -> Optional[str]:
+    """中文说明：_compare_metric_values 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if baseline_value == comparison_value:
         return None
     try:
@@ -455,6 +508,7 @@ def project_report_comparison_for_tool(
     comparison_file_name: Optional[str] = None,
     limit: int = 5,
 ) -> Optional[Dict[str, Any]]:
+    """中文说明：当前单元 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     baseline_normalized = normalize_ocr_summary_payload(baseline_payload)
     comparison_normalized = normalize_ocr_summary_payload(comparison_payload)
     if not baseline_normalized or not comparison_normalized:
@@ -532,6 +586,7 @@ def project_report_comparison_for_tool(
 
 
 def _collect_snapshot_findings(payload: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """中文说明：_collect_snapshot_findings 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     findings: List[Dict[str, Any]] = []
 
     if isinstance(payload.get("findings"), list):
@@ -561,6 +616,7 @@ def normalize_risk_snapshot_payload(
     source: Optional[str] = None,
     generated_at: Optional[str] = None,
 ) -> Optional[Dict[str, Any]]:
+    """中文说明：normalize_risk_snapshot_payload 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     parsed = _parse_json_payload(payload)
     if not isinstance(parsed, dict):
         return None
@@ -585,6 +641,7 @@ def project_risk_snapshot_for_tool(
     captured_at: Optional[str] = None,
     finding_limit: int = 3,
 ) -> Dict[str, Any]:
+    """中文说明：project_risk_snapshot_for_tool 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     normalized = normalize_risk_snapshot_payload(payload, source=snapshot_source, generated_at=captured_at)
     if normalized is None:
         return {
@@ -612,6 +669,7 @@ def project_risk_snapshot_for_tool(
 
 
 def summarize_risk_snapshot_for_context(payload: Any) -> str:
+    """中文说明：summarize_risk_snapshot_for_context 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     projection = project_risk_snapshot_for_tool(payload)
     if not projection["has_analysis_snapshot"]:
         return "暂无可用风险快照"
@@ -650,6 +708,7 @@ def summarize_risk_snapshot_for_context(payload: Any) -> str:
 
 
 def summarize_ocr_summary_for_context(payload: Any) -> str:
+    """中文说明：summarize_ocr_summary_for_context 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     projection = project_ocr_summary_for_tool(payload)
     if not projection:
         return "暂无可用报告摘要"
@@ -678,16 +737,19 @@ def summarize_ocr_summary_for_context(payload: Any) -> str:
 
 
 def is_canonical_ocr_summary_payload(payload: Any) -> bool:
+    """中文说明：is_canonical_ocr_summary_payload 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     parsed = _parse_json_payload(payload)
     return isinstance(parsed, dict) and parsed.get("schema_version") == OCR_SUMMARY_SCHEMA_VERSION and isinstance(parsed.get("metrics"), dict)
 
 
 def is_canonical_risk_snapshot_payload(payload: Any) -> bool:
+    """中文说明：is_canonical_risk_snapshot_payload 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     parsed = _parse_json_payload(payload)
     return isinstance(parsed, dict) and parsed.get("schema_version") == RISK_SNAPSHOT_SCHEMA_VERSION and isinstance(parsed.get("findings"), list)
 
 
 def scan_legacy_payload_shapes(rows: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """中文说明：scan_legacy_payload_shapes 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     findings: List[Dict[str, Any]] = []
     for row in rows:
         entity = row.get("entity")
@@ -716,6 +778,8 @@ def scan_legacy_payload_shapes(rows: Iterable[Dict[str, Any]]) -> List[Dict[str,
 
 
 def _repairable_payload_for_row(entity: str, raw_payload: Any) -> Optional[Dict[str, Any]]:
+    # 按实体类型选择可逆的规范化策略，返回统一结构；无法修复时返回 None。
+    """中文说明：_repairable_payload_for_row 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if entity == "MedicalDocument":
         return normalize_ocr_summary_payload(raw_payload)
     if entity == "HealthRecord":
@@ -726,6 +790,10 @@ def _repairable_payload_for_row(entity: str, raw_payload: Any) -> Optional[Dict[
 
 
 def repair_legacy_payload_rows(session: Any) -> Dict[str, Any]:
+    # 批量修复历史遗留 payload 结构：
+    # 1) 全量扫描三类实体字段；
+    # 2) 仅处理“非 canonical 且非空”的记录；
+    # 3) 可修复则写回规范化 JSON，不可修复仅登记。
     from backend.models import HealthRecord, MedicalDocument, UserProfile
     from sqlmodel import select
 
@@ -736,6 +804,7 @@ def repair_legacy_payload_rows(session: Any) -> Dict[str, Any]:
     }
 
     rows: List[Dict[str, Any]] = []
+    # 先把候选行拍平，便于统一扫描与统计。
     for entity, (model, field_name) in entity_map.items():
         for item in session.exec(select(model)).all():
             rows.append(
@@ -751,6 +820,7 @@ def repair_legacy_payload_rows(session: Any) -> Dict[str, Any]:
     repaired_rows: List[Dict[str, Any]] = []
     unrepairable_rows: List[Dict[str, Any]] = []
 
+    # 只转换确认为 legacy 形态的数据，避免覆盖已规范内容。
     for row in rows:
         entity = row["entity"]
         raw_payload = row["payload"]
@@ -781,6 +851,7 @@ def repair_legacy_payload_rows(session: Any) -> Dict[str, Any]:
             }
         )
 
+    # 回写阶段与扫描阶段分离，确保统计口径稳定。
     for repaired_row in repaired_rows:
         model, field_name = entity_map[repaired_row["entity"]]
         record = session.get(model, repaired_row["id"])
@@ -789,6 +860,7 @@ def repair_legacy_payload_rows(session: Any) -> Dict[str, Any]:
         setattr(record, field_name, json.dumps(repaired_row["payload"], ensure_ascii=False))
         session.add(record)
 
+    # 仅在存在实际修复时提交事务，避免无意义写入。
     if repaired_rows:
         session.commit()
 

@@ -803,7 +803,7 @@ def test_chat_service_stops_at_boundary_for_empty_medication_tool_result(session
     assert response["decision_summary"]["lane"] == "medication_related"
     assert response["decision_summary"]["policy"]["evidence_state"] == "insufficient"
     assert response["response_verdict"]["evidence_sufficiency"] == "insufficient"
-    assert "cannot" in response["reply"].lower() or "涓嶈兘" in response["reply"]
+    assert "cannot" in response["reply"].lower() or "不能" in response["reply"]
     assert mocked_completion.await_count == 0
 
 
@@ -1567,9 +1567,9 @@ def test_report_lane_hard_gate_sets_insufficient_policy_and_explicit_next_step(s
         status="required",
         trigger_reason="insufficient_evidence",
     )
-    assert "not certain" in response["reply"].lower()
-    assert "required context" in response["reply"].lower()
-    assert "upload" in response["reply"].lower()
+    assert "还不能安全地解释" in response["reply"]
+    assert "必要上下文" in response["reply"]
+    assert "请上传报告" in response["reply"]
     assert mocked_completion.await_count == 1
 
 
@@ -1613,9 +1613,9 @@ def test_general_health_without_profile_or_guideline_stays_in_lane_and_degrades(
         status="required",
         trigger_reason="insufficient_evidence",
     )
-    assert "not certain" in response["reply"].lower()
-    assert "profile data" in response["reply"].lower()
-    assert "exact values" in response["reply"].lower()
+    assert "只能给出保守的一般健康建议" in response["reply"]
+    assert "必要上下文" in response["reply"]
+    assert "准确的指标数值" in response["reply"]
     assert mocked_completion.await_count == 1
 
 

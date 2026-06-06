@@ -56,15 +56,25 @@ def clean_seqn(col):
     return pd.to_numeric(col, errors='coerce').fillna(-1).astype(int)
 
 def calculate_egfr(row):
-    """CKD-EPI 肾功能公式"""
+    """Calculate eGFR with the 2021 CKD-EPI creatinine equation."""
     scr = row.get('Creatinine', np.nan)
     age = row.get('Age', np.nan)
     gender = row.get('Gender', np.nan)
-    if pd.isna(scr) or pd.isna(age) or pd.isna(gender): return np.nan
+    if pd.isna(scr) or pd.isna(age) or pd.isna(gender):
+        return np.nan
+
+    # 2021 CKD-EPI creatinine equation is race-free; Scr is expected in mg/dL.
     kappa = 0.7 if gender == 2 else 0.9
-    alpha = -0.329 if gender == 2 else -0.411
-    is_female = 1.018 if gender == 2 else 1
-    return 141 * (min(scr/kappa, 1)**alpha) * (max(scr/kappa, 1)**-1.209) * (0.993**age) * is_female
+    alpha = -0.241 if gender == 2 else -0.302
+    female_factor = 1.012 if gender == 2 else 1.0
+    scr_ratio = scr / kappa
+    return (
+        142
+        * (min(scr_ratio, 1) ** alpha)
+        * (max(scr_ratio, 1) ** -1.200)
+        * (0.9938 ** age)
+        * female_factor
+    )
 
 def process_nhanes_final_fix():
     print("=== 🚀 NHANES  (修复SEQN丢失 & 含牙齿数据) ===")

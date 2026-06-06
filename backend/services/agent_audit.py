@@ -63,6 +63,7 @@ def build_audit_record(
     response_latency_ms: Optional[int] = None,
     fallback_used: Optional[bool] = None,
 ) -> Dict[str, Any]:
+    """中文说明：当前单元 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     return {
         "schema_version": RESPONSIBILITY_SCHEMA_VERSION,
         "governance_version": governance_version,
@@ -93,6 +94,7 @@ def build_audit_record(
 
 
 def persist_audit_record(*, session: Session, audit_record: Dict[str, Any]) -> AgentAuditEvent:
+    """中文说明：persist_audit_record 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     event = AgentAuditEvent(
         schema_version=_string_or_none(
             audit_record.get("schema_version"),
@@ -245,6 +247,7 @@ def _enum_or_none(
 
 
 def _sanitize_context_budget_summary(value: Any) -> Optional[Dict[str, Dict[str, int]]]:
+    """中文说明：_sanitize_context_budget_summary 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not isinstance(value, dict):
         return None
 

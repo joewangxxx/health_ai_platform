@@ -29,6 +29,11 @@ from backend.services.agent_tools import (
     get_allowed_tool_names_for_lane,
     get_tool_definitions,
 )
+from backend.services.chat_tool_presentation import (
+    build_tool_done_message,
+    build_tool_status_message,
+    summarize_tool_output_for_prompt,
+)
 from backend.services.payload_normalization import summarize_risk_snapshot_for_context
 from backend.services.context_builder import (
     DEFAULT_CONTEXT_BUDGETS,
@@ -201,7 +206,7 @@ class ChatService:
 
         for tool_output in tool_outputs:
             tool_name = tool_output.get("tool", "unknown_tool")
-            tool_start_message = self._build_tool_status_message(tool_name)
+            tool_start_message = build_tool_status_message(tool_name)
             yield {
                 "event": "tool_start",
                 "data": {
@@ -220,7 +225,7 @@ class ChatService:
                 "event": "tool_done",
                 "data": {
                     "tool_name": tool_name,
-                    "message": self._build_tool_done_message(tool_name),
+                    "message": build_tool_done_message(tool_name),
                     "conversation_id": conversation.id,
                 },
             }
@@ -873,46 +878,6 @@ class ChatService:
                 planned.append(tool_name)
         return list(dict.fromkeys(planned))[:4]
 
-    def _build_tool_status_message(self, tool_name: str) -> str:
-        new_messages = {
-            "medication_summary_lookup": "姝ｅ湪璇诲彇鍋ュ悍鐢ㄨ嵂鎽樿銆?",
-            "recent_metric_anomaly_lookup": "姝ｅ湪鏁寸悊杩戞湡鎸囨爣寮傚父銆?",
-            "report_comparison_lookup": "姝ｅ湪姣斿涓や唤鎶ュ憡鎽樿銆?",
-        }
-        if tool_name in new_messages:
-            return new_messages[tool_name]
-        readable = {
-            "get_user_profile_summary": "正在读取您的健康档案摘要。",
-            "get_latest_risk_report": "正在查看最新风险评估结果。",
-            "get_history_trends": "正在整理近期健康趋势变化。",
-            "get_uploaded_documents_summary": "正在查阅已上传报告的 OCR 摘要。",
-            "report_summary_lookup": "正在读取最新报告摘要。",
-            "recent_abnormal_metrics_lookup": "正在整理近期异常指标。",
-            "latest_analysis_snapshot_lookup": "正在读取最新分析快照。",
-            "search_medical_guidelines": "正在比对医学知识与指南证据。",
-        }
-        return readable.get(tool_name, f"正在执行工具：{tool_name}")
-
-    def _build_tool_done_message(self, tool_name: str) -> str:
-        new_messages = {
-            "medication_summary_lookup": "鐢ㄨ嵂鎽樿璇诲彇瀹屾垚",
-            "recent_metric_anomaly_lookup": "鎸囨爣寮傚父鏁寸悊瀹屾垚",
-            "report_comparison_lookup": "鎶ュ憡姣斿瀹屾垚",
-        }
-        if tool_name in new_messages:
-            return new_messages[tool_name]
-        readable = {
-            "get_user_profile_summary": "健康档案读取完成",
-            "get_latest_risk_report": "风险报告读取完成",
-            "get_history_trends": "历史趋势分析完成",
-            "get_uploaded_documents_summary": "报告摘要读取完成",
-            "report_summary_lookup": "报告摘要读取完成",
-            "recent_abnormal_metrics_lookup": "异常指标整理完成",
-            "latest_analysis_snapshot_lookup": "分析快照读取完成",
-            "search_medical_guidelines": "医学指南检索完成",
-        }
-        return readable.get(tool_name, f"{tool_name} completed")
-
     def _collect_evidence_tags(self, tool_outputs: List[Dict[str, Any]]) -> List[str]:
         new_tag_map = {
             "medication_summary_lookup": "medication_summary",
@@ -955,48 +920,6 @@ class ChatService:
             parts.append(f"comparable_fields_count={metadata.get('comparable_fields_count')}")
         return ", ".join(parts)
 
-    def _summarize_tool_output_for_prompt(self, tool_name: str, result: Dict[str, Any]) -> str:
-        if tool_name == "medication_summary_lookup":
-            summary = result.get("medication_summary") or {}
-            count = summary.get("count")
-            return f"medication items={count}" if count is not None else "medication summary reviewed"
-        if tool_name in {"recent_metric_anomaly_lookup", "recent_abnormal_metrics_lookup"}:
-            summary = result.get("summary") or {}
-            count = summary.get("count")
-            return f"abnormal metrics={count}" if count is not None else "abnormal metrics reviewed"
-        if tool_name == "report_comparison_lookup":
-            summary = result.get("summary") or {}
-            count = summary.get("count")
-            shared = result.get("shared_metric_count")
-            if count is not None and shared is not None:
-                return f"report differences={count}, comparable_fields={shared}"
-            return "report comparison reviewed"
-        if tool_name == "report_summary_lookup":
-            summary = result.get("report_summary") or {}
-            metric_count = len(summary.get("metrics") or [])
-            file_name = result.get("file_name") or "report"
-            return f"{file_name}, metrics={metric_count}"
-        if tool_name == "get_history_trends":
-            return f"trend records={result.get('count') or 0}"
-        if tool_name == "get_uploaded_documents_summary":
-            return f"uploaded documents={result.get('count') or 0}"
-        if tool_name == "get_user_profile_summary":
-            present_fields = [
-                key
-                for key in ("age", "gender", "bmi", "sbp", "dbp", "glucose_fasting")
-                if result.get(key) is not None
-            ]
-            return f"profile fields={len(present_fields)}"
-        if tool_name == "get_latest_risk_report":
-            findings = (result.get("risk_report") or {}).get("top_findings") or []
-            return f"snapshot findings={len(findings)}"
-        if tool_name == "latest_analysis_snapshot_lookup":
-            findings = result.get("top_findings") or []
-            return f"snapshot findings={len(findings)}"
-        if tool_name == "search_medical_guidelines":
-            return f"guideline matches={1 if result.get('matches_found') else 0}"
-        return "bounded evidence reviewed"
-
     def _tool_quality_note(self, tool_outputs: List[Dict[str, Any]]) -> Optional[str]:
         notes = []
         for item in tool_outputs:
@@ -1022,6 +945,21 @@ class ChatService:
             return None
         return "; ".join(notes[:2])
 
+    def _format_evidence_gap_classes(self, classes: List[str]) -> str:
+        labels = {
+            "retrieved guidance": "医学知识或参考资料",
+            "profile data": "个人健康档案数据",
+            "report values": "报告指标数据",
+            "trend data": "历史趋势数据",
+            "medication data": "用药数据",
+            "symptom history": "症状历史",
+            "conflicting evidence": "相互冲突的证据",
+            "required context": "必要上下文",
+            "personal data vs retrieved guidance": "个人数据与医学参考资料",
+        }
+        translated = [labels.get(str(item), str(item)) for item in classes if item]
+        return "、".join(translated) if translated else "必要上下文"
+
     def _build_tool_evidence_text(self, tool_outputs: List[Dict[str, Any]]) -> str:
         blocks = []
         for item in tool_outputs:
@@ -1030,7 +968,7 @@ class ChatService:
             tool_name = item.get("tool", "unknown_tool")
             result = item.get("result", {}) or {}
             metadata_brief = self._format_evidence_metadata_brief(result.get("evidence_metadata"))
-            summary = self._summarize_tool_output_for_prompt(tool_name, result)
+            summary = summarize_tool_output_for_prompt(tool_name, result)
             blocks.append(f"[{tool_name}] {metadata_brief}; {summary}")
         return "\n\n".join(blocks) if blocks else "暂无额外工具证据。"
 
@@ -1298,9 +1236,13 @@ class ChatService:
         retrieval_evidence: Optional[str] = None,
         post_check: Optional[Dict[str, Any]] = None,
     ) -> Optional[str]:
+        # 该函数只负责“保守直答模板”选择，不做工具执行与证据检索。
+        # 进入条件通常是：风险 lane 明确、或证据门控要求降级输出。
         lane = decision_summary.get("lane")
         verdict = decision_summary.get("verdict")
         policy = decision_summary.get("policy", {})
+        # 若 post_check 表示证据不足/冲突，这里用其结果覆盖旧策略，
+        # 确保最终回复与最新门控判定保持一致。
         if post_check and not post_check.get("should_continue", True):
             policy = dict(policy)
             if post_check.get("evidence_state"):
@@ -1324,38 +1266,38 @@ class ChatService:
             if items:
                 name = items[0].get("name") or "your current medication"
                 return (
-                    "I cannot tell you to stop, start, switch, or change the dose here (不能自行调整剂量). "
-                    f"I'm only certain that your medication record mentions {name}. "
-                    "Please confirm any medication change with a clinician first."
+                    "我不能在这里建议你自行停药、启用药物、换药或调整剂量。"
+                    f"目前系统只能确认你的用药记录中提到 {name}。"
+                    "任何用药变化都需要先和线下医生确认。"
                 )
             return (
-                "I cannot tell you to stop, start, switch, or change the dose here (不能自行调整剂量). "
-                "Please check with a clinician or prescribing doctor before making any medication change."
+                "我不能在这里建议你自行停药、启用药物、换药或调整剂量。"
+                "在做任何用药调整前，请先咨询线下医生或开药医生。"
             )
 
         if lane == "diagnosis_sensitive":
-            quality_suffix = f" Evidence quality: {quality_note}." if quality_note else ""
+            quality_suffix = f" 证据质量：{quality_note}。" if quality_note else ""
             return (
-                "I cannot determine a diagnosis from this chat alone (无法直接诊断，请线下就医). "
-                f"I'm not certain because the available {', '.join(gap['classes'])} is not enough. "
-                f"Next step: {gap['next_steps'][0]}{quality_suffix}"
+                "我不能仅凭当前聊天内容做出诊断或排除诊断。"
+                f"目前还不确定，因为可用的{self._format_evidence_gap_classes(gap['classes'])}不足。"
+                f"建议下一步：{gap['next_steps'][0]}{quality_suffix}"
             )
 
         if policy.get("evidence_state") != "sufficient":
             if gap["degrade_reason"] == "conflicting_evidence":
-                reason_text = f"the current {', '.join(gap['classes'])} does not agree"
+                reason_text = f"当前{self._format_evidence_gap_classes(gap['classes'])}之间存在不一致"
             else:
-                reason_text = f"I still lack reliable {', '.join(gap['classes'])}"
+                reason_text = f"仍缺少可靠的{self._format_evidence_gap_classes(gap['classes'])}"
             if quality_note:
-                reason_text = f"{reason_text}. Evidence quality: {quality_note}"
+                reason_text = f"{reason_text}。证据质量：{quality_note}"
             lane_openers = {
-                "general_health": "I can only give conservative general guidance right now.",
-                "report_interpretation": "I cannot safely explain the report yet.",
-                "trend_review": "I cannot safely judge the trend yet.",
-                "medication_related": "I cannot safely summarize your medication details yet.",
+                "general_health": "我现在只能给出保守的一般健康建议。",
+                "report_interpretation": "我现在还不能安全地解释这份报告。",
+                "trend_review": "我现在还不能安全地判断趋势变化。",
+                "medication_related": "我现在还不能安全地总结你的用药细节。",
             }
-            opener = lane_openers.get(lane or "", "I cannot safely answer that yet.")
-            return f"{opener} I'm not certain because {reason_text}. Next step: {gap['next_steps'][0]}"
+            opener = lane_openers.get(lane or "", "我现在还不能安全地回答这个问题。")
+            return f"{opener}原因是{reason_text}。建议下一步：{gap['next_steps'][0]}"
         if lane == "diagnosis_sensitive":
             if verdict == "insufficient_evidence":
                 return "目前证据不足，无法根据现有聊天信息判断或排除具体诊断。请尽快线下就医，由临床医生结合检查结果做正式评估。"

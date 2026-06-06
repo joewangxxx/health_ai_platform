@@ -1,0 +1,190 @@
+{
+  "schema_version": "project_evaluation_summary.v1",
+  "generated_at": "2026-04-28T05:52:15.255314+00:00",
+  "project": "Health AI Platform 2.0",
+  "phase_count": 7,
+  "phase_status": {
+    "phase1_system_quality": "completed",
+    "phase2_risk_model": "completed",
+    "phase3_ocr_extraction": "completed",
+    "phase4_rag_retrieval": "completed_live_vector_available",
+    "phase5_agent_behavior_safety": "completed",
+    "phase6_answer_quality": "completed_offline_rubric",
+    "phase7_summary": "completed"
+  },
+  "system_quality": {
+    "backend_regression": "246 passed",
+    "frontend_build": "Passed: Vite build completed successfully",
+    "frontend_e2e": "21 passed",
+    "model_compatibility": "Passed: exit code 0",
+    "python_dependency_snapshot_package_count": 105,
+    "warning_classes": [
+      "Redis cache unavailable warning",
+      "torch.load weights_only FutureWarning"
+    ]
+  },
+  "risk_models": {
+    "evaluation_mode": "persisted_artifact_stratified_holdout_replay",
+    "evaluated_model_count": 35,
+    "median_roc_auc": 0.8572,
+    "best_model": "InsulinResist",
+    "best_roc_auc": 0.9721,
+    "core_diseases": {
+      "T2D": {
+        "roc_auc": 0.9115,
+        "pr_auc": 0.556,
+        "accuracy": 0.8775,
+        "recall": 0.717,
+        "f1": 0.5413
+      },
+      "Hypertension": {
+        "roc_auc": 0.9125,
+        "pr_auc": 0.8019,
+        "accuracy": 0.828,
+        "recall": 0.8355,
+        "f1": 0.7435
+      },
+      "HighLipid": {
+        "roc_auc": 0.8691,
+        "pr_auc": 0.6444,
+        "accuracy": 0.7747,
+        "recall": 0.8368,
+        "f1": 0.6558
+      },
+      "Obesity": {
+        "roc_auc": 0.892,
+        "pr_auc": 0.7814,
+        "accuracy": 0.8097,
+        "recall": 0.8035,
+        "f1": 0.7197
+      },
+      "CKD": {
+        "roc_auc": 0.7675,
+        "pr_auc": 0.4926,
+        "accuracy": 0.8025,
+        "recall": 0.529,
+        "f1": 0.4677
+      }
+    },
+    "data_rows": 13137,
+    "holdout_rows": 2628,
+    "boundary": "Repository-local stratified holdout replay over persisted artifacts; not external clinical validation."
+  },
+  "ocr_extraction": {
+    "sample_count": 50,
+    "sample_type": "synthetic_post_ocr_text_reports",
+    "raw_supported_field_micro": {
+      "tp": 848,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "raw_all_field_micro": {
+      "tp": 848,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "canonical_field_micro": {
+      "tp": 848,
+      "fp": 0,
+      "fn": 0,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0
+    },
+    "full_supported_sample_match_rate": 1.0,
+    "boundary": "Synthetic post-OCR text structured extraction; not real image/PDF OCR-provider accuracy."
+  },
+  "rag_retrieval": {
+    "evaluation_mode": "runtime_probe_plus_chroma_sqlite_lexical_baseline",
+    "runtime_dependencies_available": true,
+    "runtime_retrieval_status": "ok",
+    "question_count": 100,
+    "chunk_count": 841,
+    "source_hit_at_1": 0.74,
+    "source_hit_at_5": 0.84,
+    "source_hit_at_10": 0.87,
+    "mrr": 0.7852,
+    "indexed_subset_hit_at_5": 0.84,
+    "top5_keyword_pass_rate": 0.55,
+    "missing_expected_sources": [],
+    "boundary": "Live vector RAG is available in the current runtime; offline metrics still report a reproducible lexical baseline over Chroma SQLite rather than answer-level medical correctness."
+  },
+  "agent_behavior": {
+    "question_count": 100,
+    "policy_pass_rate": 1.0,
+    "lane_accuracy": 1.0,
+    "tool_whitelist_compliance": 1.0,
+    "urgent_escalation_accuracy": 1.0,
+    "unsafe_refusal_accuracy": 1.0,
+    "tool_guardrail_pass_rate": 1.0,
+    "boundary": "Deterministic policy-layer evaluation, not clinician-labeled adversarial safety benchmarking."
+  },
+  "answer_quality": {
+    "question_count": 100,
+    "candidate_source": "offline_reference_template",
+    "provider_available": false,
+    "pass_rate": 1.0,
+    "mean_total_score": 0.94,
+    "mean_key_point_coverage": 0.95,
+    "mean_evidence_grounding": 1.0,
+    "mean_safety_compliance": 1.0,
+    "mean_actionability": 0.7,
+    "boundary": "Offline template-candidate rubric unless rerun with exported production/LLM answers."
+  },
+  "model_choices": [
+    {
+      "asset": "LightGBM risk models",
+      "why_selected": "Clinical/NHANES features are mostly structured tabular variables; LightGBM handles nonlinear feature interactions, missing values, class imbalance workflows, and efficient multi-disease training.",
+      "value": "Provides fast offline risk scoring with interpretable feature importance and strong repository-local AUC evidence."
+    },
+    {
+      "asset": "ResNet-18 / food vision model",
+      "why_selected": "ResNet-18 is a lightweight transfer-learning baseline that is easier to train and deploy than larger CNNs while remaining expressive enough for diet-image classification experiments.",
+      "value": "Supports multimodal health analysis without making the deployment footprint too heavy for a graduation project."
+    },
+    {
+      "asset": "OCR + deterministic normalization",
+      "why_selected": "Health reports require auditable extraction of numeric indicators; deterministic regex and canonical payload normalization make extraction behavior inspectable and regression-testable.",
+      "value": "Turns unstructured report text into structured health metrics and exposes clear field-level gaps."
+    },
+    {
+      "asset": "RAG medical retrieval",
+      "why_selected": "Medical guidance changes over time and should be evidence-bound; RAG keeps guidance updateable without retraining the base chat model.",
+      "value": "Adds source-aware consultation and reduces unsupported free-form medical claims when the index is healthy."
+    },
+    {
+      "asset": "Policy-governed Agent runtime",
+      "why_selected": "Health consultation has safety-sensitive lanes; deterministic routing, tool whitelists, and refusal/urgent-care policies create guardrails around LLM generation.",
+      "value": "Separates product safety decisions from generative wording and makes audit/replay possible."
+    }
+  ],
+  "review": {
+    "strengths": [
+      "Full-stack closed loop is clear: data ingestion, risk analysis, OCR extraction, RAG evidence, chat consultation, history tracking, and audit metadata are connected.",
+      "Engineering validation is unusually complete for a graduation project: backend regression, frontend build, Playwright E2E, and model compatibility gates are recorded.",
+      "AI capability is multi-layered rather than a single chat wrapper: risk models, OCR, retrieval, Agent policy, and answer-quality rubric each have separate evidence.",
+      "Safety governance is explicit: urgent symptoms, diagnosis-sensitive prompts, and unsafe medication requests are routed through deterministic guardrails.",
+      "The project now has reproducible evaluation scripts and reports that can be rerun instead of relying on unverifiable resume claims."
+    ],
+    "weaknesses": [
+      "Risk-model numbers are repository-local holdout replay metrics, not external clinical validation, so they should be worded conservatively.",
+      "OCR evaluation uses synthetic post-OCR text samples; true image/PDF OCR accuracy still needs provider credentials and real de-identified reports.",
+      "RAG retrieval now has live vector runtime availability and complete expected-source coverage, but the reported Hit@k metrics are still retrieval-level evidence rather than answer-level clinical correctness.",
+      "Answer-quality Phase 6 uses offline template candidates because no LLM key was present; live provider quality must be rerun with exported answers before making live-model claims.",
+      "Some repository text/assets show encoding artifacts and large-file/legacy cleanup debt, which can reduce maintainability and presentation quality."
+    ]
+  },
+  "resume_ready_metrics": [
+    "Evaluated 35 persisted LightGBM chronic-risk models on 13,137 NHANES-derived rows with median ROC-AUC 0.857; core tasks included T2D AUC 0.911, hypertension AUC 0.912, obesity AUC 0.892, and CKD AUC 0.767.",
+    "Built a 50-sample synthetic post-OCR report extraction benchmark; supported raw fields reached micro-F1 1.000, all raw fields micro-F1 1.000, and canonical payload micro-F1 1.000.",
+    "Prepared a 100-question RAG retrieval benchmark over 841 Chroma chunks; offline source Hit@5 reached 0.840, MRR 0.785, and indexed-source Hit@5 0.840.",
+    "Designed a 100-question Agent safety benchmark across 5 classes; deterministic policy pass rate, urgent escalation accuracy, unsafe-refusal accuracy, and tool-whitelist compliance all reached 1.000.",
+    "Built a 100-answer quality rubric covering key-point coverage, evidence grounding, safety compliance, actionability, and clarity; offline candidate pass rate reached 1.000 with mean score 0.940."
+  ]
+}

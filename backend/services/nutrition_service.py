@@ -1,4 +1,4 @@
-﻿"""
+"""
 AI Nutrition Planning Service
 ==============================
 Backend service for generating personalized daily meal plans using Linear Programming (PuLP).
@@ -121,7 +121,7 @@ class DietOptimizer:
 
         # 2. LLM Generation
         if not self.client:
-            return self._fallback_plan()
+            return self._fallback_plan(target_calories=target_calories, restrictions=restrictions)
 
         system_prompt = """
 You are a nutrition planner. Select only 2-3 of the best candidate ingredients to build a single meal.
@@ -215,17 +215,74 @@ Required JSON shape:
 
         except Exception as e:
             logger.warning("Nutrition planner LLM request failed: %s", e)
-            return self._fallback_plan()
+            return self._fallback_plan(target_calories=target_calories, restrictions=restrictions)
 
-    def _fallback_plan(self):
+    def _fallback_plan(self, target_calories: int = 1800, restrictions: List[str] | None = None):
+        restrictions = restrictions or []
         return {
             "status": "success",
-            "actual_calories": 0,
-            "foods": [],
-            "recipe_suggestion": None,
-            "message": "鏈嶅姟绻佸繖锛岃绋嶅悗閲嶈瘯"
+            "target_calories": target_calories,
+            "actual_calories": 1685.0,
+            "macros": {
+                "protein_g": 92.0,
+                "fat_g": 48.0,
+                "carbs_g": 205.0,
+                "sodium_mg": 1180.0,
+            },
+            "macro_ratios": {
+                "protein": 0.22,
+                "fat": 0.26,
+                "carbs": 0.52,
+            },
+            "foods": [
+                {
+                    "name": "燕麦希腊酸奶碗",
+                    "amount_desc": "1 碗",
+                    "calories": 390.0,
+                    "protein": 24.0,
+                    "fat": 9.0,
+                    "carbs": 54.0,
+                },
+                {
+                    "name": "鸡胸肉藜麦沙拉",
+                    "amount_desc": "1 份",
+                    "calories": 620.0,
+                    "protein": 42.0,
+                    "fat": 18.0,
+                    "carbs": 68.0,
+                },
+                {
+                    "name": "清蒸鳕鱼配杂蔬",
+                    "amount_desc": "1 份",
+                    "calories": 510.0,
+                    "protein": 26.0,
+                    "fat": 17.0,
+                    "carbs": 55.0,
+                },
+                {
+                    "name": "无糖豆浆与坚果",
+                    "amount_desc": "1 份",
+                    "calories": 165.0,
+                    "protein": 10.0,
+                    "fat": 4.0,
+                    "carbs": 28.0,
+                },
+            ],
+            "recipe_suggestion": {
+                "dish_name": "低钠高纤维控糖演示餐",
+                "description": "本地演示 fallback 方案，适合在外部 AI 服务不可用时继续展示营养模块。",
+                "tags": ["本地演示", "低钠", "控糖", "高纤维"],
+                "steps": [
+                    "以燕麦和无糖酸奶作为早餐，搭配少量浆果提升膳食纤维。",
+                    "午餐使用鸡胸肉、藜麦和深色蔬菜，减少精制碳水比例。",
+                    "晚餐选择清蒸鱼和杂蔬，避免高盐酱料。",
+                ],
+                "chef_tips": "答辩演示时可说明该方案是 LLM 不可用时的本地安全降级结果，仍保持结构化营养输出。",
+                "ingredient_translation": [],
+            },
+            "warnings": restrictions,
+            "message": "外部营养生成服务不可用，已切换到本地演示 fallback 食谱。",
         }
-
 if __name__ == "__main__":
     import asyncio
     async def test():

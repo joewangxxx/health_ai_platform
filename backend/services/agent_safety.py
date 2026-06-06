@@ -23,25 +23,14 @@ URGENT_PATTERNS = [
     "自伤",
     "严重过敏",
     "药物过敏",
-    "鑳哥棝",
-    "鍛煎惛鍥伴毦",
-    "鍛煎惛鎬ヤ績",
-    "姘旂煭",
-    "鏅曞€?",
-    "鏄忓帴",
-    "鑷潃",
-    "鑷激",
-    "涓ラ噸杩囨晱",
-    "鑽墿杩囨晱",
-    "閼冲摜妫?",
-    "閸涚厧鎯涢崶浼存",
-    "濮樻梻鐓?",
-    "閺勫繐甯?",
-    "閺呮洖鈧?",
-    "閼奉亝娼?",
-    "閼奉亙婵€",
-    "娑撱儵鍣告潻鍥ㄦ櫛",
-    "閼筋垳澧挎潻鍥ㄦ櫛",
+    "过敏性休克",
+    "喉头水肿",
+    "无法呼吸",
+    "呼吸衰竭",
+    "濒死感",
+    "紫绀",
+    "喘鸣",
+    "胸闷",
 ]
 
 DIAGNOSIS_PATTERNS = [
@@ -56,16 +45,11 @@ DIAGNOSIS_PATTERNS = [
     "诊断",
     "是不是",
     "排除",
-    "纭瘖",
-    "璇婃柇",
-    "鏄笉鏄?",
-    "鎺掗櫎",
-    "绾喛鐦?",
-    "鐠囧﹥鏌?",
-    "閺勵垯绗夐弰?",
-    "閹烘帡娅?",
-    "閼虫垝绗夐懗钘夊灲閺?",
-    "閸掓澘绨抽弰顖欑瑝閺?",
+    "什么病",
+    "哪种病",
+    "是否患有",
+    "能否确诊",
+    "帮我判断",
 ]
 
 MEDICATION_PATTERNS = [
@@ -81,16 +65,11 @@ MEDICATION_PATTERNS = [
     "用药",
     "处方",
     "剂量",
-    "鑽?",
-    "鑽墿",
-    "鐢ㄨ嵂",
-    "澶勬柟",
-    "鍓傞噺",
-    "閼?",
-    "閼筋垳澧?",
-    "閻劏宓?",
-    "婢跺嫭鏌?",
-    "閸撳倿鍣?",
+    "吃药",
+    "停药",
+    "换药",
+    "开药",
+    "药名",
 ]
 
 TREND_PATTERNS = [
@@ -107,18 +86,10 @@ TREND_PATTERNS = [
     "升高",
     "下降",
     "波动",
-    "鍙樺寲",
-    "瓒嬪娍",
-    "鍘嗗彶",
-    "鍗囬珮",
-    "涓嬮檷",
-    "娉㈠姩",
-    "閸欐ê瀵?",
-    "鐡掑濞?",
-    "閸樺棗褰?",
-    "閸楀洭鐝?",
-    "娑撳妾?",
-    "濞夈垹濮?",
+    "走高",
+    "走低",
+    "上升",
+    "下滑",
 ]
 
 REPORT_PATTERNS = [
@@ -133,16 +104,11 @@ REPORT_PATTERNS = [
     "报告",
     "检查单",
     "化验单",
-    "浣撴鎶ュ憡",
-    "鎶ュ憡",
-    "鎶ュ憡鍗?",
-    "妫€鏌ュ崟",
-    "鍖栭獙鍗?",
-    "娴ｆ挻顥呴幎銉ユ啞",
-    "閹躲儱鎲?",
-    "閹躲儱鎲￠崡?",
-    "濡偓閺屻儱宕?",
-    "閸栨牠鐛欓崡?",
+    "检验单",
+    "检查报告",
+    "上传报告",
+    "上传结果",
+    "ocr报告",
 ]
 
 MEDICATION_CHANGE_PATTERNS = [
@@ -164,12 +130,8 @@ MEDICATION_CHANGE_PATTERNS = [
     "减量",
     "剂量调整",
     "开药",
-    "鍋滆嵂",
-    "鎹㈣嵂",
-    "鍔犻噺",
-    "鍑忛噺",
-    "鍓傞噺璋冩暣",
-    "寮€鑽?",
+    "调药",
+    "改药",
 ]
 
 URGENT_OVERRIDE_PATTERNS = [
@@ -180,9 +142,7 @@ URGENT_OVERRIDE_PATTERNS = [
     "先不去医院",
     "能不能先观察",
     "可不可以不去医院",
-    "鍏堜笉鍘诲尰闄?",
-    "鑳戒笉鑳藉厛瑙傚療",
-    "鍙互涓嶅幓鍖婚櫌鍚?",
+    "先不去医院吗",
 ]
 
 ELEVATED_RISK_PATTERNS = [
@@ -196,11 +156,7 @@ ELEVATED_RISK_PATTERNS = [
     "加重",
     "恶化",
     "风险",
-    "鍋忛珮",
-    "寮傚父",
-    "鍔犻噸",
-    "鎭跺寲",
-    "椋庨櫓",
+    "变差",
 ]
 
 POLICY_EVALUATION_ORDER = [
@@ -840,16 +796,16 @@ def describe_evidence_gap(
             "degrade_reason": "conflicting_evidence",
             "classes": gate["conflict_classes"] or ["conflicting evidence"],
             "next_steps": [
-                "Upload the exact report values and dates so the discrepancy can be checked.",
-                "Ask a clinician to review the conflicting evidence before making decisions.",
+                "请上传准确的报告数值和日期，以便核对不一致之处。",
+                "在做健康决策前，请让线下医生复核这些相互冲突的信息。",
             ],
         }
     lane_steps = {
-        "general_health": "Share your recent exact values and dates, or update your profile data.",
-        "report_interpretation": "Upload the report (上传报告) or paste the exact values and reference ranges.",
-        "trend_review": "Add at least one more comparable result with its date.",
-        "medication_related": "Share the medication name and dose, or upload the relevant report.",
-        "diagnosis_sensitive": "Bring your report values and symptom history to a clinician for diagnosis.",
+        "general_health": "请补充近期准确的指标数值和检测日期，或先更新你的健康档案数据。",
+        "report_interpretation": "请上传报告，或粘贴准确的指标数值、单位和参考范围。",
+        "trend_review": "请至少再补充一条带日期、可比较的历史结果。",
+        "medication_related": "请补充药物名称、剂量，或上传相关报告。",
+        "diagnosis_sensitive": "请带上报告数值和症状历史，在线下由医生完成正式诊断。",
     }
     return {
         "degrade_reason": gate["degrade_reason"],

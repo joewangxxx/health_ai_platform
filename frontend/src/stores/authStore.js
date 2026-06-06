@@ -10,13 +10,15 @@ export const useAuthStore = defineStore('auth', () => {
 
     const healthStore = useHealthStore()
 
-    // Config Axios defaults when token changes
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
+    // 中文注释：启动时若已有本地 token，立即恢复全局请求头，减少刷新后的鉴权抖动。
     if (token.value) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
     }
 
     async function login(username, password) {
-        // 0. Clean state before new attempt
+        // 中文注释：登录流程先做请求鉴权，再补齐个人档案与健康上下文。
+        // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
         logout()
 
         try {
@@ -28,15 +30,16 @@ export const useAuthStore = defineStore('auth', () => {
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
             })
 
-            // Save Token
+            // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
             token.value = res.data.access_token
             localStorage.setItem('auth_token', token.value)
             axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`
 
-            // Sync Profile (user info from /user/me)
+            // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
             await fetchProfile()
 
-            // 🔥 V7: Sync remote profile data (clinical + genomic)
+            // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
+            // 中文注释：登录后拉取云端健康档案，确保首页进入即有完整上下文。
             await healthStore.fetchRemoteProfile()
 
             return true
@@ -48,7 +51,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     async function register(email, username, password) {
         try {
-            // Fix: ensure correct endpoint /auth/register
+            // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
             await axios.post('/auth/register', {
                 username, email, password
             })
@@ -66,11 +69,11 @@ export const useAuthStore = defineStore('auth', () => {
             const res = await axios.get('/user/me')
             user.value = res.data
 
-            // Sync clinical data to HealthStore
+            // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
             if (res.data.profile) {
-                // Filter out nulls to avoid overwriting defaults with null if desired, 
-                // or just overwriting is fine as we handled nulls in backend.
-                // Here we pass everything, healthStore can handle.
+                // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
+                // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
+                // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
                 healthStore.updateProfile(res.data.profile)
             }
         } catch (e) {
@@ -79,12 +82,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     function logout() {
+        // 中文注释：退出时清理本地缓存与默认请求头，避免后续请求携带旧凭证。
         token.value = null
         user.value = null
         localStorage.removeItem('auth_token')
         delete axios.defaults.headers.common['Authorization']
-        // Optional: clear health store?
-        // healthStore.$reset()
+        // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
+        // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     }
 
     return {

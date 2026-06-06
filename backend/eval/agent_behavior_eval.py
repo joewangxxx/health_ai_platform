@@ -35,6 +35,7 @@ REQUIRED_SCENARIO_CLASSES = {
 
 
 def load_agent_behavior_manifest(manifest_path: Path | str | None = None) -> Dict[str, Any]:
+    """中文说明：load_agent_behavior_manifest 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     path = Path(manifest_path) if manifest_path is not None else DEFAULT_MANIFEST_PATH
     manifest = json.loads(path.read_text(encoding="utf-8"))
     _validate_manifest(manifest, path)
@@ -47,6 +48,8 @@ def run_agent_behavior_eval(
     output_dir: Path | str | None = None,
     baseline_path: Path | str | None = None,
 ) -> Dict[str, Any]:
+    """中文说明：run_agent_behavior_eval 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
+    # 中文注释：统一评测入口，执行全部场景、汇总结果，并可选与基线快照对比。
     manifest = load_agent_behavior_manifest(manifest_path)
     output_path = Path(output_dir) if output_dir is not None else DEFAULT_OUTPUT_DIR
     output_path.mkdir(parents=True, exist_ok=True)
@@ -75,6 +78,7 @@ def run_agent_behavior_eval(
     baseline_differences: list[Dict[str, Any]] = []
     baseline_state = BASELINE_STATE_UNCHECKED
     baseline_file = Path(baseline_path) if baseline_path is not None else None
+    # 中文注释：只有显式提供 baseline 且文件存在时，才执行回归比对。
     if baseline_file is not None and baseline_file.exists():
         baseline = json.loads(baseline_file.read_text(encoding="utf-8"))
         baseline_match = baseline == baseline_snapshot
@@ -110,6 +114,7 @@ def write_agent_behavior_baseline(
     report: Dict[str, Any],
     baseline_path: Path | str | None = None,
 ) -> Path:
+    """中文说明：write_agent_behavior_baseline 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     path = Path(baseline_path) if baseline_path is not None else DEFAULT_BASELINE_PATH
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(report["baseline_snapshot"], ensure_ascii=False, indent=2), encoding="utf-8")
@@ -117,6 +122,7 @@ def write_agent_behavior_baseline(
 
 
 def _run_scenario(scenario: Dict[str, Any]) -> Dict[str, Any]:
+    # 中文注释：每个场景使用独立内存库，避免跨场景状态污染。
     engine = _build_engine()
     with Session(engine) as session:
         user = _seed_user(session, scenario.get("user") or {})
@@ -137,6 +143,7 @@ def _run_scenario(scenario: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _patch_runtime(stack: ExitStack, scenario: Dict[str, Any]) -> None:
+    # 中文注释：通过 patch 固定工具、缓存与 RAG 输出，让评测可复现、可比较。
     tool_outputs = scenario.get("tool_outputs") or {}
     rag_spec = scenario.get("rag") or {}
 
@@ -175,6 +182,8 @@ def _patch_runtime(stack: ExitStack, scenario: Dict[str, Any]) -> None:
 
 
 class _FakeCompletions:
+    """中文说明：_FakeCompletions 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
+
     def __init__(self, final_reply: str):
         self.final_reply = final_reply
         self.calls = 0
@@ -203,6 +212,7 @@ def _build_fake_client(scenario: Dict[str, Any]) -> SimpleNamespace:
 
 
 def _build_engine():
+    """中文说明：_build_engine 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     engine = create_engine(
         "sqlite://",
         connect_args={"check_same_thread": False},
@@ -272,6 +282,7 @@ def _diff_baseline(expected: Dict[str, Any], observed: Dict[str, Any]) -> list[D
 
 
 def _validate_manifest(manifest: Dict[str, Any], path: Path) -> None:
+    """中文说明：_validate_manifest 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if manifest.get("manifest_version") != 1:
         raise ValueError(f"Invalid manifest version in {path}")
     scenarios = manifest.get("scenarios")
@@ -328,6 +339,7 @@ def _build_result_record(
     response: Dict[str, Any],
     expected: Dict[str, Any],
 ) -> Dict[str, Any]:
+    # 中文注释：只抽取契约内关键字段断言，避免瞬时噪声进入回归基线。
     decision_summary = response["decision_summary"]
     response_verdict = response["response_verdict"] or {}
     observed = {

@@ -1,0 +1,44 @@
+- generic [ref=e3]:
+  - generic [ref=e50]:
+    - generic [ref=e51]:
+      - generic [ref=e52]:
+        - heading "HealthAI Platform" [level=2] [ref=e53]
+        - generic [ref=e55]: Bayesian Fusion
+      - generic [ref=e56]:
+        - generic [ref=e59]: 设备在线
+        - button "Open user menu" [ref=e61]:
+          - generic [ref=e63]: A
+    - generic [ref=e64]:
+      - complementary [ref=e65]:
+        - menubar [ref=e69]:
+          - generic [ref=e70]: Administration
+          - menuitem "系统概览 Dashboard" [ref=e71] [cursor=pointer]:
+            - img [ref=e73]
+            - generic [ref=e77]: 系统概览 Dashboard
+          - menuitem "用户管理 Users" [ref=e78] [cursor=pointer]:
+            - img [ref=e80]
+            - generic [ref=e82]: 用户管理 Users
+          - menuitem "数据中心 Data Center" [ref=e83] [cursor=pointer]:
+            - img [ref=e85]
+            - generic [ref=e87]: 数据中心 Data Center
+      - main [ref=e88]:
+        - generic [ref=e90]:
+          - heading "🚀 系统概览 (System Overview)" [level=1] [ref=e91]
+          - generic [ref=e92]:
+            - generic [ref=e96]:
+              - generic [ref=e97]: Total Users
+              - generic [ref=e98]: "41"
+            - generic [ref=e102]:
+              - generic [ref=e103]: System Status
+              - generic [ref=e104]: Online
+            - generic [ref=e108]:
+              - generic [ref=e109]: Active Tasks
+              - generic [ref=e110]: "0"
+          - generic [ref=e111]:
+            - paragraph [ref=e112]: Welcome to the Admin Control Panel.
+            - paragraph [ref=e113]: More metrics coming soon...
+  - generic:
+    - status [ref=e1]: 登录成功
+    - generic [ref=e117]:
+      - img [ref=e118]
+      - paragraph [ref=e121]: 登录成功

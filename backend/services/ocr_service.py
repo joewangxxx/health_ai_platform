@@ -93,6 +93,8 @@ class MedicalOCRService:
                     settings.BAIDU_API_KEY, 
                     settings.BAIDU_SECRET_KEY
                 )
+                self.ocr_client.setConnectionTimeoutInMillis(settings.BAIDU_OCR_CONNECTION_TIMEOUT_MS)
+                self.ocr_client.setSocketTimeoutInMillis(settings.BAIDU_OCR_SOCKET_TIMEOUT_MS)
                 self.ocr_ready = True
             else:
                 _emit_degraded_mode_warning()
@@ -129,6 +131,9 @@ class MedicalOCRService:
                 raw_text_present=False,
             ),
         }
+
+    def build_stored_unprocessed_result(self, reason: str, message: str) -> Dict[str, Any]:
+        return self._build_stored_unprocessed_result(reason, message)
 
     def _pdf_to_images(self, pdf_bytes: bytes, max_pages: int = 5) -> List[bytes]:
         """
@@ -221,43 +226,88 @@ class MedicalOCRService:
 
     def _extract_by_regex(self, text: str) -> Dict[str, Any]:
         """
-        Task 64: Regex Fallback Extraction
-        When LLM fails, extract core metrics using regex patterns.
+        Regex fallback used when semantic LLM parsing is unavailable.
+        Patterns are kept ASCII-safe with Unicode escapes to avoid Windows
+        console encoding corruption in Chinese labels.
         """
-        result = {}
-        
-        # Define patterns: (key, regex_pattern, group_index)
-        patterns = [
-            ('BMI', r'(?:BMI|体重指数|体质指数)\D{0,6}(\d{2}\.?\d{0,2})', 1),
-            ('WBC', r'(?:WBC|白细胞)\D{0,10}(\d{1,2}\.?\d{0,2})', 1),
-            ('HGB', r'(?:HGB|血红蛋白)\D{0,10}(\d{2,3})', 1),
-            ('PLT', r'(?:PLT|血小板)\D{0,10}(\d{2,3})', 1),
-            ('ALT', r'(?:ALT|谷丙转氨酶|丙氨酸氨基转移酶)\D{0,10}(\d{1,3})', 1),
-            ('AST', r'(?:AST|谷草转氨酶)\D{0,10}(\d{1,3})', 1),
-            ('GGT', r'(?:GGT|谷氨酰转肽酶|r-谷氨酰转肽酶)\D{0,10}(\d{1,3})', 1),
-            ('Glu', r'(?:Glu|GLU|葡萄糖|空腹血糖|血糖)\D{0,10}(\d{1,2}\.?\d{0,2})', 1),
-            ('TC', r'(?:TC|总胆固醇)\D{0,10}(\d{1,2}\.?\d{0,2})', 1),
-            ('TG', r'(?:TG|甘油三酯)\D{0,10}(\d{1,2}\.?\d{0,2})', 1),
-            ('UA', r'(?:UA|尿酸)\D{0,10}(\d{2,4})', 1),
+        result: Dict[str, Any] = {}
+
+        def assign_number(key: str, value: str | None, *, as_int: bool = False) -> None:
+            if value is None:
+                return
+            try:
+                number = float(value)
+            except (TypeError, ValueError):
+                return
+            result[key] = int(number) if as_int else number
+
+        def first_number_after(label_pattern: str, *, max_gap: int = 18) -> str | None:
+            pattern = rf"{label_pattern}\D{{0,{max_gap}}}(\d{{1,4}}(?:\.\d{{1,2}})?)"
+            match = re.search(pattern, text, re.IGNORECASE)
+            return match.group(1) if match else None
+
+        def gender_value() -> int | None:
+            match = re.search(
+                r"(?:\u6027\s*\u522b|\u6027\u522b)\D{0,12}(\u7537|\u5973|Male|Female|M|F)",
+                text,
+                re.IGNORECASE,
+            )
+            if not match:
+                return None
+            token = match.group(1).lower()
+            if token in {"\u7537", "male", "m"}:
+                return 1
+            if token in {"\u5973", "female", "f"}:
+                return 2
+            return None
+
+        patient_patterns = [
+            ("Age", r"(?:\u5e74\s*\u9f84|\u5e74\u9f84)", True),
+            ("Height", r"\u8eab\u9ad8\s*(?:\(|\uff08)?\s*cm\s*(?:\)|\uff09)?", False),
+            ("Weight", r"\u4f53\u91cd\s*(?:\(|\uff08)?\s*(?:kg|Kg|KG)\s*(?:\)|\uff09)?", False),
+            ("BMI", r"(?:\bBMI\b|\u4f53\u91cd\u6307\u6570|\u4f53\u8d28\u6307\u6570)", False),
+            ("SBP", r"(?:\u6536\u7f29\u538b|\u9ad8\u538b|SBP)", True),
+            ("DBP", r"(?:\u8212\u5f20\u538b|\u4f4e\u538b|DBP)", True),
         ]
-        
+        for key, pattern, as_int in patient_patterns:
+            assign_number(key, first_number_after(pattern), as_int=as_int)
+
+        gender = gender_value()
+        if gender is not None:
+            result["Gender"] = gender
+
+        patterns = [
+            ("BMI", r"(?:\bBMI\b|\u4f53\u91cd\u6307\u6570|\u4f53\u8d28\u6307\u6570)\D{0,10}(\d{2}\.\d{1,2}|\d{2})", 1),
+            ("WBC", r"(?:\bWBC\b|\u767d\u7ec6\u80de\u8ba1\u6570\s*[\uff08(]?\s*WBC?\s*[\uff09)]?)\D{0,18}(\d{1,2}\.?\d{0,2})", 1),
+            ("HGB", r"(?:\bHGB\b|\u8840\u7ea2\u86cb\u767d(?:\u542b\u91cf)?\s*[\uff08(]?\s*HGB?\s*[\uff09)]?)\D{0,18}(\d{2,3}\.?\d{0,2})", 1),
+            ("PLT", r"(?:\bPLT\b|\u8840\u5c0f\u677f\u8ba1\u6570\s*[\uff08(]?\s*PLT?\s*[\uff09)]?)\D{0,18}(\d{2,3}\.?\d{0,2})", 1),
+            ("ALT", r"(?:\bALT\b|\u8c37\u4e19\u8f6c\u6c28\u9176|\u4e19\u6c28\u9178\u6c28\u57fa\u8f6c\u79fb\u9176)\D{0,10}(\d{1,3}\.?\d{0,2})", 1),
+            ("AST", r"(?:\bAST\b|\u8c37\u8349\u8f6c\u6c28\u9176|\u95e8\u51ac\u6c28\u9178\u6c28\u57fa\u8f6c\u79fb\u9176|\u5929\u95e8\u51ac\u6c28\u9178\u6c28\u57fa\u8f6c\u79fb\u9176)\D{0,10}(\d{1,3}\.?\d{0,2})", 1),
+            ("GGT", r"(?:\bGGT\b|[\u03b3rR]-?\u8c37\u6c28\u9170\u8f6c\u79fb\u9176|[\u03b3rR]-?\u8c37\u6c28\u9170\u8f6c\u80bd\u9176|\u8c37\u6c28\u9170\u8f6c\u79fb\u9176|\u8c37\u6c28\u9170\u8f6c\u80bd\u9176)\D{0,10}(\d{1,3}\.?\d{0,2})", 1),
+            ("ALP", r"(?:\bALP\b|\u78b1\u6027\u78f7\u9178\u9176)\D{0,10}(\d{1,3}\.?\d{0,2})", 1),
+            ("Glu", r"(?:\bGLU\b|\bGlu\b|\u8461\u8404\u7cd6|\u8840\u7cd6|\u7a7a\u8179\u8840\u7cd6)\D{0,10}(\d{1,2}\.?\d{0,2})", 1),
+            ("HbA1c", r"(?:\bHbA1c\b|\bHbA1C\b|\bA1c\b|\bA1C\b|\bGHb\b|\u7cd6\u5316\u8840\u7ea2\u86cb\u767d(?:A1c)?)\D{0,10}(\d{1,2}\.?\d{0,2})", 1),
+            ("TC", r"(?:\u603b\u80c6\u56fa\u9187|(?<![A-Za-z-])TC(?![A-Za-z-]))\D{0,10}(\d{1,2}\.?\d{0,2})", 1),
+            ("TG", r"(?:\bTG\b|\u7518\u6cb9\u4e09\u916f)\D{0,10}(\d{1,2}\.?\d{0,2})", 1),
+            ("HDL", r"(?:\bHDL-C\b|\bHDL_C\b|\bHDLC\b|\bHDL\b|\u9ad8\u5bc6\u5ea6\u8102\u86cb\u767d\u80c6\u56fa\u9187|\u9ad8\u5bc6\u5ea6\u8102\u86cb\u767d)\D{0,10}(\d{1,2}\.?\d{0,2})", 1),
+            ("LDL", r"(?:\bLDL-C\b|\bLDL_C\b|\bLDLC\b|\bLDL\b|\u4f4e\u5bc6\u5ea6\u8102\u86cb\u767d\u80c6\u56fa\u9187|\u4f4e\u5bc6\u5ea6\u8102\u86cb\u767d)\D{0,10}(\d{1,2}\.?\d{0,2})", 1),
+            ("Creatinine", r"(?:\bCreatinine\b|\bCREA\b|\bScr\b|\bCr\b|\u808c\u9150|\u8840\u808c\u9150)\D{0,10}(\d{1,3}\.?\d{0,2})", 1),
+            ("eGFR", r"(?:\beGFR\b|\bGFR\b|\u4f30\u7b97\u80be\u5c0f\u7403\u6ee4\u8fc7\u7387|\u80be\u5c0f\u7403\u6ee4\u8fc7\u7387)\D{0,10}(\d{1,3}\.?\d{0,2})", 1),
+            ("UA", r"(?:\bUA\b|\u5c3f\u9178)\D{0,10}(\d{2,4}\.?\d{0,2})", 1),
+        ]
+
         for key, pattern, group in patterns:
+            if key in result:
+                continue
             match = re.search(pattern, text, re.IGNORECASE)
             if match:
-                try:
-                    result[key] = float(match.group(group))
-                except:
-                    pass
-        
-        # Blood Pressure: Extract SBP/DBP from format like "120/80"
-        bp_match = re.search(r'血压\D{0,10}(\d{2,3})\s*[/／]\s*(\d{2,3})', text)
+                assign_number(key, match.group(group))
+
+        bp_match = re.search(r"(?:\bBP\b|Blood Pressure|\u8840\u538b)\D{0,10}(\d{2,3})\s*[/\uff0f]\s*(\d{2,3})", text, re.IGNORECASE)
         if bp_match:
-            try:
-                result['SBP'] = int(bp_match.group(1))
-                result['DBP'] = int(bp_match.group(2))
-            except:
-                pass
-        
+            result["SBP"] = int(bp_match.group(1))
+            result["DBP"] = int(bp_match.group(2))
+
         return result
 
     async def parse_medical_report(self, image_bytes: bytes) -> Dict[str, Any]:
@@ -343,78 +393,41 @@ class MedicalOCRService:
         stop=stop_after_attempt(3),
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(APIStatusError),
-        before_sleep=lambda retry_state: logger.warning(f"⚠️ LLM API Error, retrying... (Attempt {retry_state.attempt_number})")
+        before_sleep=lambda retry_state: logger.warning(f"LLM API Error, retrying... (Attempt {retry_state.attempt_number})")
     )
     async def _call_llm_for_parsing(self, ocr_text: str) -> Dict[str, Any]:
         """
         Call Kimi/OpenAI to extract JSON structure.
         With retry mechanism for API errors (429 Engine Overloaded, etc.)
         """
-        system_prompt = (
-            "你是一个专业的医疗数据结构化助手。请根据 OCR 文本提取生理指标。\n"
-            "\n"
-            "**Task 87: 新输出格式**\n"
-            "每个指标的 Value 不再是纯数字，而是一个对象：\n"
-            "```json\n"
-            "\"WBC\": {\n"
-            "    \"value\": 6.39,\n"
-            "    \"unit\": \"10^9/L\",\n"
-            "    \"ref_range\": \"3.5-9.5\",\n"
-            "    \"hospital_flag\": null\n"
-            "}\n"
-            "```\n"
-            "- **value**: 检测值（数字或字符串，如酮体的'+/-'）\n"
-            "- **unit**: 单位（如 mmol/L, g/L, %）\n"
-            "- **ref_range**: 参考范围（如 '3.5-9.5', '0-40'），如未找到则为 null\n"
-            "- **hospital_flag**: 如果体检单明确标记了 'H', 'L', '↑', '↓', '+', '阳性', '偏高', '偏低'，填在这里；否则为 null\n"
-            "\n"
-            "**关键映射规则 (必须严格遵守)**：\n"
-            "请在文本中寻找以下中文指标，并提取其数值存入对应的 JSON Key：\n"
-            "\n"
-            "--- 基础信息 (这些仅返回简单值，不需要对象格式) ---\n"
-            "*   **Age** <== 寻找 \"年龄\", \"Age\" (只返回数字，如 45)\n"
-            "*   **Gender** <== 寻找 \"性别\", \"Gender\" (返回 1 表示男性, 2 表示女性)\n"
-            "*   **Height** <== 寻找 \"身高\" (转换为 cm，只保留数字)\n"
-            "*   **Weight** <== 寻找 \"体重\" (转换为 kg，只保留数字)\n"
-            "\n"
-            "--- 身体指标 (使用对象格式) ---\n"
-            "*   **BMI** <== 寻找 \"体重指数\", \"BMI\", \"体质指数\"\n"
-            "*   **SBP** <== 寻找 \"收缩压\", \"高压\" (通常在血压组的前面)\n"
-            "*   **DBP** <== 寻找 \"舒张压\", \"低压\" (通常在血压组的后面)\n"
-            "\n"
-            "--- 血常规 (使用对象格式) ---\n"
-            "*   **WBC** <== 寻找 \"白细胞\", \"白细胞计数\", \"WBC\"\n"
-            "*   **NEUT_PERCENT** <== 寻找 \"中性粒细胞百分比\", \"中性粒细胞%\"\n"
-            "*   **LYM_PERCENT** <== 寻找 \"淋巴细胞百分比\", \"淋巴细胞%\"\n"
-            "*   **HGB** <== 寻找 \"血红蛋白\", \"HGB\"\n"
-            "*   **PLT** <== 寻找 \"血小板\", \"PLT\"\n"
-            "\n"
-            "--- 肝功能 (使用对象格式) ---\n"
-            "*   **ALT** <== 寻找 \"谷丙转氨酶\", \"丙氨酸氨基转移酶\"\n"
-            "*   **AST** <== 寻找 \"谷草转氨酶\", \"天门冬氨酸氨基转移酶\"\n"
-            "*   **GGT** <== 寻找 \"r-谷氨酰转肽酶\", \"GGT\", \"谷氨酰转移酶\"\n"
-            "*   **ALP** <== 寻找 \"碱性磷酸酶\", \"ALP\"\n"
-            "\n"
-            "--- 代谢指标 (使用对象格式) ---\n"
-            "*   **Glu** <== 寻找 \"葡萄糖\", \"血糖\", \"空腹血糖\", \"GLU\"\n"
-            "*   **TC** <== 寻找 \"总胆固醇\", \"TC\"\n"
-            "*   **TG** <== 寻找 \"甘油三酯\", \"TG\"\n"
-            "*   **HDL** <== 寻找 \"高密度脂蛋白\", \"HDL-C\"\n"
-            "*   **LDL** <== 寻找 \"低密度脂蛋白\", \"LDL-C\"\n"
-            "*   **UA** <== 寻找 \"尿酸\", \"UA\"\n"
-            "*   **Creatinine** <== 寻找 \"肌酐\", \"Cr\", \"CREA\"\n"
-            "*   **eGFR** <== 寻找 \"肾小球滤过率\", \"eGFR\"\n"
-            "*   **HbA1c** <== 寻找 \"糖化血红蛋白\", \"HbA1c\"\n"
-            "*   **KET** <== 寻找 \"酮体\", \"尿酮体\", \"KET\"\n"
-            "\n"
-            "**输出要求**：\n"
-            "1. 返回纯 JSON（不要 Markdown 代码块）。\n"
-            "2. 基础信息 (Age, Gender, Height, Weight) 只返回简单值。\n"
-            "3. 其他所有生化/血常规指标使用对象格式 {value, unit, ref_range, hospital_flag}。\n"
-            "4. 如果未找到某项，对应 Key 的值为 null。\n"
-            "5. **extra_findings**: 将文中提到但不在上述核心指标列表中的其他所有检测项，以对象格式存入此字段。\n"
-        )
+        system_prompt = """
+You are a medical-report structuring assistant. Extract structured health data from OCR text.
+Return pure JSON only. Do not wrap the response in Markdown.
 
+Core scalar fields, when present:
+- Age, Gender, Height, Weight
+
+Core metric fields, when present:
+- BMI, SBP, DBP
+- WBC, HGB, PLT
+- ALT, AST, GGT, ALP
+- Glu, HbA1c, TC, TG, HDL, LDL, UA, Creatinine, eGFR, KET
+
+For Age/Gender/Height/Weight, return a simple value.
+For every metric/lab/vital field, return an object:
+{"value": number_or_string, "unit": string_or_null, "ref_range": string_or_null, "hospital_flag": string_or_null}
+
+Use common aliases:
+- SBP/DBP: systolic/diastolic or high/low blood pressure values.
+- Glu: glucose, fasting glucose, blood glucose, GLU.
+- HbA1c: HbA1c, HbA1C, A1c, glycosylated hemoglobin.
+- HDL/LDL: HDL-C and LDL-C.
+- Creatinine: creatinine, Cr, CREA, Scr.
+- eGFR: eGFR or GFR.
+
+Put detected non-core measurements under extra_findings using the same object shape.
+Do not infer missing values. Use null when unavailable.
+"""
         # [DEBUG] Print Full Prompt Context
 
         response = await self.client.chat.completions.create(

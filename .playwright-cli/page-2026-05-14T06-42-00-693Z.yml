@@ -1,0 +1,145 @@
+- generic [ref=e3]:
+  - generic [ref=e50]:
+    - generic [ref=e51]:
+      - generic [ref=e52]:
+        - heading "HealthAI Platform" [level=2] [ref=e53]
+        - generic [ref=e55]: Bayesian Fusion
+      - generic [ref=e56]:
+        - generic [ref=e59]: 设备在线
+        - button "Open user menu" [ref=e61]:
+          - generic [ref=e63]: J
+    - generic [ref=e64]:
+      - complementary [ref=e65]:
+        - menubar [ref=e69]:
+          - generic [ref=e70]: User Panel
+          - menuitem "仪表盘 Dashboard" [ref=e71] [cursor=pointer]:
+            - img [ref=e73]
+            - generic [ref=e77]: 仪表盘 Dashboard
+          - menuitem "临床体检 Clinical" [ref=e78] [cursor=pointer]:
+            - img [ref=e80]
+            - generic [ref=e84]: 临床体检 Clinical
+          - menuitem "基因组学 Genomics" [ref=e85] [cursor=pointer]:
+            - img [ref=e87]
+            - generic [ref=e89]: 基因组学 Genomics
+          - menuitem "行为视觉 Lifestyle" [ref=e90] [cursor=pointer]:
+            - img [ref=e92]
+            - generic [ref=e94]: 行为视觉 Lifestyle
+          - menuitem "Dr. AI 健康顾问" [ref=e95] [cursor=pointer]:
+            - img [ref=e97]
+            - generic [ref=e100]: Dr. AI 健康顾问
+          - menuitem "全周期慢病管理" [ref=e101] [cursor=pointer]:
+            - img [ref=e103]
+            - generic [ref=e105]: 全周期慢病管理
+          - menuitem "智能药房 Pharmacy" [ref=e106] [cursor=pointer]:
+            - img [ref=e108]
+            - generic [ref=e111]: 智能药房 Pharmacy
+          - menuitem "AI 营养师 Nutrition" [ref=e112] [cursor=pointer]:
+            - img [ref=e114]
+            - generic [ref=e116]: AI 营养师 Nutrition
+      - main [ref=e117]:
+        - generic [ref=e144]:
+          - generic [ref=e145]:
+            - heading "⏳ 全周期健康管理 (Health Timeline)" [level=1] [ref=e146]
+            - button "返回录入" [ref=e148] [cursor=pointer]:
+              - generic [ref=e149]:
+                - img [ref=e151]
+                - text: 返回录入
+          - generic [ref=e160]:
+            - generic [ref=e161]: 📊 历史健康轨迹 (Historical Trends)
+            - radiogroup "radio-group" [ref=e163]:
+              - generic [ref=e164]:
+                - radio "BMI" [checked] [ref=e165]
+                - generic [ref=e166] [cursor=pointer]: BMI
+              - generic [ref=e167]:
+                - radio "血糖" [ref=e168]
+                - generic [ref=e169] [cursor=pointer]: 血糖
+              - generic [ref=e170]:
+                - radio "收缩压" [ref=e171]
+                - generic [ref=e172] [cursor=pointer]: 收缩压
+              - generic [ref=e173]:
+                - radio "总胆固醇" [ref=e174]
+                - generic [ref=e175] [cursor=pointer]: 总胆固醇
+          - generic [ref=e179]:
+            - generic [ref=e183]:
+              - heading "🎮 平行宇宙模拟器" [level=3] [ref=e184]
+              - paragraph [ref=e185]: 如果我现在开始改变，10年后会怎样？
+              - generic [ref=e186]:
+                - generic [ref=e187]:
+                  - generic [ref=e188]:
+                    - generic [ref=e189]: 时间穿梭 (Years)
+                    - generic [ref=e190]: +5 年
+                  - slider "slider between 1 and 20" [ref=e194] [cursor=pointer]
+                - generic [ref=e210]:
+                  - generic [ref=e211]:
+                    - generic [ref=e212]:
+                      - text: 🧬 干预调节 (Intervention)
+                      - img [ref=e214]
+                    - generic [ref=e216]:
+                      - switch [checked]
+                  - generic [ref=e307]:
+                    - generic [ref=e308]:
+                      - generic [ref=e309]:
+                        - generic [ref=e310]: 体重变化 (kg)
+                        - generic [ref=e311]: "-2kg"
+                      - slider "slider between -10 and 10" [ref=e315] [cursor=pointer]
+                    - generic [ref=e317]:
+                      - generic [ref=e318]:
+                        - generic [ref=e319]: 运动频率 (周)
+                        - generic [ref=e320]: 3 次
+                      - slider "slider between 0 and 7" [ref=e324] [cursor=pointer]
+                - button "开始魔法推演 (Simulate)" [ref=e220] [cursor=pointer]:
+                  - generic [ref=e221]:
+                    - img [ref=e222]
+                    - text: 开始魔法推演 (Simulate)
+            - generic [ref=e230]:
+              - img [ref=e232]
+              - generic [ref=e234]: ✨ 等待信号输入...
+              - generic [ref=e235]: 调整左侧参数开始推演
+          - generic [ref=e239]:
+            - heading "📜 历史体检记录" [level=3] [ref=e240]
+            - list [ref=e241]:
+              - listitem [ref=e242]:
+                - generic [ref=e245]:
+                  - generic [ref=e246]: manual_update - Contains 15 metrics
+                  - generic [ref=e247]: 2026-05-14 05:41
+              - listitem [ref=e248]:
+                - generic [ref=e251]:
+                  - generic [ref=e252]: manual_update - Contains 15 metrics
+                  - generic [ref=e253]: 2026-05-13 12:14
+              - listitem [ref=e254]:
+                - generic [ref=e257]:
+                  - generic [ref=e258]: manual_update - Contains 15 metrics
+                  - generic [ref=e259]: 2026-05-13 12:13
+              - listitem [ref=e260]:
+                - generic [ref=e263]:
+                  - generic [ref=e264]: manual_update - Contains 15 metrics
+                  - generic [ref=e265]: 2026-05-13 12:13
+              - listitem [ref=e266]:
+                - generic [ref=e269]:
+                  - generic [ref=e270]: manual_update - Contains 15 metrics
+                  - generic [ref=e271]: 2026-05-07 14:29
+              - listitem [ref=e272]:
+                - generic [ref=e275]:
+                  - generic [ref=e276]: manual_update - Contains 15 metrics
+                  - generic [ref=e277]: 2026-05-07 14:21
+              - listitem [ref=e278]:
+                - generic [ref=e281]:
+                  - generic [ref=e282]: manual_update - Contains 15 metrics
+                  - generic [ref=e283]: 2026-02-05 07:39
+              - listitem [ref=e284]:
+                - generic [ref=e287]:
+                  - generic [ref=e288]: manual_update - Contains 15 metrics
+                  - generic [ref=e289]: 2026-02-05 06:57
+              - listitem [ref=e290]:
+                - generic [ref=e293]:
+                  - generic [ref=e294]: manual_update - Contains 15 metrics
+                  - generic [ref=e295]: 2026-02-04 13:47
+              - listitem [ref=e296]:
+                - generic [ref=e299]:
+                  - generic [ref=e300]: manual_update - Contains 15 metrics
+                  - generic [ref=e301]: 2026-01-27 07:15
+              - listitem [ref=e302]:
+                - generic [ref=e304]:
+                  - generic [ref=e305]: manual_update - Contains 15 metrics
+                  - generic [ref=e306]: 2026-01-27 07:14
+  - status [ref=e1]

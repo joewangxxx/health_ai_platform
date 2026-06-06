@@ -1,6 +1,6 @@
 <template>
     <div class="glass-button-wrap" :class="sizeClasses.wrap">
-        <button class="glass-button group" :class="[sizeClasses.button, contentClass]" :disabled="disabled"
+        <button type="button" class="glass-button group" :class="[sizeClasses.button, contentClass]" :disabled="disabled"
             @click="$emit('click', $event)">
             <span class="glass-button-text">
                 <slot />
@@ -31,7 +31,7 @@ const props = defineProps({
 
 defineEmits(['click'])
 
-// Size variants using computed (like CVA)
+// 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
 const sizeClasses = computed(() => {
     const variants = {
         default: {
@@ -60,13 +60,13 @@ const sizeClasses = computed(() => {
 </script>
 
 <style scoped>
-/* Glass Button Wrapper */
+/* 按钮外层容器 */
 .glass-button-wrap {
     position: relative;
     display: inline-flex;
 }
 
-/* Main Button */
+/* 主按钮样式 */
 .glass-button {
     position: relative;
     z-index: 10;
@@ -80,25 +80,25 @@ const sizeClasses = computed(() => {
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-    /* Glass base */
+    /* 玻璃质感底层 */
     background: linear-gradient(135deg,
             rgba(255, 255, 255, 0.25) 0%,
             rgba(255, 255, 255, 0.1) 100%);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
 
-    /* Border glow */
+    /* 边框高光 */
     border: 1px solid rgba(255, 255, 255, 0.4);
     box-shadow:
         inset 0 1px 1px rgba(255, 255, 255, 0.4),
         0 4px 16px -2px rgba(0, 0, 0, 0.1),
         0 2px 4px -1px rgba(0, 0, 0, 0.06);
 
-    /* Text */
+    /* 文本颜色 */
     color: #1e293b;
 }
 
-/* Dark mode */
+/* 深色模式 */
 :global(.dark) .glass-button {
     background: linear-gradient(135deg,
             rgba(255, 255, 255, 0.12) 0%,
@@ -111,7 +111,7 @@ const sizeClasses = computed(() => {
         0 2px 8px -1px rgba(0, 0, 0, 0.3);
 }
 
-/* Hover state */
+/* 悬浮状态 */
 .glass-button:hover:not(:disabled) {
     transform: translateY(-2px);
     border-color: rgba(255, 255, 255, 0.6);
@@ -136,7 +136,7 @@ const sizeClasses = computed(() => {
             rgba(255, 255, 255, 0.08) 100%);
 }
 
-/* Active/pressed state */
+/* 激活/按压状态 */
 .glass-button:active:not(:disabled) {
     transform: translateY(0);
     box-shadow:
@@ -144,13 +144,13 @@ const sizeClasses = computed(() => {
         0 2px 8px -2px rgba(0, 0, 0, 0.1);
 }
 
-/* Disabled state */
+/* 禁用状态 */
 .glass-button:disabled {
     cursor: not-allowed;
     opacity: 0.5;
 }
 
-/* Text layer */
+/* 文本层 */
 .glass-button-text {
     display: flex;
     align-items: center;
@@ -159,7 +159,7 @@ const sizeClasses = computed(() => {
     z-index: 10;
 }
 
-/* Shadow glow layer */
+/* 阴影光晕层 */
 .glass-button-shadow {
     position: absolute;
     inset: 0;

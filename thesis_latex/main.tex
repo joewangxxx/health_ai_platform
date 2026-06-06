@@ -4,11 +4,21 @@
 % 题目：基于多模态数据融合与综合风险分析的个性化健康管理平台
 % ============================================
 
-\documentclass[UTF8, a4paper, 12pt]{ctexrep}
+\documentclass[UTF8, a4paper, 12pt, oneside]{ctexrep}
 
 % ==================== 宏包引入 ====================
-\usepackage[top=2.5cm, bottom=2.5cm, left=3cm, right=2.5cm]{geometry}
-\setlength{\headheight}{14pt} % 修复 fancyhdr headheight is too small 警告
+\usepackage[
+    a4paper,
+    left=25mm,
+    right=25mm,
+    top=30mm,
+    bottom=25mm,
+    bindingoffset=10mm,
+    headheight=5mm,
+    headsep=2mm,
+    footskip=7mm
+]{geometry}
+\setlength{\headheight}{5mm} % 页眉高度按学校版芯要求设置
 \usepackage{graphicx}
 \usepackage{pdfpages}
 \usepackage{amsmath}
@@ -34,6 +44,11 @@
 \setmonofont{Courier New}
 \setCJKfamilyfont{songbf}[AutoFakeBold=2.8]{SimSun}
 \newcommand{\songbffamily}{\CJKfamily{songbf}}
+\IfFontExistsTF{方正黑体_GBK}{
+    \newCJKfontfamily\abstracttitlefont{方正黑体_GBK}
+}{
+    \newCJKfontfamily\abstracttitlefont{SimHei}
+}
 
 % ==================== 正文与段落格式 ====================
 \AtBeginDocument{\zihao{-4}\songti}
@@ -77,23 +92,47 @@
 \renewcommand{\theequation}{\arabic{chapter}-\arabic{equation}}
 
 \makeatletter
+\setcounter{tocdepth}{2}
 \renewcommand{\tagform@}[1]{\maketag@@@{\rmfamily\zihao{-4}(#1)}}
+\def\@dottedtocline#1#2#3#4#5{%
+    \ifnum #1>\c@tocdepth \else
+        \vskip \z@ \@plus.2\p@
+        {\leftskip #2\relax \rightskip \@tocrmarg \parfillskip -\rightskip
+            \parindent #2\relax\@afterindenttrue
+            \interlinepenalty\@M
+            \leavevmode
+            \@tempdima #3\relax
+            \advance\leftskip \@tempdima \null\nobreak\hskip -\leftskip
+            {#4}\nobreak
+            \leaders\hbox{$\m@th \mkern \@dotsep mu\hbox{.}\mkern \@dotsep mu$}\hfill
+            \nobreak
+            \hb@xt@\@pnumwidth{\hfil\rmfamily #5}\par}%
+    \fi
+}
 \renewcommand*\l@chapter[2]{%
     \ifnum \c@tocdepth >\m@ne
         \addpenalty{-\@highpenalty}%
-        \vskip 1.0em \@plus\p@
-        \setlength\@tempdima{1.5em}%
+        \vskip \z@ \@plus.2\p@
+        \setlength\@tempdima{4em}%
         \begingroup
             \parindent \z@ \rightskip \@pnumwidth
             \parfillskip -\@pnumwidth
             \leavevmode \songti
             \advance\leftskip\@tempdima
             \hskip -\leftskip
-            #1\nobreak\hfil
-            \nobreak\hb@xt@\@pnumwidth{\hss #2}\par
+            #1\nobreak
+            \leaders\hbox{$\m@th \mkern \@dotsep mu\hbox{.}\mkern \@dotsep mu$}\hfill
+            \nobreak\hb@xt@\@pnumwidth{\hss\rmfamily #2}\par
             \penalty\@highpenalty
         \endgroup
     \fi
+}
+\newcommand{\thesistableofcontents}{%
+    \clearpage
+    \phantomsection
+    {\centering\heiti\zihao{3}目\quad 录\par}
+    \vspace{\baselineskip}
+    {\songti\zihao{-4}\onehalfspacing\@starttoc{toc}}%
 }
 \makeatother
 
@@ -101,13 +140,13 @@
 \hypersetup{
     colorlinks=true,
     linkcolor=black,
-    citecolor=blue,
+    citecolor=black,
     urlcolor=blue,
     bookmarksopen=true,
     plainpages=false,
     hypertexnames=false
 }
-\citestyle{numbers}
+\citestyle{super}
 % 修复 PDF 标签中包含 \quad 宏导致的 Unicode string 警告
 \pdfstringdefDisableCommands{\let\quad\empty}
 
@@ -162,7 +201,7 @@
     }%
 }
 
-\newcommand{\codeid}[1]{\nolinkurl{#1}}
+\newcommand{\codeid}[1]{{\begingroup\urlstyle{rm}\nolinkurl{#1}\endgroup}}
 
 % ==================== 图片路径 ====================
 \graphicspath{{images/}}
@@ -170,13 +209,13 @@
 % ==================== 页眉页脚 ====================
 \fancypagestyle{thesisstyle}{
     \fancyhf{}
-    \fancyfoot[C]{\rmfamily\thepage}
+    \fancyfoot[C]{\rmfamily\zihao{-4}\thepage}
     \renewcommand{\headrulewidth}{0pt}
     \renewcommand{\footrulewidth}{0pt}
 }
 \fancypagestyle{plain}{
     \fancyhf{}
-    \fancyfoot[C]{\rmfamily\thepage}
+    \fancyfoot[C]{\rmfamily\zihao{-4}\thepage}
     \renewcommand{\headrulewidth}{0pt}
     \renewcommand{\footrulewidth}{0pt}
 }
@@ -187,38 +226,43 @@
 % 封面与声明页使用 Word 定稿导出的 PDF，确保前置页版式与学校模板一致。
 \includepdf[pages=-,fitpaper=true,pagecommand={\thispagestyle{empty}}]{frontmatter/cover_declaration.pdf}
 
-% =封面后统一使用阿拉伯数字页码=
+% =封面后前置部分使用罗马数字页码=
 \clearpage
+\pagenumbering{Roman}
+\setcounter{page}{1}
+
+% ==================== 目录 ====================
+\thesistableofcontents
+\clearpage
+
+% =摘要与正文部分使用阿拉伯数字页码=
 \pagenumbering{arabic}
 \setcounter{page}{1}
 
 % ==================== 中文摘要 ====================
-\newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{摘要}
 \thispagestyle{plain}
 {
 \centering
-{\heiti\zihao{3} 基于多模态数据融合与综合风险分析的个性化健康管理平台\par}
+{\abstracttitlefont\zihao{3} 基于多模态数据融合与综合风险分析的个性化健康管理平台\par}
 \vspace{\baselineskip}
 {\songti\zihao{-4} 王彬桥\par}
-\vspace{0.3cm}
 {\songti\zihao{5} 西南大学计算机与信息科学学院\enspace 软件学院，重庆\enspace 400715\par}
 \vspace{\baselineskip}
 }
 
 {\fangsong\zihao{5}
-\noindent 摘\quad 要：随着慢性病管理逐渐从诊疗后响应转向长期监测与提前干预，单一数据来源和静态评估结果已难以支撑个体化健康分析。本文围绕这一问题，设计并实现了一个面向主动健康管理的个性化平台。平台以综合风险分析为中枢，将结构化体检指标、遗传信息、OCR 医疗文档内容、生活方式相关因素以及医学知识检索结果组织到同一服务链中，用于支撑风险识别、情景比较和健康问答。
-
-在方法设计上，平台以结构化健康档案为主要分析入口，结合 OCR 得到的报告文本和补充指标，组织临床风险估计、遗传风险修正与生活方式因子修正，生成综合风险结果。在此基础上，本文进一步设计了以体重变化为主的生活方式干预场景，通过情景扰动比较不同方案下的风险变化趋势。对于健康咨询场景，系统将受控 Agent 作为结果解释与反馈入口，在保留用户上下文的同时引入证据约束和安全分流逻辑。
-
-在系统实现上，平台采用 Vue 前端与 FastAPI 后端的分层结构，集成用户档案管理、报告上传与 OCR 处理、综合风险分析、情景推演以及问答服务等功能模块，形成面向个人健康管理的服务化原型。其中，OCR 主要承担文档输入补全，问答模块主要承担分析结果的解释与反馈。结合当前仓库中的接口实现、回归测试、浏览器场景验证和 Agent 行为评测记录，可以看到该原型已经能够完成多模态数据接入、综合风险分析、情景比较和受控问答等主要流程。受本地 OCR 运行环境限制，真实 PDF 上传在当前环境下主要验证了降级存储与后续处理分支，因此本文对在线 OCR 解析能力的表述限定在现有实现与验证范围内。
+\noindent 摘\quad 要：面向慢性病长期监测与主动干预需求，本文设计并实现了一个基于多模态数据融合与综合风险分析的个性化健康管理平台。平台整合体检档案、遗传信息、OCR 医疗文档和生活方式数据，构建统一健康画像，并在临床风险估计基础上引入遗传与行为因素修正，生成可解释的综合风险结果。系统进一步支持体重变化等情景推演，用于比较不同干预方案下的风险趋势；同时将受控 Agent 用于结果解释与健康问答，通过证据检索、安全分流和过程留痕约束回答边界。基于 Vue 与 FastAPI 的原型实现和回归测试表明，平台能够完成多模态接入、风险分析、情景比较和受控问答等主要流程，为个体化健康管理提供了可验证的工程实践。
 \par}
 
-\vspace{0.5cm}
 {\songti\zihao{5}
-\noindent 关键词：多模态健康数据融合；综合风险分析；情景化干预推演；OCR 医疗文档处理；受控 Agent 问答；个性化健康管理\par}
+\noindent 关键词：个性化健康管理；多模态数据融合；综合风险分析；情景推演；受控 Agent\par}
 
 % ==================== 英文摘要（参照学长论文格式）====================
 \newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Abstract}
 \thispagestyle{plain}
 {
 \centering
@@ -226,30 +270,20 @@
 {\rmfamily\bfseries\zihao{4} Personalized Health Management Platform Based on Multimodal Data Fusion and Composite Risk Analysis\par}
 \vspace{\baselineskip}
 {\rmfamily\zihao{5} WANG Binqiao\par}
-\vspace{0.3cm}
 {\rmfamily\zihao{-5} School of Computer and Information Science \& Software, Southwest University, Chongqing 400715, PR China\par}
 \vspace{\baselineskip}
 }
 
 {\rmfamily\zihao{5}
-\noindent Abstract: As chronic disease management shifts from treatment after onset to longer-term monitoring and earlier intervention, a single data source and a static assessment result are no longer sufficient for individualized health analysis. This thesis presents a personalized health management platform for proactive care. The platform is centered on composite risk analysis and organizes structured examination indicators, genomic information, OCR-derived medical document content, lifestyle-related factors, and retrieved medical knowledge into one service chain to support risk identification, scenario comparison, and health consultation.
-
-At the method level, the platform uses the structured health profile as the main analysis entry and supplements it with OCR-extracted report text and indicators. It combines clinical risk estimation with genetic adjustment and lifestyle-related adjustment to produce a composite risk report. On top of this core analysis path, the thesis further designs a scenario-perturbation mechanism around lifestyle intervention cases that are currently centered on body weight change, so that different options can be compared through their projected risk changes. For consultation tasks, the system treats the controlled Agent as an explanation and feedback layer, using user context together with evidence constraints and safety routing.
-
-At the implementation level, the platform follows a layered Vue and FastAPI architecture and integrates profile management, document upload and OCR processing, composite risk analysis, intervention projection, and conversational assistance into a service prototype. In this structure, OCR mainly supports document-to-profile completion, while the chat module mainly supports explanation and feedback around analysis results. Based on the current repository implementation, regression tests, browser-based scenario checks, and Agent behavior evaluation records, the prototype can complete the main flow of multimodal data intake, composite risk analysis, scenario comparison, and controlled question answering. Because the local environment does not currently provide a usable OCR runtime for full live parsing, the real PDF validation in this thesis mainly confirms the degraded storage-and-follow-up branch, and the discussion of online OCR parsing is therefore limited to the implemented and verified scope.
+\noindent Abstract: To support long-term monitoring and proactive intervention for chronic disease management, this thesis designs and implements a personalized health management platform based on multimodal data fusion and composite risk analysis. The platform integrates physical examination records, genetic information, OCR-derived medical documents, and lifestyle data to build a unified health profile. On this basis, genetic and behavioral factors are introduced on top of clinical risk estimation to generate interpretable composite risk results. The system further supports scenario projection, such as body weight change, for comparing risk trends under different intervention options. In addition, a controlled Agent is used for result explanation and health question answering, with evidence retrieval, safety routing, and process tracing applied to constrain the response boundary. A prototype built with Vue and FastAPI, together with regression testing, shows that the platform can complete the main workflow of multimodal data intake, risk analysis, scenario comparison, and controlled question answering. The work provides a verifiable engineering practice for personalized health management.
 \par}
 
-\vspace{0.5cm}
 {\rmfamily\zihao{5}
-\noindent Key words: Multimodal Health Data Fusion; Composite Risk Analysis; Scenario-based Intervention Projection; OCR-based Medical Document Processing; Controlled Agent-based Consultation; Personalized Health Management\par}
-
-% ==================== 目录 ====================
-\newpage
-\tableofcontents
+\noindent Key words: Personalized Health Management; Multimodal Data Fusion; Composite Risk Analysis; Scenario Projection; Controlled Agent\par}
 \newpage
 
 % ==================== 正文章节 ====================
-\cleardoublepage
+\clearpage
 
 \input{chapters/01_intro}
 \input{chapters/02_theory}
@@ -434,6 +468,7 @@ OCR 结构化回填 & \codeid{ocr_summary.v1}、\codeid{OCR_CANONICAL_METRIC_KEY
 若记疾病集合为 \(\mathcal{D}\)，病种 \(d\) 的特征集合为 \(\mathcal{F}_d\)，在线输入向量为 \(\mathbf{x}_d=[x_j]_{j\in\mathcal{F}_d}\)，对应分类器为 \(f_d(\cdot)\)，则临床基准风险可表示为
 \begin{equation*}
 P_d^{\mathrm{clinical}} = f_d(\mathbf{x}_d), \qquad d \in \mathcal{D}.
+\tag{附2-1}
 \end{equation*}
 这里的 \(P_d^{\mathrm{clinical}}\) 是模型输出的病种级风险概率。工程实现中，概率会被转换为百分数，并按照预设阈值映射到低、中、高和极高等风险等级。需要注意的是，当前风险因子说明主要来自模型特征重要性与当前输入值的轻量组合，适合作为结果解释辅助，不应被理解为因果归因。
 
@@ -467,6 +502,7 @@ P_d^{\mathrm{clinical}}
 \cdot \alpha_d^{\mathrm{gene}}
 \cdot \alpha^{\mathrm{life}},\ 0.1,\ 99.9
 \right).
+\tag{附2-2}
 \end{equation*}
 该表达式可以从“基准风险乘以证据修正项”的角度理解，但当前代码并未显式建立条件独立假设、似然函数或后验分布，因此本文将其界定为轻量级乘性融合，而不是严格意义上的贝叶斯概率图模型。这样处理能够与系统原型的工程目标相匹配，即在多源数据质量不完全一致的条件下，形成稳定、可追踪且便于降级的综合风险结果。
 
@@ -496,16 +532,19 @@ P_d^{\mathrm{clinical}}
 \begin{equation*}
 P_{d,t+1} =
 \operatorname{clip}\!\left(\gamma_t P_{d,t}^{\mathrm{fusion}},\ 0.1,\ 99.9\right).
+\tag{附2-3}
 \end{equation*}
 情景推演则面向可解释的状态扰动。自然老化场景可概括为
 \begin{equation*}
 \mathbf{x}^{+y} = \mathbf{x} + \Delta_y,
+\tag{附2-4}
 \end{equation*}
 其中 \(\Delta_y\) 由年龄、血压、血糖和 BMI 的经验变化量组成。生活方式干预场景主要围绕体重下降展开，并以最高病种风险的相对变化衡量收益：
 \begin{equation*}
 \mathrm{Benefit} =
 \frac{R_{\max}^{\mathrm{base}} - R_{\max}^{\mathrm{new}}}
 {R_{\max}^{\mathrm{base}}}.
+\tag{附2-5}
 \end{equation*}
 这些规则的共同特点是可解释、可复用，但不构成严格的长期预后模型或因果推断模型。因此，论文正文在描述“推演”时应强调它用于方案比较和风险趋势提示，而不应将其表述为对个体未来疾病发生概率的临床级预测。
 \par}

@@ -297,6 +297,12 @@ INPUT ./chapters/01_intro.tex
 INPUT ./chapters/01_intro.tex
 INPUT ./chapters/01_intro.tex
 INPUT chapters/01_intro.tex
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmmi12.tfm
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmsy10.tfm
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmex10.tfm
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam10.tfm
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm10.tfm
+INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmr12.tfm
 INPUT ./chapters/02_theory.tex
 INPUT ./chapters/02_theory.tex
 INPUT ./chapters/02_theory.tex
@@ -338,12 +344,6 @@ INPUT ./chapters/06_exp.tex
 INPUT ./chapters/06_exp.tex
 INPUT ./chapters/06_exp.tex
 INPUT chapters/06_exp.tex
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmmi12.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmsy10.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmex10.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/amsfonts/symbols/msam10.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/amsfonts/symbols/msbm10.tfm
-INPUT c:/texlive/2026/texmf-dist/fonts/tfm/public/cm/cmr12.tfm
 INPUT ./images/fig_6_5_system_functional_validation_flat.png
 INPUT ./images/fig_6_5_system_functional_validation_flat.png
 INPUT ./images/fig_6_4_agent_behavior_harness_flat.png

@@ -17,7 +17,67 @@
 
 ---
 
+## 答辩展示入口
+
+如果用于项目答辩或代码展示，建议先从下面 5 个入口进入，避免直接在长文档和历史治理记录中迷路：
+
+| 展示材料 | 用途 |
+| :--- | :--- |
+| [项目展示一页纸](./docs/showcase/project-one-page.md) | 用 1-2 分钟讲清楚项目定位、亮点、指标和边界 |
+| [答辩演示脚本](./docs/showcase/demo-script.md) | 按 8-10 分钟动线串起前端、OCR、风险分析、Dr. AI 和工程治理 |
+| [展示检查清单](./docs/showcase/presentation-checklist.md) | 演示前确认环境、隐私、指标口径和应急方案 |
+| [展示观感治理记录](./docs/maintenance/presentation-polish-phase5.md) | 说明阶段 5 做了哪些展示入口、文档观感和编码卫生治理 |
+| [资产 Manifest 与外部化策略](./docs/maintenance/asset-manifest-phase6.md) | 说明大体积数据、模型、RAG、上传和论文资产如何保留、外部化和验收 |
+| [阶段 6 完整验收报告](./docs/maintenance/phase6-acceptance-report.md) | 汇总资产治理验收结论、保护边界、验证命令和剩余风险 |
+| [项目评估汇总](./docs/evaluation/project-evaluation-summary.zh.md) | 展示 OCR、RAG、Agent、回答质量和风险模型的量化证据 |
+
+当前推荐讲述主线：项目价值 -> 多模态闭环 -> 核心功能演示 -> 模型/Agent 指标证据 -> 多 Agent 工程治理 -> 风险边界与后续优化。
+
+### Lifestyle Digital Twin demo handoff note
+
+For the defense demo, place the Lifestyle behavior simulator after Clinical/OCR import and before the main risk-analysis explanation. It shows a `simulated_demo` / Demo-only day timeline for three prepared demo patients, including behavior events, diet-vision nutrition sync, summary metrics, and optional `lifestyle_context.v1` fusion explanation.
+
+Boundary to state out loud: the timeline is not real wearable/device evidence, does not auto-save profile data, does not write IoT records, and does not create health-history rows. `/analyze/comprehensive` can use the selected scenario's optional `lifestyle_context` as provenance-labeled heuristic context only; it is not a clinically calibrated posterior probability or live device proof.
+
+Latest QA status for this slice: PASS with focused backend tests (`6 passed`), frontend node tests (`13 passed`), frontend build success, and a real Vite browser check using mocked demo APIs. Residual risk remains that QA did not run a full live authenticated FastAPI login/API/browser end-to-end path across all three demo patients.
+
+### Lifestyle behavior upload readiness note
+
+The Lifestyle page now also supports platform-standard behavior-day `.csv` and `.json` uploads. The frontend submits an authenticated multipart request to `POST /api/v1/lifestyle/import-behavior-day`; the backend parses and validates the file only, with no raw upload storage, IoT sync, profile save, health-history write, medical-document write, or risk-snapshot persistence.
+
+Successful imports return import metadata plus a generated `behavior_day` containing nested `lifestyle_context.v1`. The generated behavior day, timeline events, diet-vision provenance, and lifestyle context remain labeled `data_mode="user_uploaded"` with `source_provenance.source_type="user_uploaded"`. Optional `patient_id` and `local_date` multipart selectors are assertions; mismatches are rejected.
+
+Error semantics are release-ready for the approved contract: structured `400` validation errors, `413` for uploads over 1 MB, and `415` for unsupported media. Existing demo scenarios remain available as examples/fallbacks, and the real-device API remains a visible placeholder only; it is not connected to wearable, vendor, or background-sync data.
+
+Latest QA status for this slice: PASS with focused backend regression (`18 passed`), focused frontend node regression (`15 passed`), full backend regression (`269 passed`), frontend production build success, live contract probes, and headed browser upload artifacts under `output/playwright/`.
+
+---
+
 ## Governance Update
+
+### 2026-04-23 Stability & Governance Remediation Snapshot
+
+- Current QA evidence:
+  - `python -m pytest tests -q` passed (`235 passed`)
+  - `python -m pytest tests/test_cors_config.py -q` passed (`3 passed`)
+  - `npm.cmd run build` in `frontend` passed
+  - targeted Playwright smoke passed:
+    - `tests/dr-ai-takeover.spec.js` (`3 passed`)
+    - `tests/ocr-guided-completion.spec.js` (`4 passed`)
+- Strict model compatibility status:
+  - `python ai_core/check_model_compatibility.py --strict` passed (`exit code 0`) with baseline versions:
+    - `xgboost==2.1.4`
+    - `torch==2.5.1`
+    - `torchvision==0.20.1`
+    - `scikit-learn==1.6.1`
+    - `joblib==1.5.3`
+- Residual non-blocking warnings:
+  - `torch.load(..., weights_only=False)` `FutureWarning` still appears in compatibility/smoke logs.
+  - local Playwright webserver logs may still show optional Redis degraded warning in environments without Redis.
+- Contract-aligned wording and boundaries (architect-frozen):
+  - fusion formula semantics are **heuristic multiplicative scaling** (`base x gene_modifier x lifestyle_modifier`), not a strict Bayesian posterior claim.
+  - Baidu OCR, Moonshot/Kimi-compatible LLM calls, and RAG retrieval are backend-mediated; raw provider payloads/raw RAG passages are not public API output.
+  - logs and audit/replay records stay bounded metadata only and must not store raw health payload text.
 
 - 审计责任记录新写入 schema：`agent_audit_responsibility.v2`
 - 当前运行时治理基线：`agent_runtime_governance.v1`
@@ -38,7 +98,7 @@
 > 当前健康管理市场面临严重的**数据孤岛效应**。基因数据锁在实验室，体检报告沉睡在 PDF 中，IoT 数据散落在各个 App 里。更致命的是，市面产品止步于"相关性分析"，无法回答用户最关心的因果问题（*"如果我现在减重 5kg，未来 10 年心血管风险能降多少？"*）。
 
 > **🟢 我们的破局**:
-> **Health AI Platform (HAP)** 引入了 **"Bayesian Fusion (贝叶斯融合)"** 范式。我们将 **Clinical (临床表型)**、**Genomic (基因组学)**、**Lifestyle (生活方式)** 三维异构数据在概率图模型中统一，实现从"被动记录"到"主动预测"的范式转换。
+> **Health AI Platform (HAP)** 采用多模态风险融合范式。当前线上融合语义为 **启发式乘法缩放**（`base x gene_modifier x lifestyle_modifier`），将 **Clinical (临床表型)**、**Genomic (基因组学)**、**Lifestyle (生活方式)** 三维异构数据用于风险评估与分层建议。
 
 ### 📄 产品工件集 (Documentation Matrix)
 
@@ -73,8 +133,8 @@ HealthAI Platform 是一个基于**多模态数据融合**的智能医疗平台�
 
 ## ✨ 核心功能
 
-### � 多模态风险融合引擎 (Fusion Engine)
-- 结合 **LightGBM** 临床模型 + **贝叶斯网络** 基因模型
+### Multimodal Risk Fusion Engine
+- 结合 **LightGBM** 临床模型与基因/生活方式修饰因子进行启发式融合
 - 综合分析先天遗传风险与后天表型数据
 - 支持 12+ 慢性疾病风险预测（糖尿病、高血压、冠心病、CKD 等）
 - **AHA CKM 分期评估**：心-肾-代谢综合征 0-4 期分层
@@ -350,10 +410,12 @@ health_ai_platform_2.0/
 
 ## 🔒 安全与隐私
 
-- ✅ 所有用户数据**本地存储**，不上传第三方服务器
 - ✅ API Keys 通过环境变量管理，不硬编码
 - ✅ 敏感文件已添加至 `.gitignore`
-- ✅ 支持本地 LLM 部署 (Ollama) 实现完全离线运行
+- ✅ 支持本地 LLM 部署 (Ollama) 以实现离线运行方案
+- ✅ 第三方能力边界明确：Baidu OCR 与 Moonshot/Kimi 调用均由后端代理，前端不直接调用供应商接口
+- ✅ RAG 检索、OCR 解析与模型调用的原始供应商 payload 不作为公共 API 输出
+- ✅ 日志/审计/回放仅保留有界元数据，不持久化原始健康文本与完整提示词/回答转录
 
 ---
 

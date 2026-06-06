@@ -10,6 +10,8 @@ from types import SimpleNamespace
 from typing import Any, Callable, Iterable, Optional
 
 from backend.rag.benchmark_diagnostics import summarize_document_density
+
+# 中文注释：本模块用于离线评估可检索质量，不直接参与线上问答推理。
 from backend.rag.pdf_extraction import (
     describe_ocr_fallback_capability,
     format_ocr_fallback_capability_summary,
@@ -34,6 +36,7 @@ _HEADING_PATTERNS = (
 
 @dataclass
 class ChunkRecord:
+    """中文说明：ChunkRecord 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     source: str
     page: Optional[int]
     chunk_index: int
@@ -49,6 +52,7 @@ def _normalize_text(value: object) -> Optional[str]:
 
 
 def _extract_section_title_from_text(page_content: str) -> Optional[str]:
+    """中文说明：_extract_section_title_from_text 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not isinstance(page_content, str):
         return None
 
@@ -86,6 +90,7 @@ def _build_chunk_metadata(
     *,
     section_title: Optional[str] = None,
 ) -> dict:
+    """中文说明：_build_chunk_metadata 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     chunk_metadata = {}
 
     source = source_metadata.get("source")
@@ -110,12 +115,17 @@ def _build_chunk_metadata(
 
 
 def _split_text_by_rules(text: str) -> list[str]:
+    # 中文注释：先做语义切分，再用固定窗口兜底，平衡可读性与稳定性。
+    # 分块优先级：
+    # 1) 先按语义分隔符（段落/句子）尝试切分并回并到目标长度；
+    # 2) 若失败再回退到固定窗口 + overlap，保证一定可切分。
     normalized = text or ""
     if not normalized:
         return [""]
     if len(normalized) <= RAG_CHUNK_SIZE:
         return [normalized]
 
+    # 先尝试语义切分，避免硬切导致上下文断裂。
     for separator in RAG_CHUNK_SEPARATORS[:-1]:
         if separator and separator in normalized:
             parts = [part for part in normalized.split(separator) if part]
@@ -135,6 +145,7 @@ def _split_text_by_rules(text: str) -> list[str]:
                 if merged:
                     return merged
 
+    # 语义切分失败时，使用固定步长兜底。
     chunks = []
     start = 0
     step = max(1, RAG_CHUNK_SIZE - RAG_CHUNK_OVERLAP)
@@ -147,6 +158,7 @@ def _split_text_by_rules(text: str) -> list[str]:
 
 
 def _split_documents_with_metadata(documents: Iterable[Any]) -> list[Any]:
+    """中文说明：_split_documents_with_metadata 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     splits = []
     for document in documents:
         document_metadata = dict(getattr(document, "metadata", {}) or {})
@@ -175,6 +187,7 @@ def _split_documents_with_metadata(documents: Iterable[Any]) -> list[Any]:
 
 
 def iter_rag_corpus_pdf_files(corpus_dir: Path | str | None = None) -> list[Path]:
+    """中文说明：iter_rag_corpus_pdf_files 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     corpus_path = Path(corpus_dir) if corpus_dir is not None else DEFAULT_CORPUS_DIR
     if not corpus_path.exists():
         return []
@@ -192,6 +205,7 @@ def _coverage(count: int, total: int) -> float:
 
 
 def _summarize_chunks(chunks: list[Any]) -> dict[str, Any]:
+    """中文说明：_summarize_chunks 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     chunk_lengths = [len(getattr(chunk, "page_content", "") or "") for chunk in chunks]
     metadata_list = [dict(getattr(chunk, "metadata", {}) or {}) for chunk in chunks]
     total_chunks = len(chunks)
@@ -210,6 +224,7 @@ def _summarize_chunks(chunks: list[Any]) -> dict[str, Any]:
 
 
 def _qa_usefulness_score(doc_summary: dict[str, Any], density_summary: dict[str, Any]) -> float:
+    """中文说明：_qa_usefulness_score 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if doc_summary.get("chunk_count", 0) <= 0:
         return 0.0
     if doc_summary.get("metadata_floor_coverage", 0.0) <= 0.0:
@@ -244,6 +259,7 @@ def build_rag_live_corpus_benchmark(
     corpus_dir: Path | str | None = None,
     loader_factory: Callable[[str], Any] | None = None,
 ) -> dict[str, Any]:
+    """中文说明：build_rag_live_corpus_benchmark 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     corpus_path = Path(corpus_dir) if corpus_dir is not None else DEFAULT_CORPUS_DIR
     ocr_fallback_capability = describe_ocr_fallback_capability()
     default_loader_factory = loader_factory or resolve_pdf_loader_factory()
@@ -255,6 +271,7 @@ def build_rag_live_corpus_benchmark(
     all_chunks: list[Any] = []
 
     for pdf_path in pdf_files:
+        # 中文注释：单文档失败记录到 load_failures，不影响整批质量统计。
         try:
             documents = load_pdf_documents_with_ocr_fallback(
                 str(pdf_path),
@@ -294,6 +311,7 @@ def build_rag_live_corpus_benchmark(
     corpus_qa_usefulness_score = round(
         mean([document["qa_usefulness_score"] for document in document_reports]), 4
     ) if document_reports else 0.0
+    # 中文注释：报告字段用于离线质检与趋势对比，保持结构稳定便于自动化消费。
     report = {
         "corpus_dir": str(corpus_path),
         "document_count": len(document_reports),

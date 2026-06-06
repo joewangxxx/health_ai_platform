@@ -2,10 +2,11 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import axios from 'axios'
 
+// 中文注释：健康域聚合状态，统一承接临床/基因/IoT/分析上下文供多页面共享。
 export const useHealthStore = defineStore('health', () => {
-    // 1. User Profile (Clinical Data)
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     const userProfile = ref({
-        // Default initialized to null to trigger empty state in UI
+        // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
         Age: null,
         Gender: null,
         Height: null, // cm
@@ -19,19 +20,21 @@ export const useHealthStore = defineStore('health', () => {
         Cholesterol_Total: null,
         Triglycerides: null,
         Cholesterol_HDL: null,
+        Cholesterol_LDL: null,
         Sleep_Hours: null,
         eGFR: null,
+        Creatinine: null,
         ALT: null,
-        // 🔥 New V10 Biomarkers
+        // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
         WBC: null,
         GGT: null,
         ALP: null,
         Platelet: null,
-        // Task 73: Extra unstructured data
+        // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
         extra_data: {}
     })
 
-    // 2. Genomics Data
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     const geneData = ref(null)
     const geneStats = ref({ loaded: false, count: 0 })
     const genePreviewList = ref([])  // V5: 用于表格展示的完整SNP列表
@@ -47,19 +50,21 @@ export const useHealthStore = defineStore('health', () => {
         current_hr: 70
     })
 
-    // 5. Diet Nutrition (from food vision)
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     const dietNutrition = ref({
         calories: 0,
         carbs: 0,
         protein: 0,
-        fat: 0
+        fat: 0,
+        sodium_mg: 0,
+        provenance: null
     })
 
-    // 6. Results
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     const riskReport = ref(null)
     const analysisContext = ref(null)
 
-    // --- Actions ---
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     function updateProfile(newProfile) {
         userProfile.value = { ...userProfile.value, ...newProfile }
     }
@@ -92,6 +97,7 @@ export const useHealthStore = defineStore('health', () => {
     }
 
     function normalizeAnalysisContext(context) {
+        // 中文注释：容错归一化，补齐缺省字段避免 UI 读取时出现空引用分支。
         if (!context || typeof context !== 'object' || Array.isArray(context)) {
             return null
         }
@@ -107,6 +113,7 @@ export const useHealthStore = defineStore('health', () => {
     }
 
     function normalizeDocumentImport(data) {
+        // 中文注释：导入结构只做轻量规范化，不重写后端业务语义。
         if (!data || typeof data !== 'object' || Array.isArray(data)) {
             return null
         }
@@ -138,6 +145,7 @@ export const useHealthStore = defineStore('health', () => {
     }
 
     async function fetchLatestRiskReport(profileOverride = userProfile.value) {
+        // 中文注释：仅提交可计算字段，显式排除历史快照与用户对象，减少后端歧义。
         const cleanClinical = Object.fromEntries(
             Object.entries(profileOverride || {}).filter(([key, value]) => {
                 if (value === null || value === undefined || value === '') return false
@@ -176,15 +184,17 @@ export const useHealthStore = defineStore('health', () => {
                 calories: data.calories || 0,
                 carbs: data.carbs || 0,
                 protein: data.protein || 0,
-                fat: data.fat || 0
+                fat: data.fat || 0,
+                sodium_mg: data.sodium_mg || 0,
+                provenance: data.provenance || data.vision_provenance || null
             }
         }
     }
 
     async function fetchIoTData() {
         try {
-            // Note: In real app this might use the auth header, 
-            // but the backend endpoint seems public or we rely on global defaults
+            // 拉取设备实时状态数据（心率、步数等）。
+            // 请求失败时仅更新设备离线状态，不抛出到页面层。
             const res = await axios.get('/api/device/current')
             updateIoT(res.data)
         } catch (e) {
@@ -194,6 +204,7 @@ export const useHealthStore = defineStore('health', () => {
 
     // 🔥 V7: 从云端拉取用户档案
     async function fetchRemoteProfile() {
+        // 中文注释：云端拉取采用临床/基因/风险分段同步，兼容历史字段格式。
         try {
             const res = await axios.get('/user/profile')
             if (res.data.status === 'success' && res.data.profile) {
@@ -233,7 +244,7 @@ export const useHealthStore = defineStore('health', () => {
         return false
     }
 
-    // 🔥 V7: 保存档案到云端
+    // V7：将当前档案保存到云端
     async function saveProfileToCloud() {
         try {
             const payload = {
@@ -253,7 +264,7 @@ export const useHealthStore = defineStore('health', () => {
         return false
     }
 
-    // 🔥 Task 59: 历史数据导入
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     const importData = ref(null)
 
     function setImportData(data) {
@@ -294,4 +305,3 @@ export const useHealthStore = defineStore('health', () => {
         clearImportData       // Task 59
     }
 })
-

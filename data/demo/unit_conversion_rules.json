@@ -1,0 +1,22 @@
+{
+  "schema_version": "unit_conversion_rules.v1",
+  "rules": {
+    "Glucose_Fasting": "mg/dL / 18 => mmol/L",
+    "Cholesterol_Total": "mg/dL / 38.67 => mmol/L",
+    "Cholesterol_HDL": "mg/dL / 38.67 => mmol/L",
+    "Cholesterol_LDL": "mg/dL / 38.67 => mmol/L",
+    "Triglycerides": "mg/dL / 88.57 => mmol/L",
+    "Creatinine": "mg/dL * 88.4 => umol/L",
+    "Height": "cm unchanged",
+    "Weight": "kg unchanged",
+    "BMI": "kg/m2 unchanged",
+    "SBP": "mmHg unchanged",
+    "DBP": "mmHg unchanged",
+    "HbA1c": "% unchanged",
+    "eGFR": "mL/min unchanged",
+    "ALT": "U/L unchanged",
+    "ALP": "U/L unchanged",
+    "WBC": "10*3/uL treated as 10^9/L",
+    "Platelet": "10*3/uL treated as 10^9/L"
+  }
+}

@@ -1,0 +1,983 @@
+{
+  "schema_version": "platform_demo_profiles_with_sources.v1",
+  "profiles": [
+    {
+      "demo_patient_id": "synthea_8505e011",
+      "synthea_patient_id": "8505e011-20cb-4bc5-8a66-5900111fb04b",
+      "demo_role": "primary_metabolic_syndrome_diabetes_management",
+      "source": {
+        "clinical": "Synthea CSV",
+        "lifestyle": "NHANES-style supplement",
+        "genomics": "pending_demo_gene_23andme_binding"
+      },
+      "profile": {
+        "Age": 60,
+        "Gender": 2,
+        "Height": 162.5,
+        "Weight": 77.9,
+        "BMI": 29.5,
+        "WaistCircum": 99.0,
+        "SBP": 188,
+        "DBP": 116,
+        "Glucose_Fasting": 4.46,
+        "HbA1c": 5.9,
+        "Cholesterol_Total": 4.39,
+        "Triglycerides": 1.62,
+        "Cholesterol_HDL": 1.62,
+        "Cholesterol_LDL": 2.03,
+        "eGFR": 148.5,
+        "ALT": 59,
+        "WBC": 7.9,
+        "Platelet": 412.2,
+        "GGT": null,
+        "ALP": 139.5,
+        "Creatinine": 61.9,
+        "Sleep_Hours": 6.0,
+        "extra_data": {
+          "synthea_patient_id": "8505e011-20cb-4bc5-8a66-5900111fb04b",
+          "synthea_name": "Belinda283 Kilback373",
+          "synthea_city": "Fairhaven",
+          "synthea_state": "Massachusetts",
+          "Smoking_Status": "Never smoker",
+          "Alcohol_Frequency": "occasional",
+          "Physical_Activity": "low",
+          "Diet_Pattern": "high_sodium_high_carbohydrate",
+          "Family_History_Diabetes": true,
+          "Family_History_CVD": true,
+          "data_source_summary": "Synthea clinical/EHR + NHANES-style lifestyle supplement"
+        }
+      },
+      "conditions": [
+        {
+          "START": "2018-09-01",
+          "STOP": "2018-09-15",
+          "CODE": "444814009",
+          "DESCRIPTION": "Viral sinusitis (disorder)"
+        },
+        {
+          "START": "2012-04-13",
+          "STOP": "2012-06-02",
+          "CODE": "38822007",
+          "DESCRIPTION": "Cystitis"
+        },
+        {
+          "START": "2011-02-27",
+          "STOP": "",
+          "CODE": "239872002",
+          "DESCRIPTION": "Osteoarthritis of hip"
+        },
+        {
+          "START": "2009-10-30",
+          "STOP": "",
+          "CODE": "368581000119106",
+          "DESCRIPTION": "Neuropathy due to type 2 diabetes mellitus (disorder)"
+        },
+        {
+          "START": "2004-12-17",
+          "STOP": "",
+          "CODE": "19169002",
+          "DESCRIPTION": "Miscarriage in first trimester"
+        },
+        {
+          "START": "2003-09-26",
+          "STOP": "",
+          "CODE": "80394007",
+          "DESCRIPTION": "Hyperglycemia (disorder)"
+        },
+        {
+          "START": "2003-09-26",
+          "STOP": "",
+          "CODE": "302870006",
+          "DESCRIPTION": "Hypertriglyceridemia (disorder)"
+        },
+        {
+          "START": "2003-09-26",
+          "STOP": "",
+          "CODE": "237602007",
+          "DESCRIPTION": "Metabolic syndrome X (disorder)"
+        },
+        {
+          "START": "2002-09-20",
+          "STOP": "",
+          "CODE": "44054006",
+          "DESCRIPTION": "Diabetes"
+        },
+        {
+          "START": "2001-09-14",
+          "STOP": "",
+          "CODE": "55822004",
+          "DESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2001-09-14",
+          "STOP": "",
+          "CODE": "271737000",
+          "DESCRIPTION": "Anemia (disorder)"
+        },
+        {
+          "START": "2000-09-08",
+          "STOP": "",
+          "CODE": "15777000",
+          "DESCRIPTION": "Prediabetes"
+        }
+      ],
+      "medications": [
+        {
+          "START": "2019-12-27T19:03:16Z",
+          "STOP": "",
+          "CODE": "999967",
+          "DESCRIPTION": "amLODIPine 5 MG / Hydrochlorothiazide 12.5 MG / Olmesartan medoxomil 20 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2019-12-27T19:03:16Z",
+          "STOP": "",
+          "CODE": "860975",
+          "DESCRIPTION": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet",
+          "REASONDESCRIPTION": "Diabetes"
+        },
+        {
+          "START": "2019-10-01T19:03:16Z",
+          "STOP": "",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2018-12-21T19:03:16Z",
+          "STOP": "2019-12-27T19:03:16Z",
+          "CODE": "999967",
+          "DESCRIPTION": "amLODIPine 5 MG / Hydrochlorothiazide 12.5 MG / Olmesartan medoxomil 20 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2018-12-21T19:03:16Z",
+          "STOP": "2019-12-27T19:03:16Z",
+          "CODE": "860975",
+          "DESCRIPTION": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet",
+          "REASONDESCRIPTION": "Diabetes"
+        },
+        {
+          "START": "2018-10-01T19:03:16Z",
+          "STOP": "2019-10-01T19:03:16Z",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2018-09-07T19:03:16Z",
+          "STOP": "2018-12-21T19:03:16Z",
+          "CODE": "999967",
+          "DESCRIPTION": "amLODIPine 5 MG / Hydrochlorothiazide 12.5 MG / Olmesartan medoxomil 20 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2018-09-07T19:03:16Z",
+          "STOP": "2018-12-21T19:03:16Z",
+          "CODE": "860975",
+          "DESCRIPTION": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet",
+          "REASONDESCRIPTION": "Diabetes"
+        },
+        {
+          "START": "2018-09-01T19:03:16Z",
+          "STOP": "2018-09-15T19:03:16Z",
+          "CODE": "562251",
+          "DESCRIPTION": "Amoxicillin 250 MG / Clavulanate 125 MG Oral Tablet",
+          "REASONDESCRIPTION": "Viral sinusitis (disorder)"
+        },
+        {
+          "START": "2017-12-15T19:03:16Z",
+          "STOP": "2018-09-07T19:03:16Z",
+          "CODE": "999967",
+          "DESCRIPTION": "amLODIPine 5 MG / Hydrochlorothiazide 12.5 MG / Olmesartan medoxomil 20 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2017-12-15T19:03:16Z",
+          "STOP": "2018-09-07T19:03:16Z",
+          "CODE": "860975",
+          "DESCRIPTION": "24 HR Metformin hydrochloride 500 MG Extended Release Oral Tablet",
+          "REASONDESCRIPTION": "Diabetes"
+        },
+        {
+          "START": "2017-10-01T19:03:16Z",
+          "STOP": "2018-10-01T19:03:16Z",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        }
+      ],
+      "encounters": [
+        {
+          "Id": "daee4739-52d1-4a5e-bee7-acda091fecb5",
+          "START": "2020-03-09T19:03:16Z",
+          "STOP": "2020-03-09T19:51:16Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "185349003",
+          "DESCRIPTION": "Encounter for 'check-up'"
+        },
+        {
+          "Id": "6da6e591-1269-47d9-b5b4-6d739d6e3a2d",
+          "START": "2019-12-27T19:03:16Z",
+          "STOP": "2019-12-27T19:18:16Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "64033a37-0744-4649-83de-e2df84634453",
+          "START": "2019-10-01T19:03:16Z",
+          "STOP": "2019-10-01T19:18:16Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "755a710e-5165-494f-8860-785d4ad13e81",
+          "START": "2018-12-21T19:03:16Z",
+          "STOP": "2018-12-21T19:33:16Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "ecaf2bfd-f658-415e-a529-19847758e62c",
+          "START": "2018-10-01T19:03:16Z",
+          "STOP": "2018-10-01T19:18:16Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "f04d3ad0-b7ef-4ae4-bdc3-454fb7513691",
+          "START": "2018-09-07T19:03:16Z",
+          "STOP": "2018-09-07T19:18:16Z",
+          "ENCOUNTERCLASS": "outpatient",
+          "CODE": "185349003",
+          "DESCRIPTION": "Encounter for check up (procedure)"
+        },
+        {
+          "Id": "a966b4b7-b2ca-4282-9ab9-8a992c73b1a5",
+          "START": "2018-09-01T19:03:16Z",
+          "STOP": "2018-09-01T19:18:16Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "185345009",
+          "DESCRIPTION": "Encounter for symptom"
+        },
+        {
+          "Id": "1277d1fe-c8f3-4722-a9ed-a560c53b03b5",
+          "START": "2017-12-15T19:03:16Z",
+          "STOP": "2017-12-15T19:18:16Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "ffcd4669-eb4f-49d4-b48a-f21f3785f811",
+          "START": "2017-10-01T19:03:16Z",
+          "STOP": "2017-10-01T19:18:16Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "21a4bcf3-b7bd-484d-b5be-17f75d77e34f",
+          "START": "2016-12-09T19:03:16Z",
+          "STOP": "2016-12-09T19:18:16Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "5fd82757-addf-4b73-8093-09e8d0e903b6",
+          "START": "2016-10-01T19:03:16Z",
+          "STOP": "2016-10-01T19:18:16Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "37cd6f1f-9cb5-4cf8-9146-b6d7d80244c0",
+          "START": "2015-12-04T19:03:16Z",
+          "STOP": "2015-12-04T19:33:16Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        }
+      ],
+      "source_tags": {
+        "Age": "Synthea patients",
+        "Gender": "Synthea patients",
+        "Height": "Synthea observations",
+        "Weight": "Synthea observations",
+        "BMI": "Synthea observations",
+        "WaistCircum": "NHANES-style supplement",
+        "SBP": "Synthea observations",
+        "DBP": "Synthea observations",
+        "Glucose_Fasting": "Synthea observations",
+        "HbA1c": "Synthea observations",
+        "Cholesterol_Total": "Synthea observations",
+        "Triglycerides": "Synthea observations",
+        "Cholesterol_HDL": "Synthea observations",
+        "Cholesterol_LDL": "Synthea observations",
+        "eGFR": "Synthea observations",
+        "ALT": "Synthea observations",
+        "WBC": "Synthea observations",
+        "Platelet": "Synthea observations",
+        "GGT": "missing_not_available",
+        "ALP": "Synthea observations",
+        "Creatinine": "Synthea observations",
+        "Sleep_Hours": "NHANES-style supplement",
+        "extra_data": "platform_container"
+      }
+    },
+    {
+      "demo_patient_id": "synthea_066c0f3d",
+      "synthea_patient_id": "066c0f3d-90bb-4082-99ec-f307c4759f50",
+      "demo_role": "cardiovascular_heart_failure_multimodal_risk",
+      "source": {
+        "clinical": "Synthea CSV",
+        "lifestyle": "NHANES-style supplement",
+        "genomics": "pending_demo_gene_23andme_binding"
+      },
+      "profile": {
+        "Age": 63,
+        "Gender": 1,
+        "Height": 172.9,
+        "Weight": 84,
+        "BMI": 28.1,
+        "WaistCircum": 101.0,
+        "SBP": 133,
+        "DBP": 82,
+        "Glucose_Fasting": 4.74,
+        "HbA1c": 6.4,
+        "Cholesterol_Total": 4.27,
+        "Triglycerides": 1.62,
+        "Cholesterol_HDL": 1.62,
+        "Cholesterol_LDL": 3.18,
+        "eGFR": 67.8,
+        "ALT": 59.7,
+        "WBC": 5.3,
+        "Platelet": 210,
+        "GGT": null,
+        "ALP": 109,
+        "Creatinine": 79.6,
+        "Sleep_Hours": 6.5,
+        "extra_data": {
+          "synthea_patient_id": "066c0f3d-90bb-4082-99ec-f307c4759f50",
+          "synthea_name": "Floyd420 Conroy74",
+          "synthea_city": "Uxbridge",
+          "synthea_state": "Massachusetts",
+          "Smoking_Status": "Never smoker",
+          "Alcohol_Frequency": "none",
+          "Physical_Activity": "low",
+          "Diet_Pattern": "high_sodium_moderate_carbohydrate",
+          "Family_History_Diabetes": true,
+          "Family_History_CVD": true,
+          "data_source_summary": "Synthea clinical/EHR + NHANES-style lifestyle supplement"
+        }
+      },
+      "conditions": [
+        {
+          "START": "2019-11-22",
+          "STOP": "",
+          "CODE": "88805009",
+          "DESCRIPTION": "Chronic congestive heart failure (disorder)"
+        },
+        {
+          "START": "2017-09-01",
+          "STOP": "2017-09-11",
+          "CODE": "195662009",
+          "DESCRIPTION": "Acute viral pharyngitis (disorder)"
+        },
+        {
+          "START": "2014-03-31",
+          "STOP": "2014-05-05",
+          "CODE": "36971009",
+          "DESCRIPTION": "Sinusitis (disorder)"
+        },
+        {
+          "START": "2012-12-24",
+          "STOP": "2012-12-31",
+          "CODE": "444814009",
+          "DESCRIPTION": "Viral sinusitis (disorder)"
+        },
+        {
+          "START": "2010-05-02",
+          "STOP": "2010-05-10",
+          "CODE": "195662009",
+          "DESCRIPTION": "Acute viral pharyngitis (disorder)"
+        },
+        {
+          "START": "2003-06-29",
+          "STOP": "",
+          "CODE": "271737000",
+          "DESCRIPTION": "Anemia (disorder)"
+        },
+        {
+          "START": "2002-06-23",
+          "STOP": "",
+          "CODE": "15777000",
+          "DESCRIPTION": "Prediabetes"
+        },
+        {
+          "START": "1997-05-25",
+          "STOP": "",
+          "CODE": "55822004",
+          "DESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "1996-04-05",
+          "STOP": "",
+          "CODE": "40055000",
+          "DESCRIPTION": "Chronic sinusitis (disorder)"
+        },
+        {
+          "START": "1992-12-27",
+          "STOP": "",
+          "CODE": "162864005",
+          "DESCRIPTION": "Body mass index 30+ - obesity (finding)"
+        },
+        {
+          "START": "1975-01-19",
+          "STOP": "",
+          "CODE": "59621000",
+          "DESCRIPTION": "Hypertension"
+        }
+      ],
+      "medications": [
+        {
+          "START": "2019-12-13T07:21:13Z",
+          "STOP": "",
+          "CODE": "866414",
+          "DESCRIPTION": "24 HR metoprolol succinate 100 MG Extended Release Oral Tablet [Toprol]",
+          "REASONDESCRIPTION": "Chronic congestive heart failure (disorder)"
+        },
+        {
+          "START": "2019-12-13T07:21:13Z",
+          "STOP": "",
+          "CODE": "313988",
+          "DESCRIPTION": "Furosemide 40 MG Oral Tablet",
+          "REASONDESCRIPTION": "Chronic congestive heart failure (disorder)"
+        },
+        {
+          "START": "2019-09-29T07:21:13Z",
+          "STOP": "",
+          "CODE": "429503",
+          "DESCRIPTION": "Hydrochlorothiazide 12.5 MG",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2019-06-10T07:21:13Z",
+          "STOP": "",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2018-09-23T07:21:13Z",
+          "STOP": "2019-09-29T07:21:13Z",
+          "CODE": "429503",
+          "DESCRIPTION": "Hydrochlorothiazide 12.5 MG",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2018-06-10T07:21:13Z",
+          "STOP": "2019-06-10T07:21:13Z",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2017-09-17T07:21:13Z",
+          "STOP": "2018-09-23T07:21:13Z",
+          "CODE": "429503",
+          "DESCRIPTION": "Hydrochlorothiazide 12.5 MG",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2017-06-10T07:21:13Z",
+          "STOP": "2018-06-10T07:21:13Z",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2016-09-11T07:21:13Z",
+          "STOP": "2017-09-17T07:21:13Z",
+          "CODE": "429503",
+          "DESCRIPTION": "Hydrochlorothiazide 12.5 MG",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2016-06-10T07:21:13Z",
+          "STOP": "2017-06-10T07:21:13Z",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2015-09-06T07:21:13Z",
+          "STOP": "2016-09-11T07:21:13Z",
+          "CODE": "429503",
+          "DESCRIPTION": "Hydrochlorothiazide 12.5 MG",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2015-06-11T07:21:13Z",
+          "STOP": "2016-06-10T07:21:13Z",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        }
+      ],
+      "encounters": [
+        {
+          "Id": "f14e541e-188f-49b9-ae68-b1c3baacf499",
+          "START": "2019-12-13T07:21:13Z",
+          "STOP": "2019-12-13T08:06:13Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "185347001",
+          "DESCRIPTION": "Encounter for problem"
+        },
+        {
+          "Id": "f1e2a993-d97e-4e05-b037-c4f03039a288",
+          "START": "2019-11-22T07:21:13Z",
+          "STOP": "2019-11-22T07:36:13Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "185347001",
+          "DESCRIPTION": "Encounter for problem"
+        },
+        {
+          "Id": "47cd046d-fea4-4c84-9c4d-2e665f826084",
+          "START": "2019-09-29T07:21:13Z",
+          "STOP": "2019-09-29T07:36:13Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "12d2e2a4-f883-46c4-bd32-1d96c72ce223",
+          "START": "2019-06-10T07:21:13Z",
+          "STOP": "2019-06-10T07:36:13Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "4272daf7-62d2-40e3-b68a-d03c74fc1998",
+          "START": "2018-09-23T07:21:13Z",
+          "STOP": "2018-09-23T07:36:13Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "f8121e5d-29c5-4135-9b8f-2ae0a86ccc09",
+          "START": "2018-06-10T07:21:13Z",
+          "STOP": "2018-06-10T07:36:13Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "14ea4c26-5620-4978-bddc-6b2a75414460",
+          "START": "2017-09-17T07:21:13Z",
+          "STOP": "2017-09-17T07:36:13Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "29dbfd96-24c2-4937-8e9d-4a690dbf58ab",
+          "START": "2017-09-01T07:21:13Z",
+          "STOP": "2017-09-01T07:36:13Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "185345009",
+          "DESCRIPTION": "Encounter for symptom"
+        },
+        {
+          "Id": "e46883e6-4eab-4cb1-ad91-3c269f87dd35",
+          "START": "2017-06-10T07:21:13Z",
+          "STOP": "2017-06-10T07:36:13Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "b27d17b0-3bb4-49b0-bf25-338b623c8c6e",
+          "START": "2016-09-11T07:21:13Z",
+          "STOP": "2016-09-11T07:36:13Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "b6fb63df-d60a-45ea-9eb2-8eb5d6ebb7c9",
+          "START": "2016-06-10T07:21:13Z",
+          "STOP": "2016-06-10T07:36:13Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "213c5efa-93c2-4964-8e47-84d36dd5eaf6",
+          "START": "2015-09-06T07:21:13Z",
+          "STOP": "2015-09-06T07:36:13Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        }
+      ],
+      "source_tags": {
+        "Age": "Synthea patients",
+        "Gender": "Synthea patients",
+        "Height": "Synthea observations",
+        "Weight": "Synthea observations",
+        "BMI": "Synthea observations",
+        "WaistCircum": "NHANES-style supplement",
+        "SBP": "Synthea observations",
+        "DBP": "Synthea observations",
+        "Glucose_Fasting": "Synthea observations",
+        "HbA1c": "Synthea observations",
+        "Cholesterol_Total": "Synthea observations",
+        "Triglycerides": "Synthea observations",
+        "Cholesterol_HDL": "Synthea observations",
+        "Cholesterol_LDL": "Synthea observations",
+        "eGFR": "Synthea observations",
+        "ALT": "Synthea observations",
+        "WBC": "Synthea observations",
+        "Platelet": "Synthea observations",
+        "GGT": "missing_not_available",
+        "ALP": "Synthea observations",
+        "Creatinine": "Synthea observations",
+        "Sleep_Hours": "NHANES-style supplement",
+        "extra_data": "platform_container"
+      }
+    },
+    {
+      "demo_patient_id": "synthea_4a52ea9c",
+      "synthea_patient_id": "4a52ea9c-d410-4b78-a4da-6053e2ed0787",
+      "demo_role": "younger_cardiometabolic_respiratory_risk",
+      "source": {
+        "clinical": "Synthea CSV",
+        "lifestyle": "NHANES-style supplement",
+        "genomics": "pending_demo_gene_23andme_binding"
+      },
+      "profile": {
+        "Age": 45,
+        "Gender": 2,
+        "Height": 155.7,
+        "Weight": 68.5,
+        "BMI": 28.2,
+        "WaistCircum": 91.0,
+        "SBP": 148,
+        "DBP": 110,
+        "Glucose_Fasting": 3.92,
+        "HbA1c": 6.1,
+        "Cholesterol_Total": 5.16,
+        "Triglycerides": 1.38,
+        "Cholesterol_HDL": 1.57,
+        "Cholesterol_LDL": 2.96,
+        "eGFR": 71.9,
+        "ALT": 54.7,
+        "WBC": 5.9,
+        "Platelet": 186.2,
+        "GGT": null,
+        "ALP": 96.7,
+        "Creatinine": 70.7,
+        "Sleep_Hours": 6.0,
+        "extra_data": {
+          "synthea_patient_id": "4a52ea9c-d410-4b78-a4da-6053e2ed0787",
+          "synthea_name": "Aundrea980 Mertz280",
+          "synthea_city": "Waltham",
+          "synthea_state": "Massachusetts",
+          "Smoking_Status": "Former smoker",
+          "Alcohol_Frequency": "occasional",
+          "Physical_Activity": "low",
+          "Diet_Pattern": "high_sodium_high_fat",
+          "Family_History_Diabetes": true,
+          "Family_History_CVD": false,
+          "data_source_summary": "Synthea clinical/EHR + NHANES-style lifestyle supplement"
+        }
+      },
+      "conditions": [
+        {
+          "START": "2014-11-29",
+          "STOP": "",
+          "CODE": "55822004",
+          "DESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2014-11-22",
+          "STOP": "2014-12-06",
+          "CODE": "72892002",
+          "DESCRIPTION": "Normal pregnancy"
+        },
+        {
+          "START": "2014-11-22",
+          "STOP": "2014-12-06",
+          "CODE": "156073000",
+          "DESCRIPTION": "Fetus with unknown complication"
+        },
+        {
+          "START": "2013-10-31",
+          "STOP": "2014-02-27",
+          "CODE": "36971009",
+          "DESCRIPTION": "Sinusitis (disorder)"
+        },
+        {
+          "START": "2012-11-17",
+          "STOP": "",
+          "CODE": "15777000",
+          "DESCRIPTION": "Prediabetes"
+        },
+        {
+          "START": "2012-04-21",
+          "STOP": "2012-11-17",
+          "CODE": "72892002",
+          "DESCRIPTION": "Normal pregnancy"
+        },
+        {
+          "START": "2012-02-29",
+          "STOP": "2012-03-07",
+          "CODE": "43878008",
+          "DESCRIPTION": "Streptococcal sore throat (disorder)"
+        },
+        {
+          "START": "2010-11-06",
+          "STOP": "",
+          "CODE": "87433001",
+          "DESCRIPTION": "Pulmonary emphysema (disorder)"
+        },
+        {
+          "START": "2009-05-09",
+          "STOP": "",
+          "CODE": "19169002",
+          "DESCRIPTION": "Miscarriage in first trimester"
+        },
+        {
+          "START": "1997-08-28",
+          "STOP": "",
+          "CODE": "40055000",
+          "DESCRIPTION": "Chronic sinusitis (disorder)"
+        },
+        {
+          "START": "1992-07-25",
+          "STOP": "",
+          "CODE": "59621000",
+          "DESCRIPTION": "Hypertension"
+        }
+      ],
+      "medications": [
+        {
+          "START": "2019-12-28T14:35:35Z",
+          "STOP": "",
+          "CODE": "999967",
+          "DESCRIPTION": "amLODIPine 5 MG / Hydrochlorothiazide 12.5 MG / Olmesartan medoxomil 20 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2019-12-28T14:35:35Z",
+          "STOP": "",
+          "CODE": "896209",
+          "DESCRIPTION": "60 ACTUAT Fluticasone propionate 0.25 MG/ACTUAT / salmeterol 0.05 MG/ACTUAT Dry Powder Inhaler",
+          "REASONDESCRIPTION": "Pulmonary emphysema (disorder)"
+        },
+        {
+          "START": "2019-12-19T14:35:35Z",
+          "STOP": "",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2019-11-23T14:35:35Z",
+          "STOP": "",
+          "CODE": "1605257",
+          "DESCRIPTION": "Liletta 52 MG Intrauterine System",
+          "REASONDESCRIPTION": ""
+        },
+        {
+          "START": "2018-12-22T14:35:35Z",
+          "STOP": "2019-12-28T14:35:35Z",
+          "CODE": "999967",
+          "DESCRIPTION": "amLODIPine 5 MG / Hydrochlorothiazide 12.5 MG / Olmesartan medoxomil 20 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2018-12-22T14:35:35Z",
+          "STOP": "2019-12-28T14:35:35Z",
+          "CODE": "896209",
+          "DESCRIPTION": "60 ACTUAT Fluticasone propionate 0.25 MG/ACTUAT / salmeterol 0.05 MG/ACTUAT Dry Powder Inhaler",
+          "REASONDESCRIPTION": "Pulmonary emphysema (disorder)"
+        },
+        {
+          "START": "2018-12-19T14:35:35Z",
+          "STOP": "2019-12-19T14:35:35Z",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2017-12-19T14:35:35Z",
+          "STOP": "2018-12-19T14:35:35Z",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        },
+        {
+          "START": "2017-12-16T14:35:35Z",
+          "STOP": "2018-12-22T14:35:35Z",
+          "CODE": "999967",
+          "DESCRIPTION": "amLODIPine 5 MG / Hydrochlorothiazide 12.5 MG / Olmesartan medoxomil 20 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hypertension"
+        },
+        {
+          "START": "2017-12-16T14:35:35Z",
+          "STOP": "2018-12-22T14:35:35Z",
+          "CODE": "896209",
+          "DESCRIPTION": "60 ACTUAT Fluticasone propionate 0.25 MG/ACTUAT / salmeterol 0.05 MG/ACTUAT Dry Powder Inhaler",
+          "REASONDESCRIPTION": "Pulmonary emphysema (disorder)"
+        },
+        {
+          "START": "2017-12-03T14:35:35Z",
+          "STOP": "2018-11-28T14:35:35Z",
+          "CODE": "831533",
+          "DESCRIPTION": "Errin 28 Day Pack",
+          "REASONDESCRIPTION": ""
+        },
+        {
+          "START": "2016-12-19T14:35:35Z",
+          "STOP": "2017-12-19T14:35:35Z",
+          "CODE": "314231",
+          "DESCRIPTION": "Simvastatin 10 MG Oral Tablet",
+          "REASONDESCRIPTION": "Hyperlipidemia"
+        }
+      ],
+      "encounters": [
+        {
+          "Id": "b4b41017-b2b2-4c86-88ec-70807920f4c7",
+          "START": "2019-12-28T14:35:35Z",
+          "STOP": "2019-12-28T15:20:35Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "e57dce38-e8f1-4e5d-9420-c573d3cf8967",
+          "START": "2019-12-19T14:35:35Z",
+          "STOP": "2019-12-19T14:50:35Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "b6378624-f4de-429a-87a4-aa4af77288c5",
+          "START": "2019-11-26T14:35:35Z",
+          "STOP": "2019-11-26T15:31:35Z",
+          "ENCOUNTERCLASS": "outpatient",
+          "CODE": "308335008",
+          "DESCRIPTION": "Patient encounter procedure"
+        },
+        {
+          "Id": "2944d1c3-fe7a-4248-8282-0422fcbe6771",
+          "START": "2019-11-23T14:35:35Z",
+          "STOP": "2019-11-23T14:50:35Z",
+          "ENCOUNTERCLASS": "outpatient",
+          "CODE": "698314001",
+          "DESCRIPTION": "Consultation for treatment"
+        },
+        {
+          "Id": "0c157676-1965-4b53-aa34-79fd3a498d5d",
+          "START": "2018-12-22T14:35:35Z",
+          "STOP": "2018-12-22T14:50:35Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "5b899358-8e8f-470a-969f-85264c2133b2",
+          "START": "2018-12-19T14:35:35Z",
+          "STOP": "2018-12-19T14:50:35Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "903b2436-7a2a-47d1-8df5-938e2c0a1127",
+          "START": "2017-12-19T14:35:35Z",
+          "STOP": "2017-12-19T14:50:35Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "cd4ee6cc-d6d3-4e51-a0ba-c532b78d4013",
+          "START": "2017-12-16T14:35:35Z",
+          "STOP": "2017-12-16T15:20:35Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "c3f1607f-83ad-417a-9a76-40bc98ce1cee",
+          "START": "2017-12-03T14:35:35Z",
+          "STOP": "2017-12-03T14:50:35Z",
+          "ENCOUNTERCLASS": "outpatient",
+          "CODE": "698314001",
+          "DESCRIPTION": "Consultation for treatment"
+        },
+        {
+          "Id": "e5223451-e52e-422d-a67a-afcd48f4ece3",
+          "START": "2016-12-19T14:35:35Z",
+          "STOP": "2016-12-19T14:50:35Z",
+          "ENCOUNTERCLASS": "ambulatory",
+          "CODE": "390906007",
+          "DESCRIPTION": "Follow-up encounter"
+        },
+        {
+          "Id": "f39b25ae-cecc-4d5a-b33c-b82eb30da626",
+          "START": "2016-12-10T14:35:35Z",
+          "STOP": "2016-12-10T15:20:35Z",
+          "ENCOUNTERCLASS": "wellness",
+          "CODE": "162673000",
+          "DESCRIPTION": "General examination of patient (procedure)"
+        },
+        {
+          "Id": "3316ad94-8599-42c7-946e-b80aedfb8697",
+          "START": "2016-12-08T14:35:35Z",
+          "STOP": "2016-12-08T14:50:35Z",
+          "ENCOUNTERCLASS": "outpatient",
+          "CODE": "698314001",
+          "DESCRIPTION": "Consultation for treatment"
+        }
+      ],
+      "source_tags": {
+        "Age": "Synthea patients",
+        "Gender": "Synthea patients",
+        "Height": "Synthea observations",
+        "Weight": "Synthea observations",
+        "BMI": "Synthea observations",
+        "WaistCircum": "NHANES-style supplement",
+        "SBP": "Synthea observations",
+        "DBP": "Synthea observations",
+        "Glucose_Fasting": "Synthea observations",
+        "HbA1c": "Synthea observations",
+        "Cholesterol_Total": "Synthea observations",
+        "Triglycerides": "Synthea observations",
+        "Cholesterol_HDL": "Synthea observations",
+        "Cholesterol_LDL": "Synthea observations",
+        "eGFR": "Synthea observations",
+        "ALT": "Synthea observations",
+        "WBC": "Synthea observations",
+        "Platelet": "Synthea observations",
+        "GGT": "missing_not_available",
+        "ALP": "Synthea observations",
+        "Creatinine": "Synthea observations",
+        "Sleep_Hours": "NHANES-style supplement",
+        "extra_data": "platform_container"
+      }
+    }
+  ]
+}

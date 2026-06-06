@@ -1,6 +1,6 @@
 <template>
     <AuroraBackground>
-        <div class="h-full flex items-center justify-center px-4">
+        <div class="min-h-screen flex items-center justify-center px-4 py-8">
             <GlassCard :glowProximity="100" class="w-full max-w-md p-8 relative" :glow="true">
                 <template #header>
                     <div class="flex flex-col items-center mb-6">

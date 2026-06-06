@@ -1,6 +1,6 @@
 <template>
     <div class="relative inline-block" ref="popoverRef">
-        <!-- Trigger -->
+        <!-- 中文注释：界面结构说明 -->
         <button
             type="button"
             :class="triggerClasses"
@@ -14,7 +14,7 @@
             <slot name="trigger" />
         </button>
 
-        <!-- Content -->
+        <!-- 中文注释：界面结构说明 -->
         <Teleport to="body">
             <Transition enter-active-class="transition ease-out duration-200" enter-from-class="opacity-0 scale-95"
                 enter-to-class="opacity-100 scale-100" leave-active-class="transition ease-in duration-150"
@@ -78,14 +78,14 @@ const updatePosition = async () => {
     let top = 0
     let left = 0
 
-    // Side positioning
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     if (props.side === 'bottom') {
         top = triggerRect.bottom + props.sideOffset
     } else if (props.side === 'top') {
         top = triggerRect.top - contentRect.height - props.sideOffset
     }
 
-    // Align positioning
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     if (props.align === 'start') {
         left = triggerRect.left
     } else if (props.align === 'center') {
@@ -94,7 +94,7 @@ const updatePosition = async () => {
         left = triggerRect.right - contentRect.width
     }
 
-    // Keep within viewport
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     if (left < 8) left = 8
     if (left + contentRect.width > window.innerWidth - 8) {
         left = window.innerWidth - contentRect.width - 8

@@ -9,6 +9,167 @@
 
 Record a detailed functional test-case matrix, browser validation evidence, residual risks, and the QA recommendation for the current platform slice.
 
+## Lifestyle Behavior Upload Timeline QA Revalidation (2026-05-13)
+
+1. **Findings and disposition**
+
+- QA disposition: `PASS`.
+- Blocking findings: none in retry 2/3 revalidation.
+- Prior blocker 1 resolved: `POST /api/v1/lifestyle/import-behavior-day` now accepts multipart `patient_id` and `local_date` selector assertions. Matching selectors return `200 success`; mismatched `patient_id` and `local_date` now return structured `400` errors with detail paths `patient_id` and `local_date`.
+- Prior blocker 2 resolved: upload validation errors now use structured `status="error"` / `error` envelopes. Unsupported media returns `415`, oversize upload returns `413`, malformed JSON returns `400`, and details include deterministic `path`, `code`, and `message` entries.
+- No drift found in the happy path: the route remains authenticated, parse-only, non-persistent, and returns `import` plus `behavior_day.lifestyle_context` with `user_uploaded` provenance.
+- No FE blocker found: structured backend errors are extracted for display while the previous fallback error handling remains available; the Lifestyle page still preserves upload UI, demo fallback, uploaded provenance, and the real-device placeholder as not connected.
+
+2. **Files read and files changed**
+
+- Files read:
+  - `docs/blackboard/state.yaml`
+  - `docs/qa-report.md`
+  - `docs/api-contract.md`
+  - `backend/api/api_v1/endpoints/lifestyle.py`
+  - `backend/services/behavior_day_import.py`
+  - `tests/test_behavior_day_import.py`
+  - `tests/test_demo_behavior_scenarios.py`
+  - `tests/test_profile_csv_import.py`
+  - `frontend/src/utils/lifestyleBehaviorImport.js`
+  - `frontend/src/views/LifestyleView.vue`
+  - `frontend/tests/lifestyle-behavior-import.node.test.mjs`
+  - `frontend/tests/lifestyle-demo-simulator.node.test.mjs`
+  - `output/playwright/behavior-upload-contract-probes.json`
+  - `output/playwright/behavior-upload-live-e2e.json`
+- Files changed by QA:
+  - `docs/qa-report.md`
+
+3. **Evidence**
+
+- Gate/routing check:
+  - `docs/blackboard/state.yaml` reports `project.state: behavior_upload_timeline_reintegration_ready`, `workflow.status: integration_ready`, `workflow.next_owner: qa`, FE retry `2/3`, BE retry `2/3`, and `qa_passed: false`.
+- Focused backend regression:
+  - Command: `python -m pytest tests/test_behavior_day_import.py tests/test_demo_behavior_scenarios.py tests/test_profile_csv_import.py -q`
+  - Result: `18 passed in 0.26s`
+- Focused frontend node regression:
+  - Command: `node --test frontend\tests\lifestyle-demo-simulator.node.test.mjs frontend\tests\lifestyle-behavior-import.node.test.mjs`
+  - Result: `15 passed`
+- Frontend production build:
+  - Command: `npm.cmd run build` in `frontend`
+  - Result: passed; Vite reported `built in 6.98s`
+- Full backend regression:
+  - Command: `python -m pytest tests -q`
+  - Result: `269 passed in 67.23s`
+- Independent QA contract probes:
+  - Matching `patient_id=patient_a` and `local_date=2026-05-13`: `200 success`.
+  - Mismatched `patient_id=other_patient`: `400`, `status=error`, `error.code=behavior_day_validation_failed`, detail path `patient_id`, detail code `selector_mismatch`.
+  - Mismatched `local_date=2026-05-14`: `400`, `status=error`, `error.code=behavior_day_validation_failed`, detail path `local_date`, detail code `selector_mismatch`.
+  - Unsupported `.txt` / `text/plain`: `415`, `status=error`, `error.code=unsupported_media_type`, detail path `file`.
+  - Oversize upload: `413`, `status=error`, `error.code=payload_too_large`, detail path `file`.
+  - Malformed JSON: `400`, `status=error`, `error.code=behavior_day_validation_failed`, detail path `$`, detail code `malformed_json`.
+- Parent-thread live artifact review:
+  - `output/playwright/behavior-upload-contract-probes.json` records 200/400/400/415/413/400 semantics with structured response bodies.
+  - `output/playwright/behavior-upload-live-e2e.json` records `200` for `/api/v1/lifestyle/import-behavior-day`, `200` for `/analyze/comprehensive`, `consoleErrors: []`, `uploadedLabelVisible: true`, `uploadButtonVisible: true`, and `realDevicePlaceholderVisible: true`.
+
+4. **Decisions made**
+
+- QA recommends opening `qa_passed` for this slice.
+- The BE retry addresses the two previous API contract blockers without changing the approved contract.
+- The FE retry is sufficient for the structured-error display boundary covered by this slice.
+- QA did not edit code, API docs/contracts, blackboard state, frontend source, backend source, or tests.
+
+5. **Assumptions, risks, and open questions**
+
+- Assumption: parent-thread live browser evidence remains acceptable for headed UI coverage; QA reran local automated regressions and contract probes but did not rerun the headed browser flow.
+- Residual risk: `output/playwright/behavior-upload-live-e2e.json` still reports `fusionButtonVisible: false` even though it also records a successful `/analyze/comprehensive` request. QA treats this as a visual-observation limitation, not a blocker, because request evidence, source checks, and focused node tests cover the fusion handoff.
+- Residual risk: full cross-browser upload certification was not performed in this revalidation.
+- Open questions: none for this QA gate.
+
+6. **Requested next owner**
+
+- Requested next owner: `orchestrator` for blackboard update and gate review.
+- Optional next owner: `general` if the orchestrator accepts this QA PASS and wants repository-facing release/handoff documentation refreshed.
+
+## Lifestyle Behavior Upload Timeline QA Validation (2026-05-13)
+
+1. **Findings and disposition**
+
+- QA disposition: `FAIL / BLOCKED FOR CONTRACT DRIFT`.
+- Blocking finding 1: `POST /api/v1/lifestyle/import-behavior-day` does not implement the approved optional `patient_id` and `local_date` multipart request parts. Contract probes with mismatched `patient_id=other_patient` and `local_date=2026-05-14` both returned `200 success` for a file containing `patient_a` / `2026-05-13`, while `docs/api-contract.md` requires supplied selectors to match the file.
+- Blocking finding 2: validation error status/envelope does not match the approved API contract. Unsupported file type returned `400 {"detail": "Only platform behavior CSV or JSON files are supported."}` instead of `415` with the structured `status="error"` / `error.code` envelope; oversize upload returned `400 {"detail": "Behavior day upload must be 1 MB or smaller."}` instead of `413`; malformed JSON also returned a plain FastAPI `detail` string rather than the deterministic structured error envelope.
+- Passing core behavior: the happy-path upload is authenticated, parse-only, non-persistent, returns `import` plus `behavior_day.lifestyle_context`, labels the behavior day, timeline events, diet-vision provenance, and lifestyle context as `user_uploaded`, and can feed `/analyze/comprehensive` without profile/risk-history persistence in focused tests.
+- Passing FE behavior: the Lifestyle page exposes the platform CSV/JSON upload area, normalizes the current success response envelope, preserves the existing demo fallback on upload failure, keeps UTF-8 Chinese strings readable in source, and shows the real-device API placeholder as not connected.
+- Passing live evidence review: parent-thread browser evidence in `output/playwright/behavior-upload-live-e2e.json` shows a live upload request to `/api/v1/lifestyle/import-behavior-day` returned `200`, `/analyze/comprehensive` returned `200`, no console errors were captured, the uploaded label was visible, and the real-device placeholder was visible.
+
+2. **Files read and files changed**
+
+- Files read:
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `.codex/agents/qa.toml`
+  - `.agents/skills/qa.md`
+  - `.agents/skills/shared-policy.md`
+  - `docs/blackboard/state.yaml`
+  - `docs/PRD.md`
+  - `docs/FEATURE_MAP.md`
+  - `docs/architecture.md`
+  - `docs/api-contract.md`
+  - `docs/data-model-contract.md`
+  - `docs/qa-report.md`
+  - `backend/api/api_v1/endpoints/lifestyle.py`
+  - `backend/services/behavior_day_import.py`
+  - `backend/services/demo_behavior_scenarios.py`
+  - `backend/main.py`
+  - `tests/test_behavior_day_import.py`
+  - `tests/test_demo_behavior_scenarios.py`
+  - `tests/test_profile_csv_import.py`
+  - `frontend/src/views/LifestyleView.vue`
+  - `frontend/src/utils/lifestyleBehaviorImport.js`
+  - `frontend/tests/lifestyle-demo-simulator.node.test.mjs`
+  - `frontend/tests/lifestyle-behavior-import.node.test.mjs`
+  - `output/playwright/behavior-upload-live-e2e.json`
+- Files changed by QA:
+  - `docs/qa-report.md`
+
+3. **Evidence**
+
+- Required read-order and gate check:
+  - `docs/blackboard/state.yaml` reports `workflow.status: integration_ready`, `workflow.next_owner: qa`, `implementation_ready: true`, `integration_ready: true`, and `qa_passed: false`.
+- Focused backend regression:
+  - Command: `python -m pytest tests/test_behavior_day_import.py tests/test_demo_behavior_scenarios.py tests/test_profile_csv_import.py -q`
+  - Result: `16 passed in 5.02s`
+- Focused frontend node regression:
+  - Command: `node --test frontend\tests\lifestyle-demo-simulator.node.test.mjs frontend\tests\lifestyle-behavior-import.node.test.mjs`
+  - Result: `12 passed`
+- Frontend production build:
+  - Command: `npm.cmd run build` in `frontend`
+  - Result: passed; Vite reported `built in 6.79s`
+- Live browser evidence artifact review:
+  - `output/playwright/behavior-upload-live-e2e.json` recorded `200` for `/api/v1/lifestyle/import-behavior-day`, `200` for `/analyze/comprehensive`, `consoleErrors: []`, `uploadedLabelVisible: true`, `uploadButtonVisible: true`, and `realDevicePlaceholderVisible: true`.
+- UTF-8 source verification:
+  - Python UTF-8 read checks confirmed `frontend/src/views/LifestyleView.vue`, `frontend/src/utils/lifestyleBehaviorImport.js`, and `frontend/tests/lifestyle-behavior-import.node.test.mjs` contain readable Chinese strings such as `用户上传数据`, `真实设备接口`, `未连接`, and `使用上传数据生成风险解释`; no replacement character was present.
+- Additional QA contract probes:
+  - Unauthenticated upload returned `401 {"detail": "Not authenticated"}`.
+  - Mismatched `patient_id` selector returned `200 success` instead of rejecting.
+  - Mismatched `local_date` selector returned `200 success` instead of rejecting.
+  - Unsupported `.txt` / `text/plain` upload returned `400` plain `detail` instead of contract `415` structured error envelope.
+  - Oversize upload returned `400` plain `detail` instead of contract `413`.
+  - Malformed JSON returned `400` plain `detail` instead of the contract structured validation-error envelope.
+
+4. **Decisions made**
+
+- QA cannot recommend opening `qa_passed` for this slice while the public API behavior diverges from `docs/api-contract.md`.
+- QA treats the happy-path FE/BE implementation as functionally strong but insufficient for release readiness because selector mismatch handling and error semantics are part of the approved API contract, not implementation preference.
+- QA did not edit code, API docs/contracts, blackboard state, frontend source, backend source, or tests.
+
+5. **Assumptions, risks, and open questions**
+
+- Assumption: `docs/api-contract.md` and `docs/data-model-contract.md` remain the source of truth for selector and error-envelope behavior unless the orchestrator routes a contract update back through `architect`.
+- Residual risk: the parent-thread browser artifact shows `fusionButtonVisible: false` even though `/analyze/comprehensive` returned `200`; QA accepts the request evidence as useful but not a complete visual assertion for the analysis button state.
+- Residual risk: QA did not rerun a fresh live headed browser flow; it inspected the parent-thread artifact requested by the orchestrator and ran focused automated regressions locally.
+- Open question for orchestrator/architect: should the optional selector and structured error semantics remain required for this slice, or should the contract be narrowed before BE retry?
+
+6. **Requested next owner**
+
+- Requested next owner: `orchestrator`.
+- Recommended routing: send the blocking contract findings to `be` for retry if the existing API contract stands; route to `architect` first only if the orchestrator wants to revise the selector or error-envelope contract. `general` should not proceed until QA can revalidate a pass.
+
 ## Current Slice
 
 - Scope:
@@ -132,6 +293,214 @@ Record a detailed functional test-case matrix, browser validation evidence, resi
 - Pass the comprehensive test-cases and browser-validation slice.
 - Pass the cross-browser E2E slice with the environment-limited caveat noted above.
 - Requested next owner: `orchestrator`
+
+## Lifestyle Digital Twin Demo Engine QA Validation (2026-05-07)
+
+1. **Files read and files changed**
+
+- Files read:
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `.codex/agents/qa.toml`
+  - `.agents/skills/qa.md`
+  - `.agents/skills/shared-policy.md`
+  - `docs/blackboard/state.yaml`
+  - `docs/architecture.md`
+  - `docs/api-contract.md`
+  - `docs/data-model-contract.md`
+  - `backend/api/api_v1/endpoints/demo.py`
+  - `backend/services/demo_behavior_scenarios.py`
+  - `backend/main.py`
+  - `tests/test_demo_behavior_scenarios.py`
+  - `frontend/src/views/LifestyleView.vue`
+  - `frontend/src/stores/healthStore.js`
+  - `frontend/src/stores/authStore.js`
+  - `frontend/src/router/index.js`
+  - `frontend/tests/lifestyle-demo-simulator.node.test.mjs`
+  - `frontend/tests/*.node.test.mjs`
+  - `frontend/package.json`
+  - `data/demo/behavior_day_scenarios.json`
+  - `data/demo/behavior_day_scenario_validation_report.json`
+- Files changed by QA:
+  - `docs/qa-report.md`
+
+2. **Decisions made**
+
+- QA accepts this as an additive demo-only validation slice.
+- The frozen contract remains aligned across docs, data artifact, backend API/service validation, frontend source-level behavior, and focused tests.
+- The scenario API is authenticated and read-only under `/api/v1/demo/behavior-scenarios`; list responses omit timeline details, detail responses preserve `behavior_day_scenario.v1`, timeline event provenance, `diet_vision_event.v1`, and `lifestyle_context.v1`.
+- `/analyze/comprehensive` accepts optional `lifestyle_context.v1` only when `data_mode` and `source_provenance` are present; focused tests confirm malformed context is rejected before analysis.
+- FE submits `clinical`, `user_snps`, and selected scenario `lifestyle_context` explicitly for demo fusion analysis and keeps visible `simulated_demo`/Demo-only provenance in the simulator.
+
+3. **Validation evidence**
+
+- Focused backend tests:
+  - Command: `python -m pytest tests/test_demo_behavior_scenarios.py -q`
+  - Exit code: `0`
+  - Output: `6 passed in 0.61s`
+- Frontend node tests:
+  - Command: `node --test .\tests\*.node.test.mjs` in `frontend`
+  - Exit code: `0`
+  - Output: `13 passed`
+- Frontend production build:
+  - Command: `npm.cmd run build` in `frontend`
+  - Exit code: `0`
+  - Output highlight: `built in 30.13s`
+- Lightweight browser/integration check:
+  - Mode: real local Vite app at `http://127.0.0.1:5174/lifestyle` with Playwright mock API routes for `/user/me`, `/user/profile`, and `/api/v1/demo/behavior-scenarios`; no backend database writes were required.
+  - Result: page loaded the Lifestyle simulator, requested scenario list and `metabolic_day_001` detail, displayed `simulated_demo`, `Demo only`, and timeline event types including `diet_vision`/`vitals`/`daily_summary`; replay control was clickable.
+- Contract/code inspection:
+  - Backend repository validation includes strict collection/scenario/event/diet-vision/lifestyle-context checks and the reconciled `vitals` and `daily_summary` event enum.
+  - Focused tests assert scenario list/detail reads do not create `IoTHealthData`, `HealthRecord`, `MedicalDocument`, or new profile/risk-history side effects.
+  - FE source-level checks assert demo scenario APIs are read-only GETs, diet-vision nutrition sync keeps provenance, demo fusion includes `lifestyle_context`, and the simulator does not call profile save or route selected scenarios through IoT batch sync.
+
+4. **Findings**
+
+- QA recommendation: `PASS`.
+- Blocking findings: none.
+- Non-blocking findings: none for this slice.
+- Contract control: no drift found against the approved Lifestyle Digital Twin demo contract. The slice preserves `simulated_demo` provenance, does not widen IoT sync, food upload, profile save, document upload, or health-history persistence contracts, and does not claim demo-derived lifestyle modifiers are clinically calibrated posterior probabilities.
+- Residual risks:
+  - Browser validation used mocked API responses over the real local frontend rather than a live authenticated FastAPI server/login flow.
+  - Source-level frontend tests are useful contract guards but do not replace full UI interaction coverage for scenario selection across all three demo patients.
+  - Existing unrelated dirty worktree entries remain outside this QA slice and were not reset or reverted.
+
+5. **Requested next owner**
+
+- Requested next owner: `orchestrator`; `general` may proceed if the orchestrator accepts this QA PASS and wants a documentation/release handoff.
+
+## Platform Standard CSV Profile Import QA Validation (2026-05-02)
+
+1. **Files read and files changed**
+
+- Files read:
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `.codex/agents/qa.toml`
+  - `.agents/skills/qa.md`
+  - `.agents/skills/shared-policy.md`
+  - `docs/blackboard/state.yaml`
+  - `docs/architecture.md`
+  - `docs/api-contract.md`
+  - `docs/data-model-contract.md`
+  - `backend/services/profile_csv_import.py`
+  - `backend/api/api_v1/endpoints/profile.py`
+  - `backend/main.py`
+  - `tests/test_profile_csv_import.py`
+  - `frontend/src/views/ClinicalView.vue`
+  - `frontend/src/stores/healthStore.js`
+  - `frontend/tests/clinical-csv-import.node.test.mjs`
+  - `docs/qa-report.md`
+- Files changed:
+  - `docs/qa-report.md`
+
+2. **Decisions made**
+
+- Current stage: `qa` independent validation for the platform-standard CSV health-data import slice.
+- QA recommendation: `PASS`.
+- Contract control: verified `POST /api/v1/profile/import-csv` is an authenticated multipart parse-only route that returns `schema_version`, `demo_patient_id`, `profile`, `source_tags`, and `metadata`.
+- Scope control: confirmed the slice does not convert the endpoint into profile persistence, raw Synthea ETL, unit conversion, OCR/document upload, health-record creation, risk analysis, or document storage.
+
+3. **Findings**
+
+- Blocking findings: none.
+- Non-blocking observation: the broader worktree was already dirty before this QA pass, including many unrelated modified/deleted/untracked files. QA did not revert, stage, or edit those files and only updated `docs/qa-report.md`.
+- Non-blocking observation: `rg` could not run in this environment because Windows returned `Access is denied`; QA used targeted PowerShell `Select-String` and direct file reads instead.
+
+4. **Validation evidence**
+
+- Contract and implementation inspection:
+  - `backend/main.py` registers `profile_api.router` with prefix `/api/v1/profile`, and `backend/api/api_v1/endpoints/profile.py` defines `@router.post("/import-csv")`.
+  - The endpoint depends on `get_current_user`, accepts multipart `file`, accepts optional `demo_patient_id` from form data, and also supports query-param selection.
+  - `backend/services/profile_csv_import.py` parses UTF-8 CSV rows into `platform_profile_import.v1`, copies provenance into `source_tags` / `metadata` / `profile.extra_data`, and has no database session or persistence calls.
+  - `tests/test_profile_csv_import.py` explicitly checks that `UserProfile`, `HealthRecord`, and `MedicalDocument` counts are unchanged and that an existing `UserProfile` value is not overwritten by import.
+  - `frontend/src/views/ClinicalView.vue` places `data-testid="csv-upload"` beside `data-testid="ocr-upload"`, uses matching `GlassButton size="sm"` structure, posts multipart `file` to `/api/v1/profile/import-csv`, fills the profile form from response `profile` with overwrite, and the CSV handler does not call `saveProfileToCloud()`.
+  - Frontend error handling preserves backend `detail` / `message` via `formatUploadErrorMessage`.
+- Focused backend regression:
+  - `python -m pytest tests/test_profile_csv_import.py -q`
+  - Exit code: `0`
+  - Output: `4 passed in 0.60s`
+- Focused frontend source-level regression:
+  - `node --test frontend/tests/clinical-csv-import.node.test.mjs`
+  - Exit code: `0`
+  - Output: `3 passed`
+- Frontend production build:
+  - `npm.cmd run build` in `frontend`
+  - Exit code: `0`
+  - Output highlight: `built in 31.56s`
+- Additional QA API probe:
+  - Anonymous `POST /api/v1/profile/import-csv` with multipart CSV returned `401`.
+  - Auth-overridden multipart form request with `demo_patient_id=b` returned `200`, selected `demo_patient_id=b`, and returned `profile.Age=50`.
+
+5. **Assumptions, risks, or open questions**
+
+- Assumption: source-level frontend tests are sufficient for this narrow control/handler slice because the requested FE evidence is structural and request-behavior oriented; no browser screenshot test was run for this QA pass.
+- Residual risk: frontend CSV import currently has source-level coverage rather than a full browser-driven upload interaction against a live backend.
+- Open questions: none for this QA gate.
+
+6. **Requested next owner**
+
+- Requested next owner: `orchestrator` for blackboard status/gate review.
+- Optional next owner: `general` only after the orchestrator accepts QA pass and wants repository-facing release/handoff docs updated.
+
+## Platform Standard CSV Profile Import Browser Validation (2026-05-06)
+
+1. **Files and artifacts**
+
+- Files read:
+  - `frontend/src/views/ClinicalView.vue`
+  - `backend/api/api_v1/endpoints/profile.py`
+  - `backend/services/profile_csv_import.py`
+  - `.tmp/browser-csv-test/demo-profile.csv`
+- Artifacts created:
+  - `output/playwright/csv-import-clinical-filled.png`
+
+2. **Validation flow**
+
+- Started local backend: `python -m uvicorn backend.main:app --host 127.0.0.1 --port 8000`.
+- Started local frontend: `npm.cmd run dev -- --host 127.0.0.1 --port 5173`.
+- Opened headed browser with `playwright-cli` at `http://127.0.0.1:5173`.
+- Logged in through the real login form as `admin`.
+- Navigated to `http://127.0.0.1:5173/clinical`.
+- Confirmed `导入CSV健康数据` renders beside `智能识别体检单`.
+- Clicked `导入CSV健康数据` and uploaded `.tmp/browser-csv-test/demo-profile.csv` through the browser file chooser.
+
+3. **Evidence**
+
+- Browser network log:
+  - `POST http://127.0.0.1:8000/api/v1/profile/import-csv => 200 OK`
+- Response body included:
+  - `schema_version: platform_profile_import.v1`
+  - `demo_patient_id: browser_demo`
+  - `profile.Age: 60`
+  - `profile.Gender: 2`
+  - `profile.Height: 162.5`
+  - `profile.Weight: 77.9`
+  - `profile.BMI: 29.5`
+  - `profile.SBP: 188`
+  - `profile.DBP: 116`
+  - `profile.Glucose_Fasting: 4.46`
+  - `profile.HbA1c: 5.9`
+  - `profile.Creatinine: 61.9`
+- Browser snapshot after upload showed the clinical form filled with:
+  - Age `60`
+  - Gender `女 (Female)`
+  - Height `162.5`
+  - Weight `77.9`
+  - BMI `29.5`
+  - Blood pressure `188 / 116`
+  - Fasting glucose `4.5` as displayed by the UI precision setting
+  - HbA1c `5.9`
+  - Creatinine `61.9`
+- Browser network log did not show a `POST /user/profile` request during CSV import, so the import remained form-fill only and did not auto-save the profile.
+- Browser console reported `0` errors and `0` warnings.
+
+4. **Findings**
+
+- QA recommendation: `PASS`.
+- Blocking findings: none.
+- The previous residual risk, "no browser-driven CSV upload interaction", is now closed for Chromium/headed local validation.
+- Residual risk: this remains a single-browser local headed validation, not a full cross-browser certification.
 
 ## Third-Round Validation
 
@@ -1930,3 +2299,669 @@ Record a detailed functional test-case matrix, browser validation evidence, resi
 
 - Requested next owner:
   - `orchestrator`
+
+## Stability and Governance Remediation QA (2026-04-23)
+
+- Stage owner: `qa`
+- Recommendation: `FAIL` for gate promotion in this round (build and test baselines are green, but model compatibility blockers remain unresolved).
+
+### Files read
+
+- `AGENTS.md`
+- `.codex/config.toml`
+- `.codex/agents/qa.toml`
+- `docs/blackboard/state.yaml`
+- `docs/PRD.md`
+- `docs/architecture.md`
+- `docs/api-contract.md`
+- `docs/data-model-contract.md`
+- `frontend/package.json`
+- `frontend/playwright.config.js`
+- `docs/model-governance/dependency-compatibility-policy.md`
+- `docs/model-governance/model-cards.md`
+
+### Files changed
+
+- `docs/qa-report.md`
+
+### Validation commands and results
+
+- `python -m pytest tests -q`
+  - Result: `235 passed in 56.36s`
+- `python -m pytest tests/test_cors_config.py -q`
+  - Result: `3 passed in 0.33s`
+- `npm.cmd run build` (cwd: `frontend`)
+  - Result: success, `vite build` completed (`built in 54.70s`)
+- `npx.cmd playwright test tests/dr-ai-takeover.spec.js --project=chromium --reporter=line` (cwd: `frontend`)
+  - Result: `3 passed`
+- `npx.cmd playwright test tests/ocr-guided-completion.spec.js --project=chromium --reporter=line` (cwd: `frontend`)
+  - Result: `4 passed`
+- `python ai_core/check_model_compatibility.py --strict`
+  - Result: exit code `1`
+  - Output highlights:
+    - `xgboost==NOT_INSTALLED`
+    - `torch==NOT_INSTALLED`
+    - `torchvision==NOT_INSTALLED`
+    - sklearn artifact/runtime mismatch warnings (`1.6.1` artifacts under `1.8.0` runtime)
+    - blockers:
+      - `lifestyle_xgb_model load failed: No module named 'xgboost'`
+      - `torch not installed; cannot validate .pth model readability`
+
+### Findings
+
+- Blocking findings:
+  - `P1 (release-blocking for this remediation round)` AI model dependency compatibility is not yet production-ready under strict governance checks. Missing runtime dependencies (`xgboost`, `torch`, `torchvision`) and sklearn artifact drift prevent full asset validation and violate the intended steady-state compatibility policy.
+- Non-blocking findings:
+  - Backend regression and CORS behavior are aligned with current tests in this workspace (`pytest tests -q` green, `test_cors_config.py` green).
+  - Frontend production build remains green.
+  - Targeted browser smoke flows are green for Dr. AI takeover and OCR guided-completion paths.
+  - Playwright webserver logs still show degraded-runtime warnings (Redis optional, model-runtime availability warnings). These are expected in this local environment but should stay explicitly documented.
+
+### Gate recommendation and next owner
+
+- Requested gate decision from `orchestrator`:
+  - Keep `qa_passed=false` for this remediation round until dependency blockers are either fixed or formally accepted with an explicit release exception.
+- Requested next owner: `orchestrator`
+
+## Post Dependency-Clearance QA Rerun (2026-04-23)
+
+- Stage owner: `qa`
+- Recommendation: `FAIL` for gate promotion in this rerun (strict dependency gate is now green, but required full backend pytest command is not green).
+
+### Files read
+
+- `AGENTS.md`
+- `.codex/config.toml`
+- `.codex/agents/qa.toml`
+- `docs/blackboard/state.yaml`
+- `docs/PRD.md`
+- `docs/architecture.md`
+- `docs/api-contract.md`
+- `docs/data-model-contract.md`
+
+### Files changed
+
+- `docs/qa-report.md`
+
+### Validation commands and outputs
+
+- `python -m pytest tests -q`
+  - Exit code: `1`
+  - Output:
+    - `1 failed, 234 passed, 1 warning in 64.44s`
+    - Failed test: `tests/test_main.py::test_inference_service_imports_and_degrades_cleanly_without_torch`
+    - Failure detail: assertion expected `predictor.model is None`, but runtime loaded a `GlucoseLSTM` model.
+    - Warning excerpt:
+      - `backend/services/inference_service.py:101: FutureWarning ... torch.load ... weights_only=False ...`
+- `python -m pytest tests/test_cors_config.py -q`
+  - Exit code: `0`
+  - Output: `3 passed in 0.33s`
+- `npm.cmd run build` (cwd: `frontend`)
+  - Exit code: `0`
+  - Output highlights:
+    - `vite v7.3.0 building client environment for production...`
+    - `✓ 4149 modules transformed.`
+    - `✓ built in 56.96s`
+- `npx.cmd playwright test tests/dr-ai-takeover.spec.js --project=chromium --reporter=line` (cwd: `frontend`)
+  - Exit code: `0`
+  - Output highlights:
+    - `Running 3 tests using 1 worker`
+    - `3 passed (32.0s)`
+    - WebServer log excerpts:
+      - `Redis cache unavailable; continuing without cache ...`
+      - `FutureWarning ... torch.load ... weights_only=False ...` (food/inference services)
+- `npx.cmd playwright test tests/ocr-guided-completion.spec.js --project=chromium --reporter=line` (cwd: `frontend`)
+  - Exit code: `0`
+  - Output highlights:
+    - `Running 4 tests using 1 worker`
+    - `4 passed (43.6s)`
+    - WebServer log excerpts:
+      - `Redis cache unavailable; continuing without cache ...`
+      - `FutureWarning ... torch.load ... weights_only=False ...` (food/inference services)
+- `python ai_core/check_model_compatibility.py --strict`
+  - Exit code: `0`
+  - Output:
+    - `=== package versions ===`
+    - `xgboost==2.1.4`
+    - `torch==2.5.1`
+    - `torchvision==0.20.1`
+    - `scikit-learn==1.6.1`
+    - `joblib==1.5.3`
+    - `=== compatibility checks ===`
+    - `OK: no compatibility issues detected.`
+    - Warning excerpt:
+      - `FutureWarning ... torch.load ... weights_only=False ...`
+
+### Findings
+
+- Blocking finding:
+  - `P1 (gate-blocking)` Required backend full-suite command is red after dependency clearance (`1 failed`). The failing case still assumes a no-torch degraded environment (`predictor.model is None`), but runtime now has torch installed and model loading succeeds.
+- Non-blocking findings:
+  - CORS-focused pytest remains green.
+  - Frontend production build remains green.
+  - Both required Playwright smoke suites remain green.
+  - Strict model compatibility check is now green with required package versions resolved.
+  - Residual runtime warnings remain about `torch.load(..., weights_only=False)` future behavior and Redis optional degradation in Playwright webserver logs.
+
+### Gate recommendation and next owner
+
+- Requested gate decision from `orchestrator`:
+  - Keep `qa_passed=false` until the backend full-suite failure is resolved (or explicitly waived by orchestrator policy).
+- Requested next owner: `orchestrator`
+
+## Final QA Validation After BE Retry3 (2026-04-23)
+
+1. **Files read and files changed**
+
+- Files read (required order):
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `.codex/agents/qa.toml`
+  - `docs/blackboard/state.yaml`
+  - `docs/PRD.md`
+  - `docs/architecture.md`
+  - `docs/api-contract.md`
+  - `docs/data-model-contract.md`
+- Files changed:
+  - `docs/qa-report.md`
+
+2. **Decisions made**
+
+- Current stage: `qa` final validation after `be` retry3 test-fix.
+- QA recommendation: `PASS` for requested evidence set in this rerun.
+- Reason: all 6 required commands are green, including backend full pytest and strict model compatibility gate.
+- Scope control: updated QA evidence only, no code/contract/blackboard changes.
+
+3. **Assumptions, risks, or open questions**
+
+- Assumption: current local dependency baseline (`xgboost==2.1.4`, `torch==2.5.1`, `torchvision==0.20.1`, `scikit-learn==1.6.1`, `joblib==1.5.3`) is the intended runtime baseline for this stage.
+- Risk (non-blocking): `torch.load(..., weights_only=False)` FutureWarning appears in strict check and Playwright webserver logs; should be tracked as hardening follow-up.
+- Risk (non-blocking): Playwright webserver still logs Redis optional degradation in local environment.
+- Open question: none for gate decision in this stage.
+
+4. **Evidence for requested gate changes (with command outputs)**
+
+- `python -m pytest tests -q`
+  - Exit code: `0`
+  - Output:
+    - `235 passed in 57.62s`
+- `python -m pytest tests/test_cors_config.py -q`
+  - Exit code: `0`
+  - Output:
+    - `3 passed in 0.33s`
+- `npm.cmd run build` (cwd: `frontend`)
+  - Exit code: `0`
+  - Output highlights:
+    - `vite v7.3.0 building client environment for production...`
+    - `✓ 4149 modules transformed.`
+    - `✓ built in 52.03s`
+- `npx.cmd playwright test tests/dr-ai-takeover.spec.js --project=chromium --reporter=line` (cwd: `frontend`)
+  - Exit code: `0`
+  - Output:
+    - `Running 3 tests using 1 worker`
+    - `3 passed (31.5s)`
+- `npx.cmd playwright test tests/ocr-guided-completion.spec.js --project=chromium --reporter=line` (cwd: `frontend`)
+  - Exit code: `0`
+  - Output:
+    - `Running 4 tests using 1 worker`
+    - `4 passed (43.6s)`
+- `python ai_core/check_model_compatibility.py --strict`
+  - Exit code: `0`
+  - Output:
+    - `xgboost==2.1.4`
+    - `torch==2.5.1`
+    - `torchvision==0.20.1`
+    - `scikit-learn==1.6.1`
+    - `joblib==1.5.3`
+    - `OK: no compatibility issues detected.`
+
+5. **Requested next owner**
+
+- `orchestrator` (for blackboard gate update: consider setting `qa_passed=true` and proceeding to final release/handoff gating decision).
+
+## OCR Canonical Extraction Optimization Validation (2026-04-24)
+
+1. **Files read and files changed**
+
+- Files read:
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `docs/blackboard/state.yaml`
+  - `docs/data-model-contract.md`
+  - `backend/services/ocr_service.py`
+  - `backend/services/payload_normalization.py`
+  - `ai_core/evaluate_ocr_extraction.py`
+- Files changed:
+  - `backend/services/ocr_service.py`
+  - `backend/services/payload_normalization.py`
+  - `ai_core/evaluate_ocr_extraction.py`
+  - `docs/architecture-change-requests/ocr-canonical-biomarker-extension.md`
+  - `docs/evaluation/ocr-extraction-summary.json`
+  - `docs/evaluation/ocr-evaluation-report.md`
+  - `docs/evaluation/project-evaluation-summary.json`
+  - `docs/evaluation/project-evaluation-summary.md`
+  - `docs/evaluation/project-evaluation-summary.zh.md`
+  - `docs/evaluation/resume-metrics-brief.md`
+  - `docs/evaluation/resume-metrics-brief.zh.md`
+
+2. **Decisions made**
+
+- Current stage: `qa` validation for OCR canonical extraction optimization.
+- QA recommendation: `PASS` for the contract-safe OCR extraction improvement.
+- Scope control: promoted only fields already aligned with the canonical OCR/risk data flow (`HbA1c`, `Creatinine`, `eGFR`, `HDL`, `LDL`) and kept `AST`, `HGB`, `UA` out of canonical metrics pending architecture approval.
+- Contract pressure: documented as `docs/architecture-change-requests/ocr-canonical-biomarker-extension.md`; no silent API/data-model contract mutation was made.
+
+3. **Assumptions, risks, or open questions**
+
+- Assumption: the 50-sample benchmark remains a synthetic post-OCR text extraction benchmark, not a real image/PDF OCR recognition benchmark.
+- Risk (non-blocking): canonical micro-F1 remains bounded by approved canonical metric coverage; `AST`, `HGB`, and `UA` are extracted raw but not canonicalized until the ACR is approved.
+- Risk (non-blocking): real OCR provider recognition quality still requires de-identified report images/PDFs and provider credentials.
+
+4. **Evidence**
+
+- `python -m py_compile backend\services\ocr_service.py backend\services\payload_normalization.py ai_core\evaluate_ocr_extraction.py`
+  - Exit code: `0`
+- `python ai_core\evaluate_ocr_extraction.py`
+  - Exit code: `0`
+  - Output highlights:
+    - `Generated/evaluated 50 synthetic OCR text reports.`
+    - `Raw supported-field F1: 1.000`
+    - `Raw all-field F1: 1.000`
+    - Canonical `ocr_summary.v1` micro F1 in report: `0.918`
+- `python ai_core\summarize_evaluation_metrics.py`
+  - Exit code: `0`
+  - Output highlight: `"ocr_canonical_f1": 0.9184`
+- `python -m pytest tests/test_main.py -q -k "ocr_upload_persists_canonical_ocr_summary_envelope or ocr_upload_partial_success"`
+  - Exit code: `0`
+  - Output: `1 passed, 21 deselected`
+- `python -m pytest tests/test_agent_tools.py tests/test_repair_legacy_payload_shapes.py -q`
+  - Exit code: `0`
+  - Output: `21 passed`
+- `python -m pytest tests -q`
+  - Exit code: `0`
+  - Output: `235 passed in 69.72s`
+
+5. **Requested next owner**
+
+- `orchestrator` for blackboard update and routing.
+- `architect` only if the team wants to approve canonical promotion of `AST`, `HGB`, and `UA` through the new architecture change request.
+
+## OCR Canonical Biomarker Extension QA Validation (2026-04-24)
+
+1. **Files read and files changed**
+
+- Files read:
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `.codex/agents/qa.toml`
+  - `docs/blackboard/state.yaml`
+  - `.agents/skills/qa.md` (read attempt failed because the local device/path was unavailable)
+  - `docs/architecture-change-requests/ocr-canonical-biomarker-extension.md`
+  - `docs/data-model-contract.md`
+  - `docs/api-contract.md`
+  - `backend/services/payload_normalization.py`
+  - `ai_core/evaluate_ocr_extraction.py`
+  - `tests/test_repair_legacy_payload_shapes.py`
+  - `tests/test_main.py`
+  - `tests/test_agent_tools.py`
+- Files changed:
+  - `docs/qa-report.md`
+  - `docs/evaluation/ocr-extraction-summary.json` (regenerated by QA verification command)
+  - `docs/evaluation/ocr-evaluation-report.md` (regenerated by QA verification command)
+  - `docs/evaluation/project-evaluation-summary.json` (regenerated by QA verification command)
+  - `docs/evaluation/project-evaluation-summary.md` (regenerated by QA verification command)
+  - `docs/evaluation/project-evaluation-summary.zh.md` (regenerated by QA verification command)
+  - `docs/evaluation/resume-metrics-brief.md` (regenerated by QA verification command)
+  - `docs/evaluation/resume-metrics-brief.zh.md` (regenerated by QA verification command)
+
+2. **Decisions made**
+
+- Current stage: `qa` independent validation for the OCR canonical biomarker extension.
+- QA recommendation: `PASS`.
+- Scope control: confirmed `AST`, `HGB`, and `UA` are report-level canonical `ocr_summary.v1.metrics` keys only.
+- Contract control: no public route field, raw OCR provider payload exposure, or automatic `UserProfile` promotion was introduced in this QA stage.
+
+3. **Assumptions, risks, or open questions**
+
+- Assumption: the OCR benchmark remains a deterministic 50-sample synthetic post-OCR text structured-extraction benchmark, not a real image/PDF OCR recognition benchmark.
+- Non-blocking risk: real OCR recognition quality still requires de-identified report images/PDFs plus provider/runtime credentials.
+- Open questions: none for this QA gate.
+
+4. **Evidence**
+
+- `python -m py_compile backend\services\payload_normalization.py ai_core\evaluate_ocr_extraction.py`
+  - Exit code: `0`
+- `python ai_core\evaluate_ocr_extraction.py`
+  - Exit code: `0`
+  - Output highlights:
+    - `Generated/evaluated 50 synthetic OCR text reports.`
+    - `Raw supported-field F1: 1.000`
+    - `Raw all-field F1: 1.000`
+- Canonical metric recomputation from `docs/evaluation/ocr-extraction-summary.json`
+  - `canonical`: `tp=848`, `fp=0`, `fn=0`, `precision=1.000`, `recall=1.000`, `f1=1.000`
+  - `raw`: `tp=848`, `fp=0`, `fn=0`, `precision=1.000`, `recall=1.000`, `f1=1.000`
+  - `AST`: `support=45`, `precision=1.000`, `recall=1.000`, `f1=1.000`
+  - `HGB`: `support=43`, `precision=1.000`, `recall=1.000`, `f1=1.000`
+  - `UA`: `support=40`, `precision=1.000`, `recall=1.000`, `f1=1.000`
+- `python ai_core\summarize_evaluation_metrics.py`
+  - Exit code: `0`
+  - Output highlight: `"ocr_canonical_f1": 1.0`
+- `python -m pytest tests/test_repair_legacy_payload_shapes.py -q`
+  - Exit code: `0`
+  - Output: `3 passed in 1.06s`
+- `python -m pytest tests/test_main.py -q -k "ocr_upload_persists_canonical_ocr_summary_envelope or ocr_upload_partial_success"`
+  - Exit code: `0`
+  - Output: `1 passed, 21 deselected in 0.26s`
+- `python -m pytest tests/test_agent_tools.py tests/test_repair_legacy_payload_shapes.py -q`
+  - Exit code: `0`
+  - Output: `22 passed in 0.24s`
+- `python -m pytest tests -q`
+  - Exit code: `0`
+  - Output: `236 passed in 59.01s`
+
+5. **Requested next owner**
+
+- `orchestrator` for blackboard gate/status update and closure routing.
+- Optional `general` only if the team wants a final repository-facing documentation refresh after this metric-extension QA pass.
+
+## Repository Encoding Remediation Phase 2 QA Validation (2026-04-24)
+
+1. **Files read and files changed**
+
+- Files read:
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `.codex/agents/qa.toml`
+  - `.agents/skills/qa.md`
+  - `docs/blackboard/state.yaml`
+  - `docs/maintenance/encoding-remediation-phase2.md`
+  - `tests/test_encoding_hygiene.py`
+  - `backend/main.py`
+  - `backend/services/chat_service.py`
+  - `tests/test_chat_agent_service.py`
+- Files changed:
+  - `docs/qa-report.md`
+
+2. **Decisions made**
+
+- Current stage: `qa` independent validation for repository encoding remediation Phase 2.
+- QA recommendation: `PASS`.
+- Scope control: confirmed Phase 2 stayed within confirmed mojibake/text restoration and regression-test coverage.
+- Contract control: no route path, request/response envelope, schema, persistence model, OCR/RAG/Agent contract, or frontend API contract change was detected in this QA stage.
+- Cleanup control: no large files, generated artifacts, model artifacts, PDFs, databases, images, or LaTeX build outputs were deleted or moved.
+
+3. **Findings**
+
+- Blocking findings: none.
+- Non-blocking finding: an initial broad frontend source scan produced 6 hits, but follow-up line-level inspection showed they were false positives from a PowerShell-encoded pattern degenerating into the JavaScript nullish coalescing operator `??`; no frontend mojibake issue was confirmed from those hits.
+
+4. **Assumptions, risks, or open questions**
+
+- Assumption: this QA gate validates the focused Phase 2 remediation scope only; it does not close the broader repository maintenance backlog.
+- Non-blocking risk: ambiguous lossy placeholders that would require behavior interpretation remain deferred by design and should not be silently rewritten without owner review.
+- Non-blocking risk: large-file cleanup, generated-artifact policy, legacy/temp cleanup, and browser visual QA remain future phases.
+- Open questions: none for this QA gate.
+
+5. **Evidence**
+
+- Phase 2 readiness/state check from `docs/blackboard/state.yaml`
+  - `project.state`: `encoding_remediation_phase2_ready_for_qa`
+  - `workflow.phase`: `repository_encoding_remediation`
+  - `workflow.status`: `encoding_remediation_phase2_ready_for_qa`
+  - `workflow.next_owner`: `qa`
+- Required artifact presence check
+  - `docs/maintenance/encoding-remediation-phase2.md`: present
+  - `docs/maintenance/maintenance-health-summary.md`: present
+  - `docs/maintenance/encoding-issues.md`: present
+  - `tests/test_encoding_hygiene.py`: present
+- Target file mojibake scan for `backend/main.py`, `backend/services/chat_service.py`, and `tests/test_chat_agent_service.py`
+  - Exit code: `0`
+  - Output: no known pattern hits.
+- `python -m py_compile backend\main.py backend\services\chat_service.py`
+  - Exit code: `0`
+- `python -m pytest tests\test_encoding_hygiene.py tests\test_chat_agent_service.py tests\test_main.py -q`
+  - Exit code: `0`
+  - Output: `63 passed in 23.82s`
+- `python -m pytest tests -q`
+  - Exit code: `0`
+  - Output: `237 passed in 57.87s`
+- `npm.cmd run build` in `frontend`
+  - Exit code: `0`
+  - Output highlight: `✓ built in 35.96s`
+
+6. **Requested next owner**
+
+- `orchestrator` for blackboard status update and Phase 2 closure routing.
+- Recommended next workflow step: decide whether to start Phase 3 for large-file/generated-artifact policy, or pause for manual review before any deletion/move/split work.
+
+## Repository Source Split Phase 3 QA Validation (2026-04-24)
+
+1. **Files read and files changed**
+
+- Files read:
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `.codex/agents/qa.toml`
+  - `.agents/skills/qa.md`
+  - `docs/blackboard/state.yaml`
+  - `docs/maintenance/source-split-phase3.md`
+  - `backend/services/chat_service.py`
+  - `backend/services/chat_tool_presentation.py`
+  - `tests/test_chat_tool_presentation.py`
+- Files changed:
+  - `docs/qa-report.md`
+
+2. **Decisions made**
+
+- Current stage: `qa` independent validation for repository source split Phase 3.
+- QA recommendation: `PASS`.
+- Scope control: confirmed the split extracts chat tool presentation/helper logic only, while preserving the existing `ChatService` orchestration interface.
+- Contract control: no public route path, request/response envelope, database schema, OCR/RAG/Agent tool contract, or frontend API contract change was detected in this QA stage.
+- Cleanup control: no model, data, PDF, database, generated artifact, or large binary was deleted or moved.
+
+3. **Findings**
+
+- Blocking findings: none.
+- Non-blocking finding: direct PowerShell `Get-Content` display initially rendered Chinese comments and strings as mojibake, but Python UTF-8 `unicode_escape` inspection confirmed the file content contains readable Chinese codepoints. The precise encoding check also found no private-use characters, replacement characters, or known Phase 2 mojibake snippets.
+- Non-blocking finding: the repository still contains many unrelated dirty files from previous stages; QA scoped this validation to the Phase 3 split files and regression evidence rather than treating the full dirty worktree as part of this phase.
+
+4. **Assumptions, risks, or open questions**
+
+- Assumption: this QA gate validates the conservative Phase 3 split pilot only.
+- Non-blocking risk: `backend/services/chat_service.py` remains large after the pilot split and should be decomposed further only through separate scoped phases with their own tests.
+- Non-blocking risk: large data/model/PDF/generated artifact cleanup remains out of scope until ownership and retention policy are explicitly approved.
+- Open questions: none for this QA gate.
+
+5. **Evidence**
+
+- Phase 3 readiness/state check from `docs/blackboard/state.yaml`
+  - `project.state`: `maintenance_phase3_source_split_ready_for_qa`
+  - `workflow.phase`: `repository_source_split`
+  - `workflow.status`: `maintenance_phase3_source_split_ready_for_qa`
+  - `workflow.next_owner`: `qa`
+- Source-boundary inspection
+  - `backend/services/chat_service.py` imports `build_tool_done_message`, `build_tool_status_message`, and `summarize_tool_output_for_prompt` from `backend.services.chat_tool_presentation`.
+  - The old private helper methods `_build_tool_status_message`, `_build_tool_done_message`, and `_summarize_tool_output_for_prompt` are no longer present in `backend/services/chat_service.py`.
+- `python -m py_compile backend\services\chat_service.py backend\services\chat_tool_presentation.py tests\test_chat_tool_presentation.py`
+  - Exit code: `0`
+- Precise UTF-8/encoding check for `backend/services/chat_tool_presentation.py`, `backend/services/chat_service.py`, and `tests/test_chat_tool_presentation.py`
+  - Exit code: `0`
+  - Output: `encoding_check_failures= []`
+- `python -m pytest tests\test_chat_tool_presentation.py tests\test_chat_agent_service.py tests\test_agent_tools.py -q`
+  - Exit code: `0`
+  - Output: `62 passed in 19.02s`
+- `python -m pytest tests -q`
+  - Exit code: `0`
+  - Output: `240 passed in 59.50s`
+- `npm.cmd run build` in `frontend`
+  - Exit code: `0`
+  - Output highlight: `✓ built in 35.95s`
+
+6. **Requested next owner**
+
+- `orchestrator` for blackboard status update and Phase 3 closure routing.
+- Recommended next workflow step: close the source-split pilot as QA-passed, then decide whether to schedule a separate Phase 4 for another bounded split or for large/generated artifact policy review.
+
+## Repository Historical Cleanup Phase 4 QA Validation (2026-04-24)
+
+1. **Files read and files changed**
+
+- Files read:
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `.codex/agents/qa.toml`
+  - `docs/blackboard/state.yaml`
+  - `docs/maintenance/legacy-cleanup-inventory.md`
+  - `docs/maintenance/large-files.md`
+  - `docs/maintenance/maintenance-health-summary.md`
+- Files changed:
+  - `.gitignore`
+  - `docs/maintenance/legacy-cleanup-phase4.md`
+  - `docs/maintenance/maintenance-health-summary.md`
+  - `docs/qa-report.md`
+
+2. **Decisions made**
+
+- QA accepts the cleanup boundary because the removed items were untracked or ignored local artifacts: cache directories, pytest cache, frontend build output, local verification folders, temporary document extraction output, and Playwright output.
+- QA explicitly does not treat data/model/PDF/vector-store/database/upload/thesis assets as safe deletion targets in this phase.
+- `.gitignore` readability and ignore-rule hardening are considered repository-maintenance changes, not product/API contract changes.
+
+3. **Validation evidence**
+
+- Cleanup safety guard:
+  - Recursive deletion script resolved absolute paths under `E:\health_ai_platform_2.0` before deletion.
+  - The script checked `git ls-files` and skipped paths with tracked files.
+- `python -m pytest tests -q`
+  - Exit code: `0`
+  - Output: `240 passed in 66.52s`
+- `npm.cmd run build` in `frontend`
+  - Exit code: `0`
+  - Output highlight: `✓ built in 8.93s`
+
+4. **Findings**
+
+- QA recommendation: `PASS`.
+- Blocking findings: none.
+- Contract control: no public route path, request/response envelope, database schema, OCR/RAG/Agent tool contract, frontend API contract, or model/data contract change was detected in this cleanup phase.
+- Asset control: no useful business source code, model asset, data asset, RAG PDF, vector store, database, uploaded asset, or tracked thesis/check artifact was intentionally deleted.
+- Residual risk: large runtime/data assets remain in the repository/workspace and still need owner-reviewed manifest or externalization policy before any future archive/delete action.
+
+5. **Requested next owner**
+
+- Requested next owner: `orchestrator`
+
+## Repository Presentation Polish Phase 5 QA Validation (2026-04-24)
+
+1. **Files read and files changed**
+
+- Files read:
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `.codex/agents/qa.toml`
+  - `docs/blackboard/state.yaml`
+  - `README.md`
+  - `docs/maintenance/maintenance-health-summary.md`
+  - `docs/maintenance/legacy-cleanup-phase4.md`
+- Files changed:
+  - `README.md`
+  - `.gitignore`
+  - `docs/showcase/project-one-page.md`
+  - `docs/showcase/demo-script.md`
+  - `docs/showcase/presentation-checklist.md`
+  - `docs/maintenance/presentation-polish-phase5.md`
+  - `docs/maintenance/maintenance-health-summary.md`
+  - `tests/test_showcase_hygiene.py`
+  - `docs/qa-report.md`
+
+2. **Decisions made**
+
+- QA accepts Phase 5 as a presentation-governance slice rather than a product behavior change.
+- The README now has a top-level defense/demo entry, and `docs/showcase/` provides a one-page brief, demo script, and presentation checklist.
+- A focused regression guard now checks showcase links, required sections, UTF-8/no-BOM hygiene, and common mojibake fragments.
+
+3. **Validation evidence**
+
+- TDD red evidence:
+  - `python -m pytest tests\test_showcase_hygiene.py -q`
+  - Initial result: expected failure because README showcase links and showcase documents were missing, and `.gitignore` still had a UTF-8 BOM.
+- Focused showcase hygiene:
+  - `python -m pytest tests\test_showcase_hygiene.py -q`
+  - Exit code: `0`
+  - Output: `3 passed in 0.04s`
+- Full backend regression:
+  - `python -m pytest tests -q`
+  - Exit code: `0`
+  - Output: `243 passed in 62.81s`
+- Frontend production build:
+  - `npm.cmd run build` in `frontend`
+  - Exit code: `0`
+  - Output highlight: `✓ built in 7.46s`
+
+4. **Findings**
+
+- QA recommendation: `PASS`.
+- Blocking findings: none.
+- Contract control: no public route path, request/response envelope, database schema, OCR/RAG/Agent tool contract, frontend API contract, or model/data contract change was detected.
+- Asset control: no useful business source code, model asset, data asset, RAG PDF, vector store, database, uploaded asset, or thesis/check artifact was deleted.
+- Residual risk: this phase improves repository/demo documentation and encoding hygiene; it does not redesign frontend UI screens. Any future visual UI polish should be a separate FE-owned slice with browser screenshots.
+
+5. **Requested next owner**
+
+- Requested next owner: `orchestrator`
+
+## Repository Asset Manifest Phase 6 Acceptance Validation (2026-04-24)
+
+1. **Files read and files changed**
+
+- Files read:
+  - `AGENTS.md`
+  - `.codex/config.toml`
+  - `docs/blackboard/state.yaml`
+  - `docs/maintenance/maintenance-health-summary.md`
+  - `docs/maintenance/legacy-cleanup-phase4.md`
+  - `docs/maintenance/presentation-polish-phase5.md`
+  - `README.md`
+- Files changed:
+  - `README.md`
+  - `docs/maintenance/asset-manifest-phase6.json`
+  - `docs/maintenance/asset-manifest-phase6.md`
+  - `docs/maintenance/phase6-acceptance-report.md`
+  - `docs/maintenance/maintenance-health-summary.md`
+  - `tests/test_asset_manifest_phase6.py`
+  - `docs/qa-report.md`
+
+2. **Decisions made**
+
+- QA accepts Phase 6 as an asset-governance and acceptance slice, not a deletion or product behavior slice.
+- The manifest covers eight required asset classes: raw data, processed data, model artifacts, RAG documents, vector store, upload samples, runtime databases, and thesis artifacts.
+- Direct deletion remains disallowed. Externalization requires owner review, regeneration/rebuild instructions, checksum policy, privacy review where applicable, and follow-up regression evidence.
+
+3. **Validation evidence**
+
+- TDD red evidence:
+  - `python -m pytest tests\test_asset_manifest_phase6.py -q`
+  - Initial result: expected failure because Phase 6 manifest JSON/Markdown, acceptance report, and README links were missing.
+- Focused Phase 5/6 acceptance hygiene:
+  - `python -m pytest tests/test_asset_manifest_phase6.py tests/test_showcase_hygiene.py -q`
+  - Exit code: `0`
+  - Output: `6 passed in 0.03s`
+- Full backend regression:
+  - `python -m pytest tests -q`
+  - Exit code: `0`
+  - Output: `246 passed in 58.35s`
+- Frontend production build:
+  - `npm.cmd run build` in `frontend`
+  - Exit code: `0`
+  - Output highlight: `✓ built in 7.43s`
+
+4. **Findings**
+
+- QA recommendation: `PASS`.
+- Blocking findings: none.
+- Contract control: no public route path, request/response envelope, database schema, OCR/RAG/Agent tool contract, frontend API contract, or model I/O contract change was detected.
+- Asset control: no useful business source code, model asset, data asset, RAG PDF, vector store, database, uploaded asset, or thesis/check artifact was deleted.
+- Residual risk: the manifest reports about `156563.64 MB` of scoped assets, including about `148691.12 MB` under `data_warehouse/raw_data` and `7616.68 MB` under `temp_uploads`. These remain future owner-reviewed externalization candidates, not current deletion approvals.
+
+5. **Requested next owner**
+
+- Requested next owner: `orchestrator`

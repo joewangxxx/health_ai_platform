@@ -937,6 +937,8 @@ const authHeaders = () => ({
 const renderMarkdown = (text) => md.render(text || '')
 
 const normalizeEvidencePanel = (panel) => {
+    // 统一后端可能返回的宽松结构，确保渲染层始终拿到稳定字段。
+    // 若 chips/sections 都为空，则返回 null，避免渲染空证据面板。
     if (!panel || typeof panel !== 'object') return null
 
     const normalizeSourceItem = (sourceItem) => {
@@ -1164,11 +1166,11 @@ const formatResponseMode = (msg) => {
     const verdict = getResponseVerdict(msg)
     const policy = getDecisionPolicy(msg)
     return formatEnumValue(verdict?.response_mode || policy.answer_mode, {
-        direct_answer: 'direct_answer',
-        bounded_answer: 'bounded_answer',
-        clarify_missing_context: 'clarify_missing_context',
-        refusal_with_disclaimer: 'refusal_with_disclaimer',
-        urgent_care_disclaimer: 'urgent_care_disclaimer',
+        direct_answer: '直接回答',
+        bounded_answer: '保守限定回答',
+        clarify_missing_context: '需要补充上下文',
+        refusal_with_disclaimer: '安全拒答并提示就医',
+        urgent_care_disclaimer: '紧急就医提示',
     })
 }
 
@@ -1176,9 +1178,9 @@ const formatMedicalRiskLevel = (msg) => {
     const verdict = getResponseVerdict(msg)
     const policy = getDecisionPolicy(msg)
     return formatEnumValue(verdict?.medical_risk_level || policy.risk_level, {
-        low: 'low',
-        medium: 'medium',
-        high: 'high',
+        low: '低',
+        medium: '中',
+        high: '高',
     })
 }
 
@@ -1186,9 +1188,9 @@ const formatEvidenceSufficiency = (msg) => {
     const verdict = getResponseVerdict(msg)
     const policy = getDecisionPolicy(msg)
     return formatEnumValue(verdict?.evidence_sufficiency || policy.evidence_state, {
-        sufficient: 'sufficient',
-        limited: 'limited',
-        insufficient: 'insufficient',
+        sufficient: '充分',
+        limited: '有限',
+        insufficient: '不足',
     })
 }
 
@@ -1242,6 +1244,9 @@ const scrollToBottom = async () => {
 }
 
 const parseSseBuffer = (buffer, onEvent) => {
+    // 解析增量 SSE 缓冲区：
+    // - 只消费完整事件块（以空行分隔）；
+    // - 未闭合的尾部片段保留到下次 read() 继续拼接。
     let normalized = buffer.replace(/\r\n/g, '\n')
     let separatorIndex = normalized.indexOf('\n\n')
 
@@ -1263,6 +1268,7 @@ const parseSseBuffer = (buffer, onEvent) => {
 
             if (dataLines.length > 0) {
                 try {
+                    // data 允许多行，按 SSE 规范拼接后再做 JSON 解析。
                     onEvent({
                         event: eventName,
                         data: JSON.parse(dataLines.join('\n')),
@@ -1466,6 +1472,7 @@ const prepareBatchRestoreSelection = async (conversationIds) => {
 }
 
 const archiveSelectedConversations = async () => {
+    // 仅在“活动会话视图”执行批量归档，避免与归档视图操作语义冲突。
     if (loading.value || batchArchiveLoading.value || showArchived.value) return
 
     const selectedIds = Array.from(new Set(selectedConversationIds.value)).filter(Boolean)
@@ -1476,6 +1483,7 @@ const archiveSelectedConversations = async () => {
 
     batchArchiveLoading.value = true
     try {
+        // 先走 prepare 预检，确保只对可归档项执行正式提交。
         const preview = await prepareBatchArchiveSelection(selectedIds)
         if (!preview || preview.archiveable_count === 0) {
             ElMessage.info('所选会话没有可归档项')
@@ -1488,6 +1496,7 @@ const archiveSelectedConversations = async () => {
             { headers: authHeaders() },
         )
 
+        // 当前会话被归档后，主动切换到新会话，避免停留在不可见上下文。
         if (conversationId.value && selectedIds.includes(conversationId.value) && !showArchived.value) {
             await startNewConversation()
         }
@@ -1579,6 +1588,7 @@ const sendMessage = async (e) => {
     const content = inputMessage.value.trim()
     if (!content || loading.value) return
 
+    // 先把用户消息入本地列表，提升输入后即时反馈。
     messages.value.push({
         role: 'user',
         content,
@@ -1590,6 +1600,7 @@ const sendMessage = async (e) => {
     await scrollToBottom()
 
     try {
+        // 主路径：优先使用 SSE 流式响应，持续更新阶段状态与最终答复。
         const response = await fetch(CHAT_STREAM_URL, {
             method: 'POST',
             headers: {
@@ -1641,6 +1652,7 @@ const sendMessage = async (e) => {
             await scrollToBottom()
         }
 
+        // 读取结束后再冲刷一次 decoder，处理最后一个可能未提交的事件块。
         buffer += decoder.decode()
         parseSseBuffer(buffer, ({ event, data }) => {
             if (event === 'status') {
@@ -1663,6 +1675,7 @@ const sendMessage = async (e) => {
     } catch (error) {
         console.error('SSE chat failed, falling back to standard request.', error)
         try {
+            // 降级路径：流式失败时回退到普通请求，保证最小可用体验。
             if (streamStages.value.length === 0) {
                 loadingHint.value = '流式连接异常，正在切换为标准请求...'
             }

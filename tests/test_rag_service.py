@@ -81,6 +81,7 @@ def test_search_context_with_quality_returns_internal_quality_summary(monkeypatc
 def test_search_context_with_quality_marks_unavailable_when_vectorstore_is_missing():
     service = RAGService()
     service.vectorstore = None
+    service._initialized = True
 
     result = service.search_context_with_quality("blood sugar guidance", k=3)
 

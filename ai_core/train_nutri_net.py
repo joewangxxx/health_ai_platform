@@ -6,12 +6,18 @@ from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms, models
 from PIL import Image
 import os
+import sys
 import time
 
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+sys.path.append(PROJECT_ROOT)
+
+from backend.config import DATA_WAREHOUSE_DIR, MODELS_DIR
+
 # ================= ⚙️ 配置区域 =================
-BASE_DIR = r"F:\health_ai_platform_2.0"
-DATA_FILE = os.path.join(BASE_DIR, "data_warehouse", "processed_data", "food_nutrition_labels.csv")
-MODEL_SAVE_PATH = os.path.join(BASE_DIR, "models", "nutrition_efficientnet.pth")
+DATA_FILE = os.path.join(DATA_WAREHOUSE_DIR, "processed_data", "food_nutrition_labels.csv")
+MODEL_SAVE_PATH = os.path.join(MODELS_DIR, "nutrition_efficientnet.pth")
 
 # 训练参数
 BATCH_SIZE = 16       # 显存不够可调小至 8

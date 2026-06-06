@@ -14,11 +14,13 @@ DOCS_DIR = str((__import__("pathlib").Path(__file__).resolve().parents[3] / "rag
 
 
 def _build_knowledge_base_safe():
+    """中文说明：_build_knowledge_base_safe 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     from backend.rag.build_kb import build_knowledge_base
 
     build_knowledge_base()
 
 def get_file_info(filename: str) -> Dict:
+    """中文说明：get_file_info 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     file_path = os.path.join(DOCS_DIR, filename)
     stats = os.stat(file_path)
     return {
@@ -48,6 +50,7 @@ async def upload_knowledge_file(
     """
     上传新的 PDF 指南
     """
+    # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
     if not file.filename.lower().endswith('.pdf'):
         raise HTTPException(400, "Only PDF files are supported.")
     
@@ -90,5 +93,6 @@ async def rebuild_knowledge_base_endpoint(
     """
     触发后台任务：重建 RAG 知识库索引
     """
+    # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
     background_tasks.add_task(_build_knowledge_base_safe)
     return {"status": "queued", "message": "Knowledge base rebuild task started in background."}

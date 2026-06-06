@@ -1,0 +1,771 @@
+{
+  "schema_version": "synthea_extracted_profiles.v1",
+  "source_directory": "C:\\Users\\JoeWang\\Downloads\\synthea_sample_data_csv_apr2020\\csv",
+  "profiles": [
+    {
+      "synthea_patient_id": "8505e011-20cb-4bc5-8a66-5900111fb04b",
+      "patient": {
+        "birthdate": "1960-03-11",
+        "deathdate": null,
+        "gender": "F",
+        "age": 60,
+        "name": "Belinda283 Kilback373"
+      },
+      "latest_observations": {
+        "Glucose_Fasting": {
+          "value": 4.46,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Glucose",
+            "synthea_code": "2339-0",
+            "original_value": "80.3",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Glucose"
+        },
+        "Creatinine": {
+          "value": 61.9,
+          "unit": "umol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Creatinine",
+            "synthea_code": "38483-4",
+            "original_value": "0.7",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Creatinine"
+        },
+        "eGFR": {
+          "value": 148.5,
+          "unit": "mL/min/{1.73_m2}",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Estimated Glomerular Filtration Rate",
+            "synthea_code": "33914-3",
+            "original_value": "148.5",
+            "original_unit": "mL/min/{1.73_m2}"
+          },
+          "mapping_key": "Estimated Glomerular Filtration Rate"
+        },
+        "ALP": {
+          "value": 139.5,
+          "unit": "U/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-10-01T19:03:16Z",
+            "synthea_description": "Alkaline phosphatase [Enzymatic activity/volume] in Serum or Plasma",
+            "synthea_code": "6768-6",
+            "original_value": "139.5",
+            "original_unit": "U/L"
+          },
+          "mapping_key": "Alkaline phosphatase"
+        },
+        "ALT": {
+          "value": 59,
+          "unit": "U/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-10-01T19:03:16Z",
+            "synthea_description": "Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma",
+            "synthea_code": "1742-6",
+            "original_value": "59.0",
+            "original_unit": "U/L"
+          },
+          "mapping_key": "Alanine aminotransferase"
+        },
+        "Cholesterol_Total": {
+          "value": 4.39,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Total Cholesterol",
+            "synthea_code": "2093-3",
+            "original_value": "169.7",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Total Cholesterol"
+        },
+        "Triglycerides": {
+          "value": 1.62,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Triglycerides",
+            "synthea_code": "2571-8",
+            "original_value": "143.6",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Triglycerides"
+        },
+        "Cholesterol_LDL": {
+          "value": 2.03,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Low Density Lipoprotein Cholesterol",
+            "synthea_code": "18262-6",
+            "original_value": "78.4",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Low Density Lipoprotein Cholesterol"
+        },
+        "Cholesterol_HDL": {
+          "value": 1.62,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "High Density Lipoprotein Cholesterol",
+            "synthea_code": "2085-9",
+            "original_value": "62.6",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "High Density Lipoprotein Cholesterol"
+        },
+        "Height": {
+          "value": 162.5,
+          "unit": "cm",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Body Height",
+            "synthea_code": "8302-2",
+            "original_value": "162.5",
+            "original_unit": "cm"
+          },
+          "mapping_key": "Body Height"
+        },
+        "Weight": {
+          "value": 77.9,
+          "unit": "kg",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Body Weight",
+            "synthea_code": "29463-7",
+            "original_value": "77.9",
+            "original_unit": "kg"
+          },
+          "mapping_key": "Body Weight"
+        },
+        "BMI": {
+          "value": 29.5,
+          "unit": "kg/m2",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Body Mass Index",
+            "synthea_code": "39156-5",
+            "original_value": "29.5",
+            "original_unit": "kg/m2"
+          },
+          "mapping_key": "Body Mass Index"
+        },
+        "DBP": {
+          "value": 116,
+          "unit": "mmHg",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Diastolic Blood Pressure",
+            "synthea_code": "8462-4",
+            "original_value": "116.0",
+            "original_unit": "mm[Hg]"
+          },
+          "mapping_key": "Diastolic Blood Pressure"
+        },
+        "SBP": {
+          "value": 188,
+          "unit": "mmHg",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Systolic Blood Pressure",
+            "synthea_code": "8480-6",
+            "original_value": "188.0",
+            "original_unit": "mm[Hg]"
+          },
+          "mapping_key": "Systolic Blood Pressure"
+        },
+        "Smoking_Status": {
+          "value": "Never smoker",
+          "unit": null,
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Tobacco smoking status NHIS",
+            "synthea_code": "72166-2",
+            "original_value": "Never smoker",
+            "original_unit": null
+          },
+          "mapping_key": "Tobacco smoking status NHIS"
+        },
+        "HbA1c": {
+          "value": 5.9,
+          "unit": "%",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-27T19:03:16Z",
+            "synthea_description": "Hemoglobin A1c/Hemoglobin.total in Blood",
+            "synthea_code": "4548-4",
+            "original_value": "5.9",
+            "original_unit": "%"
+          },
+          "mapping_key": "Hemoglobin A1c/Hemoglobin.total in Blood"
+        },
+        "WBC": {
+          "value": 7.9,
+          "unit": "10*3/uL",
+          "source": {
+            "table": "observations.csv",
+            "date": "2016-12-09T19:03:16Z",
+            "synthea_description": "Leukocytes [#/volume] in Blood by Automated count",
+            "synthea_code": "6690-2",
+            "original_value": "7.9",
+            "original_unit": "10*3/uL"
+          },
+          "mapping_key": "Leukocytes"
+        },
+        "Platelet": {
+          "value": 412.2,
+          "unit": "10*3/uL",
+          "source": {
+            "table": "observations.csv",
+            "date": "2016-12-09T19:03:16Z",
+            "synthea_description": "Platelets [#/volume] in Blood by Automated count",
+            "synthea_code": "777-3",
+            "original_value": "412.2",
+            "original_unit": "10*3/uL"
+          },
+          "mapping_key": "Platelets"
+        }
+      },
+      "supplement": {
+        "WaistCircum": 99.0,
+        "Sleep_Hours": 6.0,
+        "Alcohol_Frequency": "occasional",
+        "Physical_Activity": "low",
+        "Diet_Pattern": "high_sodium_high_carbohydrate",
+        "Family_History_Diabetes": true,
+        "Family_History_CVD": true
+      }
+    },
+    {
+      "synthea_patient_id": "066c0f3d-90bb-4082-99ec-f307c4759f50",
+      "patient": {
+        "birthdate": "1956-11-25",
+        "deathdate": null,
+        "gender": "M",
+        "age": 63,
+        "name": "Floyd420 Conroy74"
+      },
+      "latest_observations": {
+        "Glucose_Fasting": {
+          "value": 4.74,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-11-22T07:21:13Z",
+            "synthea_description": "Glucose",
+            "synthea_code": "2339-0",
+            "original_value": "85.4",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Glucose"
+        },
+        "Creatinine": {
+          "value": 79.6,
+          "unit": "umol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-11-22T07:21:13Z",
+            "synthea_description": "Creatinine",
+            "synthea_code": "38483-4",
+            "original_value": "0.9",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Creatinine"
+        },
+        "eGFR": {
+          "value": 67.8,
+          "unit": "mL/min",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-06-10T07:21:13Z",
+            "synthea_description": "Glomerular filtration rate/1.73 sq M.predicted",
+            "synthea_code": "33914-3",
+            "original_value": "67.8",
+            "original_unit": "mL/min"
+          },
+          "mapping_key": "Estimated Glomerular Filtration Rate"
+        },
+        "ALP": {
+          "value": 109,
+          "unit": "U/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-06-10T07:21:13Z",
+            "synthea_description": "Alkaline phosphatase [Enzymatic activity/volume] in Serum or Plasma",
+            "synthea_code": "6768-6",
+            "original_value": "109.0",
+            "original_unit": "U/L"
+          },
+          "mapping_key": "Alkaline phosphatase"
+        },
+        "ALT": {
+          "value": 59.7,
+          "unit": "U/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-06-10T07:21:13Z",
+            "synthea_description": "Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma",
+            "synthea_code": "1742-6",
+            "original_value": "59.7",
+            "original_unit": "U/L"
+          },
+          "mapping_key": "Alanine aminotransferase"
+        },
+        "Cholesterol_Total": {
+          "value": 4.27,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-06-10T07:21:13Z",
+            "synthea_description": "Total Cholesterol",
+            "synthea_code": "2093-3",
+            "original_value": "165.1",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Total Cholesterol"
+        },
+        "Triglycerides": {
+          "value": 1.62,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-06-10T07:21:13Z",
+            "synthea_description": "Triglycerides",
+            "synthea_code": "2571-8",
+            "original_value": "143.3",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Triglycerides"
+        },
+        "Cholesterol_LDL": {
+          "value": 3.18,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-06-10T07:21:13Z",
+            "synthea_description": "Low Density Lipoprotein Cholesterol",
+            "synthea_code": "18262-6",
+            "original_value": "122.8",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Low Density Lipoprotein Cholesterol"
+        },
+        "Cholesterol_HDL": {
+          "value": 1.62,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-06-10T07:21:13Z",
+            "synthea_description": "High Density Lipoprotein Cholesterol",
+            "synthea_code": "2085-9",
+            "original_value": "62.7",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "High Density Lipoprotein Cholesterol"
+        },
+        "Height": {
+          "value": 172.9,
+          "unit": "cm",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-09-29T07:21:13Z",
+            "synthea_description": "Body Height",
+            "synthea_code": "8302-2",
+            "original_value": "172.9",
+            "original_unit": "cm"
+          },
+          "mapping_key": "Body Height"
+        },
+        "Weight": {
+          "value": 84,
+          "unit": "kg",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-09-29T07:21:13Z",
+            "synthea_description": "Body Weight",
+            "synthea_code": "29463-7",
+            "original_value": "84.0",
+            "original_unit": "kg"
+          },
+          "mapping_key": "Body Weight"
+        },
+        "BMI": {
+          "value": 28.1,
+          "unit": "kg/m2",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-09-29T07:21:13Z",
+            "synthea_description": "Body Mass Index",
+            "synthea_code": "39156-5",
+            "original_value": "28.1",
+            "original_unit": "kg/m2"
+          },
+          "mapping_key": "Body Mass Index"
+        },
+        "DBP": {
+          "value": 82,
+          "unit": "mmHg",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-09-29T07:21:13Z",
+            "synthea_description": "Diastolic Blood Pressure",
+            "synthea_code": "8462-4",
+            "original_value": "82.0",
+            "original_unit": "mm[Hg]"
+          },
+          "mapping_key": "Diastolic Blood Pressure"
+        },
+        "SBP": {
+          "value": 133,
+          "unit": "mmHg",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-09-29T07:21:13Z",
+            "synthea_description": "Systolic Blood Pressure",
+            "synthea_code": "8480-6",
+            "original_value": "133.0",
+            "original_unit": "mm[Hg]"
+          },
+          "mapping_key": "Systolic Blood Pressure"
+        },
+        "Smoking_Status": {
+          "value": "Never smoker",
+          "unit": null,
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-09-29T07:21:13Z",
+            "synthea_description": "Tobacco smoking status NHIS",
+            "synthea_code": "72166-2",
+            "original_value": "Never smoker",
+            "original_unit": null
+          },
+          "mapping_key": "Tobacco smoking status NHIS"
+        },
+        "HbA1c": {
+          "value": 6.4,
+          "unit": "%",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-09-29T07:21:13Z",
+            "synthea_description": "Hemoglobin A1c/Hemoglobin.total in Blood",
+            "synthea_code": "4548-4",
+            "original_value": "6.4",
+            "original_unit": "%"
+          },
+          "mapping_key": "Hemoglobin A1c/Hemoglobin.total in Blood"
+        },
+        "WBC": {
+          "value": 5.3,
+          "unit": "10*3/uL",
+          "source": {
+            "table": "observations.csv",
+            "date": "2018-09-23T07:21:13Z",
+            "synthea_description": "Leukocytes [#/volume] in Blood by Automated count",
+            "synthea_code": "6690-2",
+            "original_value": "5.3",
+            "original_unit": "10*3/uL"
+          },
+          "mapping_key": "Leukocytes"
+        },
+        "Platelet": {
+          "value": 210,
+          "unit": "10*3/uL",
+          "source": {
+            "table": "observations.csv",
+            "date": "2018-09-23T07:21:13Z",
+            "synthea_description": "Platelets [#/volume] in Blood by Automated count",
+            "synthea_code": "777-3",
+            "original_value": "210.0",
+            "original_unit": "10*3/uL"
+          },
+          "mapping_key": "Platelets"
+        }
+      },
+      "supplement": {
+        "WaistCircum": 101.0,
+        "Sleep_Hours": 6.5,
+        "Alcohol_Frequency": "none",
+        "Physical_Activity": "low",
+        "Diet_Pattern": "high_sodium_moderate_carbohydrate",
+        "Family_History_Diabetes": true,
+        "Family_History_CVD": true
+      }
+    },
+    {
+      "synthea_patient_id": "4a52ea9c-d410-4b78-a4da-6053e2ed0787",
+      "patient": {
+        "birthdate": "1974-06-01",
+        "deathdate": null,
+        "gender": "F",
+        "age": 45,
+        "name": "Aundrea980 Mertz280"
+      },
+      "latest_observations": {
+        "Height": {
+          "value": 155.7,
+          "unit": "cm",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Body Height",
+            "synthea_code": "8302-2",
+            "original_value": "155.7",
+            "original_unit": "cm"
+          },
+          "mapping_key": "Body Height"
+        },
+        "Weight": {
+          "value": 68.5,
+          "unit": "kg",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Body Weight",
+            "synthea_code": "29463-7",
+            "original_value": "68.5",
+            "original_unit": "kg"
+          },
+          "mapping_key": "Body Weight"
+        },
+        "BMI": {
+          "value": 28.2,
+          "unit": "kg/m2",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Body Mass Index",
+            "synthea_code": "39156-5",
+            "original_value": "28.2",
+            "original_unit": "kg/m2"
+          },
+          "mapping_key": "Body Mass Index"
+        },
+        "DBP": {
+          "value": 110,
+          "unit": "mmHg",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Diastolic Blood Pressure",
+            "synthea_code": "8462-4",
+            "original_value": "110.0",
+            "original_unit": "mm[Hg]"
+          },
+          "mapping_key": "Diastolic Blood Pressure"
+        },
+        "SBP": {
+          "value": 148,
+          "unit": "mmHg",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Systolic Blood Pressure",
+            "synthea_code": "8480-6",
+            "original_value": "148.0",
+            "original_unit": "mm[Hg]"
+          },
+          "mapping_key": "Systolic Blood Pressure"
+        },
+        "Cholesterol_Total": {
+          "value": 5.16,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Total Cholesterol",
+            "synthea_code": "2093-3",
+            "original_value": "199.5",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Total Cholesterol"
+        },
+        "Triglycerides": {
+          "value": 1.38,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Triglycerides",
+            "synthea_code": "2571-8",
+            "original_value": "122.2",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Triglycerides"
+        },
+        "Cholesterol_LDL": {
+          "value": 2.96,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Low Density Lipoprotein Cholesterol",
+            "synthea_code": "18262-6",
+            "original_value": "114.4",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Low Density Lipoprotein Cholesterol"
+        },
+        "Cholesterol_HDL": {
+          "value": 1.57,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "High Density Lipoprotein Cholesterol",
+            "synthea_code": "2085-9",
+            "original_value": "60.7",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "High Density Lipoprotein Cholesterol"
+        },
+        "WBC": {
+          "value": 5.9,
+          "unit": "10*3/uL",
+          "source": {
+            "table": "observations.csv",
+            "date": "2015-12-05T14:35:35Z",
+            "synthea_description": "Leukocytes [#/volume] in Blood by Automated count",
+            "synthea_code": "6690-2",
+            "original_value": "5.9",
+            "original_unit": "10*3/uL"
+          },
+          "mapping_key": "Leukocytes"
+        },
+        "Platelet": {
+          "value": 186.2,
+          "unit": "10*3/uL",
+          "source": {
+            "table": "observations.csv",
+            "date": "2015-12-05T14:35:35Z",
+            "synthea_description": "Platelets [#/volume] in Blood by Automated count",
+            "synthea_code": "777-3",
+            "original_value": "186.2",
+            "original_unit": "10*3/uL"
+          },
+          "mapping_key": "Platelets"
+        },
+        "Smoking_Status": {
+          "value": "Former smoker",
+          "unit": null,
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Tobacco smoking status NHIS",
+            "synthea_code": "72166-2",
+            "original_value": "Former smoker",
+            "original_unit": null
+          },
+          "mapping_key": "Tobacco smoking status NHIS"
+        },
+        "HbA1c": {
+          "value": 6.1,
+          "unit": "%",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Hemoglobin A1c/Hemoglobin.total in Blood",
+            "synthea_code": "4548-4",
+            "original_value": "6.1",
+            "original_unit": "%"
+          },
+          "mapping_key": "Hemoglobin A1c/Hemoglobin.total in Blood"
+        },
+        "Glucose_Fasting": {
+          "value": 3.92,
+          "unit": "mmol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Glucose",
+            "synthea_code": "2339-0",
+            "original_value": "70.5",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Glucose"
+        },
+        "Creatinine": {
+          "value": 70.7,
+          "unit": "umol/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-28T14:35:35Z",
+            "synthea_description": "Creatinine",
+            "synthea_code": "38483-4",
+            "original_value": "0.8",
+            "original_unit": "mg/dL"
+          },
+          "mapping_key": "Creatinine"
+        },
+        "eGFR": {
+          "value": 71.9,
+          "unit": "mL/min",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-19T14:35:35Z",
+            "synthea_description": "Glomerular filtration rate/1.73 sq M.predicted",
+            "synthea_code": "33914-3",
+            "original_value": "71.9",
+            "original_unit": "mL/min"
+          },
+          "mapping_key": "Estimated Glomerular Filtration Rate"
+        },
+        "ALP": {
+          "value": 96.7,
+          "unit": "U/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-19T14:35:35Z",
+            "synthea_description": "Alkaline phosphatase [Enzymatic activity/volume] in Serum or Plasma",
+            "synthea_code": "6768-6",
+            "original_value": "96.7",
+            "original_unit": "U/L"
+          },
+          "mapping_key": "Alkaline phosphatase"
+        },
+        "ALT": {
+          "value": 54.7,
+          "unit": "U/L",
+          "source": {
+            "table": "observations.csv",
+            "date": "2019-12-19T14:35:35Z",
+            "synthea_description": "Alanine aminotransferase [Enzymatic activity/volume] in Serum or Plasma",
+            "synthea_code": "1742-6",
+            "original_value": "54.7",
+            "original_unit": "U/L"
+          },
+          "mapping_key": "Alanine aminotransferase"
+        }
+      },
+      "supplement": {
+        "WaistCircum": 91.0,
+        "Sleep_Hours": 6.0,
+        "Alcohol_Frequency": "occasional",
+        "Physical_Activity": "low",
+        "Diet_Pattern": "high_sodium_high_fat",
+        "Family_History_Diabetes": true,
+        "Family_History_CVD": false
+      }
+    }
+  ]
+}

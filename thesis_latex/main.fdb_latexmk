@@ -1,18 +1,18 @@
 # Fdb version 4
-["bibtex main"] 1776144080.32569 "main.aux" "main.bbl" "main" 1776144094.69383 0
-  "./references.bib" 1776144012 12517 1b42482374317daa301b2efd2c3b0bf1 ""
+["bibtex main"] 1776755342.07191 "main.aux" "main.bbl" "main" 1776755342.80397 0
+  "./references.bib" 1776755332 10523 b1cda0803ccb8c9be2c51e75f5989b84 ""
   "c:/texlive/2026/texmf-dist/bibtex/bst/gbt7714/gbt7714-numerical.bst" 1773224189 58899 d0fae0cf8d28654026c4bf03972fb16c ""
-  "main.aux" 1776144088 23145 f8c041160d1e3bf8c50b21c1236cb9e0 "xelatex"
+  "main.aux" 1776753952 23340 5051e4c6e33bcd9eab423fd1955265af "xelatex"
   (generated)
   "main.bbl"
   "main.blg"
   (rewritten before read)
-["xdvipdfmx"] 1776144088.79252 "main.xdv" "main.pdf" "main" 1776144094.69744 0
-  "main.xdv" 1776144088 1030756 f35a908f01299492b29620c2caf6930c "xelatex"
+["xdvipdfmx"] 1776753952.14595 "main.xdv" "main.pdf" "main" 1776755342.80675 0
+  "main.xdv" 1776753952 1022080 9c91a0faaa7ac77d0efa2260ea0362cc "xelatex"
   (generated)
   "main.pdf"
   (rewritten before read)
-["xelatex"] 1776144081.12554 "main.tex" "main.xdv" "main" 1776144094.69402 0
+["xelatex"] 1776753948.54486 "main.tex" "main.xdv" "main" 1776755342.80408 0
   "c:/Windows/Fonts/msyh.ttc" 1753424583 19704352 1e10e74402e59d54499af795caf0b135 ""
   "c:/texlive/2026/texmf-dist/fonts/map/fontname/texfonts.map" 1773223919 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "c:/texlive/2026/texmf-dist/fonts/tfm/adobe/zapfding/pzdr.tfm" 1773230372 1528 7e12f4c0fcf5a072cebdcfbfc610f54c ""
@@ -142,12 +142,12 @@
   "c:/texlive/2026/texmf-dist/web2c/texmf.cnf" 1773219702 43630 e9fa012910491fe5ae08a72c3c2997a7 ""
   "c:/texlive/2026/texmf-var/web2c/xetex/xelatex.fmt" 1773230620 5948926 f2df16dfac7772f2bb3e2610c88bc03b ""
   "c:/texlive/2026/texmf.cnf" 1773230465 713 e69b156964470283e0530f5060668171 ""
-  "chapters/01_intro.tex" 1775994246 15894 d093e93526d8b8b83dbf00e9f099af00 ""
+  "chapters/01_intro.tex" 1776240646 15894 b6e9eff851a29ef43718c9414161ffd5 ""
   "chapters/02_theory.tex" 1776144012 8155 530c7991aa31eea8a1160f8a2ddd4811 ""
-  "chapters/03_design.tex" 1776010366 13155 dfe23fe212808c92a440be4c74ff1240 ""
-  "chapters/04_algo.tex" 1776144012 18699 7adb63d6c81eaefccc4d17bd97b6c5f0 ""
-  "chapters/05_impl.tex" 1776144012 19491 bbb13d3db7540ffd8c2b3200e0e8a20b ""
-  "chapters/06_exp.tex" 1776010366 14415 949660ee0fbcb06236906e3238d22624 ""
+  "chapters/03_design.tex" 1776246686 12401 0861d489b550da2b4f84baa7f706115c ""
+  "chapters/04_algo.tex" 1776752400 18695 1b9caa3c8003d7913662a3b7c006b5fc ""
+  "chapters/05_impl.tex" 1776752400 19486 cff78651c5ec783432eae5f9e216a105 ""
+  "chapters/06_exp.tex" 1776752400 14411 1c32a1b4a7202c0ab8822718d578dade ""
   "chapters/07_conclusion.tex" 1776010366 6293 545f740739aa42f25666d27e5d75ef63 ""
   "frontmatter/cover_declaration.pdf" 1776011900 244497 f3014ec3487bf1b2af8a027c1fec6d9d ""
   "images/fig_3_1_overall_architecture_final_flat.png" 1775995438 212415 35ec059dc1e503b21b5130c2343a5c2f ""
@@ -161,11 +161,11 @@
   "images/fig_6_4_agent_behavior_harness_flat.png" 1775924398 173384 e96bfc6f47beb1d3eccdca41353beff7 ""
   "images/fig_6_5_system_functional_validation_flat.png" 1775967092 147432 0b746afac2666196996e0b1b8a3180cd ""
   "images/fig_6_6_agent_consistency_decision_flat.png" 1775971664 156131 958310a36c65de762ebcdca5c8dd4a4f ""
-  "main.aux" 1776144088 23145 f8c041160d1e3bf8c50b21c1236cb9e0 "xelatex"
-  "main.bbl" 1776144082 10052 4524f58c36b001ec76caa9ac8a800708 "bibtex main"
-  "main.out" 1776144088 12122 c3094f46f1dc5137e2179e56c2a3b276 "xelatex"
-  "main.tex" 1776012064 49503 4bcb2142d265d5d7c54299123753d1be ""
-  "main.toc" 1776144088 8847 3cf7a3d3ddb65b451dfe1c1eac2d1519 "xelatex"
+  "main.aux" 1776753952 23340 5051e4c6e33bcd9eab423fd1955265af "xelatex"
+  "main.bbl" 1776755344 10052 4524f58c36b001ec76caa9ac8a800708 "bibtex main"
+  "main.out" 1776753952 12273 d01a8020605e92295f7b3b9cc01c4686 "xelatex"
+  "main.tex" 1776753940 48581 1e9a18878af2e91184b6f14cf45f6745 ""
+  "main.toc" 1776753952 8938 090029820774205ab29bd1f4cea48e00 "xelatex"
   (generated)
   "main.aux"
   "main.log"

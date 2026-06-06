@@ -34,6 +34,7 @@ def build_answer_replay_record(
     cache_hit: bool,
     governance_version: str = GOVERNANCE_VERSION,
 ) -> Dict[str, Any]:
+    """中文说明：当前单元 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     policy = decision_summary.get("policy") or {}
     verdict_payload = response_verdict or {}
     evidence_sufficiency = verdict_payload.get("evidence_sufficiency") or _public_evidence_sufficiency(
@@ -76,6 +77,7 @@ def build_answer_replay_record(
 
 
 def persist_answer_replay_record(*, session: Session, replay_record: Dict[str, Any]) -> AgentAnswerReplay:
+    """中文说明：persist_answer_replay_record 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     event = AgentAnswerReplay(
         schema_version=_string_or_none(
             replay_record.get("schema_version"),
@@ -138,6 +140,7 @@ def _dict_or_default(value: Any) -> Dict[str, Any]:
 
 
 def _sanitize_context_budget_summary(value: Any) -> Optional[Dict[str, Dict[str, int]]]:
+    """中文说明：_sanitize_context_budget_summary 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not isinstance(value, dict):
         return None
 
@@ -159,6 +162,7 @@ def _sanitize_context_budget_summary(value: Any) -> Optional[Dict[str, Dict[str,
 
 
 def _sanitize_tool_result_summary(value: Any) -> List[Dict[str, Any]]:
+    """中文说明：_sanitize_tool_result_summary 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not isinstance(value, list):
         return []
 
@@ -205,6 +209,7 @@ def _sanitize_tool_result_summary(value: Any) -> List[Dict[str, Any]]:
 
 
 def _sanitize_rag_source_refs(value: Any) -> List[Dict[str, Any]]:
+    """中文说明：_sanitize_rag_source_refs 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not isinstance(value, list):
         return []
 

@@ -1,0 +1,51 @@
+{
+  "schema_version": "demo_patient_file_manifest.v1",
+  "updated_at": "2026-05-07",
+  "data_mode": "synthetic_defense_demo",
+  "purpose": "Bind each defense-demo patient to the clinical CSV, synthetic genotype TXT, behavior-day scenario, and expected fusion-output artifact used by the HealthAI Platform demo flow.",
+  "boundaries": [
+    "Clinical profiles are Synthea-derived demo profiles with NHANES-style supplemental fields.",
+    "Genotype files are synthetic 23andMe-style demo files generated from local GWAS weight files; they are not real personal genomes.",
+    "Behavior timelines are simulated_demo artifacts; they are not real wearable, IoT, camera, or device evidence.",
+    "Expected fusion results are local demo outputs for rehearsal, not clinical validation."
+  ],
+  "recommended_primary_patient_id": "synthea_8505e011",
+  "patients": [
+    {
+      "demo_patient_id": "synthea_8505e011",
+      "display_name": "代谢与糖尿病高风险主线患者",
+      "demo_story": "临床血压和代谢指标异常，基因层面强化代谢与心血管风险，行为时间线显示短睡眠、高碳水、高钠和久坐。",
+      "clinical_csv": "data/demo/platform_demo_profile_synthea_8505e011.csv",
+      "gene_txt": "data/demo/demo_gene_synthea_8505e011.txt",
+      "gene_snp_count": 50000,
+      "behavior_scenario_id": "metabolic_day_001",
+      "behavior_scenario_file": "data/demo/behavior_day_scenarios.json",
+      "expected_result_file": "data/demo/demo_fusion_expected_results.json",
+      "recommended_use": "8-10 分钟答辩主流程首选患者"
+    },
+    {
+      "demo_patient_id": "synthea_066c0f3d",
+      "display_name": "心血管与心衰监测备用患者",
+      "demo_story": "临床上突出心血管和肾功能压力，基因层面强化血压、冠心病和心衰风险，行为时间线展示钠摄入和活动耐量受限。",
+      "clinical_csv": "data/demo/platform_demo_profile_synthea_066c0f3d.csv",
+      "gene_txt": "data/demo/demo_gene_synthea_066c0f3d.txt",
+      "gene_snp_count": 50000,
+      "behavior_scenario_id": "cardio_hf_day_001",
+      "behavior_scenario_file": "data/demo/behavior_day_scenarios.json",
+      "expected_result_file": "data/demo/demo_fusion_expected_results.json",
+      "recommended_use": "备用患者；适合展示慢病管理、心血管监测和药物安全模块"
+    },
+    {
+      "demo_patient_id": "synthea_4a52ea9c",
+      "display_name": "年轻心代谢与呼吸改善对照患者",
+      "demo_story": "临床仍有血压和代谢压力，但行为时间线更健康，基因层面突出呼吸/炎症与中等心代谢易感性，适合作为对照故事。",
+      "clinical_csv": "data/demo/platform_demo_profile_synthea_4a52ea9c.csv",
+      "gene_txt": "data/demo/demo_gene_synthea_4a52ea9c.txt",
+      "gene_snp_count": 50000,
+      "behavior_scenario_id": "younger_improvement_day_001",
+      "behavior_scenario_file": "data/demo/behavior_day_scenarios.json",
+      "expected_result_file": "data/demo/demo_fusion_expected_results.json",
+      "recommended_use": "对照患者；适合展示改善型生活方式和个性化建议"
+    }
+  ]
+}

@@ -68,9 +68,9 @@ Agent 模块是本论文在系统实现层的重要交互部分。与常见“�
 
 图~\ref{fig:agent_runtime_workflow_impl} 展示了 Agent 受控问答在实现层的运行链路。
 
-\begin{figure}[htbp]
+\begin{figure}[H]
     \centering
-    \includegraphics[width=0.98\textwidth]{fig_5_2_agent_runtime_workflow_flat.png}
+    \includegraphics[width=0.90\textwidth]{fig_5_2_agent_runtime_workflow_flat.png}
     \bifigcaption
         {Agent受控问答运行链路}
         {Controlled Question-Answering Workflow of the Agent}
@@ -88,7 +88,7 @@ Agent 模块是本论文在系统实现层的重要交互部分。与常见“�
 
 在进入模型生成前，系统先由 \codeid{agent_safety.py} 中的 \codeid{classify_query_safety()} 执行安全分类，输出当前查询所属的车道、路由方式与风险等级。当前实现采用规则驱动而非独立分类模型：它通过模式表和优先级顺序，将查询归入健康咨询、报告解读、趋势回顾、用药相关、诊断敏感和急症分流等车道，并在急症场景下直接短路到安全引导回复。这样的实现方式虽然不属于高复杂度语义分类器，但具有边界清晰、易审计和便于人工规则修正的优势。
 
-在完成车道划分后，系统并不会把全部工具都交给大模型自由探索，而是由 \texttt{ChatService.\_plan\_tools()} 与工具注册表共同决定可调用的受限工具集合。具体来说，规划函数会根据车道默认种子和查询关键词生成候选工具列表，再与按车道返回的白名单求交，并将数量截断在较小上限内。由此，工具调用约束在当前实现中体现为“服务侧先做车道相关筛选，再允许模型在受控集合内调用”，而不是开放式工具自治规划。
+在完成车道划分后，系统并不会把全部工具都交给大模型自由探索，而是由 \codeid{ChatService._plan_tools()} 与工具注册表共同决定可调用的受限工具集合。具体来说，规划函数会根据车道默认种子和查询关键词生成候选工具列表，再与按车道返回的白名单求交，并将数量截断在较小上限内。由此，工具调用约束在当前实现中体现为“服务侧先做车道相关筛选，再允许模型在受控集合内调用”，而不是开放式工具自治规划。
 
 图~\ref{fig:agent_tool_guardrail_impl} 给出了意图分流、车道白名单、受控工具规划与急症旁路之间的实现关系。
 

@@ -64,7 +64,7 @@ P_d^{\text{clinical}} = f_d(\mathbf{x}_d), \qquad d \in \mathcal{D},
 
 \subsection{基因风险评估模型}
 
-遗传风险评估由 \codeid{GeneRiskEngine} 执行。系统首先解析用户上传的 23andMe 原始文本，将其转化为 \(\{\texttt{rsid}: \texttt{genotype}\}\) 的字典，再与病种知识库中的风险位点进行匹配。对于病种 \(d\)，若其知识库包含的位点集合为 \(\mathcal{S}_d\)，位点 \(i\) 的效应权重为 \(w_i\)，用户在该位点命中的风险等位基因剂量为 \(g_i \in \{0,1,2\}\)，则原始遗传风险分数可表示为
+遗传风险评估由 \codeid{GeneRiskEngine} 执行。系统首先解析用户上传的 23andMe 原始文本，将其转化为 \(\{\text{rsid}: \text{genotype}\}\) 的字典，再与病种知识库中的风险位点进行匹配。对于病种 \(d\)，若其知识库包含的位点集合为 \(\mathcal{S}_d\)，位点 \(i\) 的效应权重为 \(w_i\)，用户在该位点命中的风险等位基因剂量为 \(g_i \in \{0,1,2\}\)，则原始遗传风险分数可表示为
 \begin{equation}
 S_d = \sum_{i \in \mathcal{S}_d} w_i g_i.
 \end{equation}

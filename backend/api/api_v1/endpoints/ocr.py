@@ -1,3 +1,4 @@
+import asyncio
 import inspect
 import json
 import logging
@@ -23,8 +24,24 @@ from backend.services.payload_normalization import (
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# China Timezone
+# 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
 CHINA_TZ = ZoneInfo("Asia/Shanghai")
+
+
+async def _parse_medical_report_with_timeout(file_bytes: bytes, timeout_seconds: float | None = None):
+    timeout = timeout_seconds or settings.OCR_PROCESSING_TIMEOUT_SECONDS
+
+    try:
+        result = medical_ocr_service.parse_medical_report(file_bytes)
+        if inspect.isawaitable(result):
+            return await asyncio.wait_for(result, timeout=timeout)
+        return result
+    except (asyncio.TimeoutError, TimeoutError):
+        logger.warning("OCR processing timed out after %s seconds; document remains saved.", timeout)
+        return medical_ocr_service.build_stored_unprocessed_result(
+            "ocr_processing_timeout",
+            "Document saved, but OCR processing timed out.",
+        )
 
 
 @router.post("/upload")
@@ -36,6 +53,7 @@ async def extract_medical_data(
     """
     OCR upload endpoint that persists a canonical summary envelope.
     """
+    # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
     allowed_types = ["image/jpeg", "image/png", "image/jpg", "application/pdf"]
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Invalid file type. Only JPEG, PNG, PDF supported.")
@@ -74,14 +92,13 @@ async def extract_medical_data(
 
         logger.info("Saved Document ID=%s to %s", doc.id, file_path)
 
-        result = medical_ocr_service.parse_medical_report(file_bytes)
-        if inspect.isawaitable(result):
-            result = await result
+        # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
+        result = await _parse_medical_report_with_timeout(file_bytes)
 
         effective_status = result.get("status")
         if effective_status == "error":
-            # The document row is already durable, so OCR failure must degrade
-            # into a business state instead of bubbling up as a generic 500.
+            # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
+            # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
             effective_status = "stored_unprocessed"
 
         raw_processing_status = result.get("ocr_processing_status")
@@ -112,6 +129,7 @@ async def extract_medical_data(
         session.commit()
 
         if normalized_summary is not None:
+            # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
             from backend.core.cache import CacheManager
 
             invalidate_result = CacheManager.invalidate_user_cache(current_user.id)

@@ -170,6 +170,7 @@ class ConversationDetail(BaseModel):
 
 
 def _encode_sse(event: str, payload: dict) -> str:
+    """中文说明：_encode_sse 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     data = json.dumps(payload, ensure_ascii=False)
     return f"event: {event}\ndata: {data}\n\n"
 
@@ -180,6 +181,7 @@ async def send_chat_message(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    """中文说明：当前单元 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not request.message:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
@@ -200,6 +202,7 @@ def list_chat_conversations(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    """中文说明：list_chat_conversations 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     return conversation_service.list_conversations(
         session=session,
         user=current_user,
@@ -215,6 +218,7 @@ def rename_chat_conversation(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    """中文说明：rename_chat_conversation 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     normalized_title = (request.title or "").strip()
     if not normalized_title:
         raise HTTPException(status_code=400, detail="Title cannot be empty")
@@ -252,6 +256,7 @@ def batch_archive_chat_conversations(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    """中文说明：batch_archive_chat_conversations 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not request.conversation_ids:
         raise HTTPException(status_code=400, detail="conversation_ids cannot be empty")
 
@@ -281,6 +286,7 @@ def batch_restore_chat_conversations(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    """中文说明：batch_restore_chat_conversations 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not request.conversation_ids:
         raise HTTPException(status_code=400, detail="conversation_ids cannot be empty")
 
@@ -365,6 +371,7 @@ def get_chat_conversation_messages(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    """中文说明：get_chat_conversation_messages 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     try:
         return conversation_service.get_conversation_detail(
             session=session,
@@ -381,10 +388,12 @@ async def stream_chat_message(
     current_user: User = Depends(get_current_user),
     session: Session = Depends(get_session),
 ):
+    """中文说明：当前单元 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     if not request.message:
         raise HTTPException(status_code=400, detail="Message cannot be empty")
 
     async def event_generator():
+        # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
         try:
             async for event in chat_service.stream_chat(
                 user=current_user,

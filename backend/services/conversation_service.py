@@ -11,12 +11,16 @@ def build_message_window(
     history: List[Dict[str, str]],
     max_rounds: int = 5,
 ) -> List[Dict[str, str]]:
+    """中文说明：build_message_window 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     max_messages = max_rounds * 2
     recent_history = history[-max_messages:] if max_messages > 0 else history
     return [{"role": "system", "content": system_prompt}, *recent_history]
 
 
 class ConversationService:
+    """中文说明：ConversationService 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
+
+    # 中文注释：该步骤承担当前流程的关键状态衔接，需与上下游契约保持一致。
     LEGACY_AUTO_TITLES = {"Dr. AI Session", "Untitled Conversation"}
 
     def get_or_create_conversation(
@@ -25,6 +29,7 @@ class ConversationService:
         user: User,
         conversation_id: Optional[int] = None,
     ) -> ChatConversation:
+        """中文说明：get_or_create_conversation 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         if conversation_id is not None:
             conversation = session.get(ChatConversation, conversation_id)
             if not conversation or conversation.user_id != user.id:
@@ -100,6 +105,7 @@ class ConversationService:
         conversation: ChatConversation,
         max_rounds: int = 5,
     ) -> List[Dict[str, str]]:
+        """中文说明：get_recent_history 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         max_messages = max_rounds * 2
         messages = list(
             session.exec(
@@ -123,6 +129,10 @@ class ConversationService:
         query: Optional[str] = None,
         archived: bool = False,
     ) -> List[Dict[str, object]]:
+        # 列表查询分三步：
+        # 1) 拉取用户会话并修复历史自动标题；
+        # 2) 按固定排序键排序；
+        # 3) 按归档状态与关键字过滤后截断到 limit。
         conversations = list(
             session.exec(
                 select(ChatConversation).where(ChatConversation.user_id == user.id)
@@ -142,6 +152,7 @@ class ConversationService:
             if archived != is_archived:
                 continue
 
+            # preview 基于最后一条消息生成，用于会话列表摘要展示。
             messages = list(
                 session.exec(
                     select(ChatMessage)
@@ -187,6 +198,7 @@ class ConversationService:
         conversation_id: int,
         title: str,
     ) -> ChatConversation:
+        """中文说明：rename_conversation 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         conversation = self.get_or_create_conversation(
             session=session,
             user=user,
@@ -210,6 +222,7 @@ class ConversationService:
         user: User,
         conversation_id: int,
     ) -> Dict[str, object]:
+        """中文说明：get_conversation_detail 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         conversation = self.get_or_create_conversation(
             session=session,
             user=user,
@@ -254,6 +267,7 @@ class ConversationService:
         user: User,
         conversation_id: int,
     ) -> ChatConversation:
+        """中文说明：archive_conversation 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         conversation = self.get_or_create_conversation(
             session=session,
             user=user,
@@ -271,6 +285,7 @@ class ConversationService:
         user: User,
         conversation_id: int,
     ) -> ChatConversation:
+        """中文说明：pin_conversation 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         conversation = self.get_or_create_conversation(
             session=session,
             user=user,
@@ -288,6 +303,7 @@ class ConversationService:
         user: User,
         conversation_id: int,
     ) -> ChatConversation:
+        """中文说明：unpin_conversation 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         conversation = self.get_or_create_conversation(
             session=session,
             user=user,
@@ -305,6 +321,7 @@ class ConversationService:
         user: User,
         conversation_id: int,
     ) -> ChatConversation:
+        """中文说明：restore_conversation 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         conversation = self.get_or_create_conversation(
             session=session,
             user=user,
@@ -323,6 +340,7 @@ class ConversationService:
         user: User,
         conversation_ids: List[int],
     ) -> Dict[str, object]:
+        """中文说明：prepare_batch_archive 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         requested_conversation_ids, unique_conversation_ids, duplicate_conversation_ids = self._normalize_batch_conversation_ids(
             conversation_ids
         )
@@ -355,6 +373,7 @@ class ConversationService:
         user: User,
         conversation_ids: List[int],
     ) -> Dict[str, object]:
+        """中文说明：prepare_batch_restore 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         requested_conversation_ids, unique_conversation_ids, duplicate_conversation_ids = self._normalize_batch_conversation_ids(
             conversation_ids
         )
@@ -387,6 +406,7 @@ class ConversationService:
         user: User,
         conversation_ids: List[int],
     ) -> Dict[str, object]:
+        """中文说明：batch_archive_conversations 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         prepared = self.prepare_batch_archive(
             session=session,
             user=user,
@@ -422,6 +442,7 @@ class ConversationService:
         user: User,
         conversation_ids: List[int],
     ) -> Dict[str, object]:
+        """中文说明：batch_restore_conversations 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         prepared = self.prepare_batch_restore(
             session=session,
             user=user,
@@ -483,6 +504,7 @@ class ConversationService:
         return True
 
     def _conversation_sort_key(self, conversation: ChatConversation) -> tuple:
+        """中文说明：_conversation_sort_key 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         pinned_rank = 1 if conversation.pinned_at is not None else 0
         pin_time = conversation.pinned_at or datetime.min
         access_time = conversation.last_accessed_at or datetime.min
@@ -491,6 +513,7 @@ class ConversationService:
         return (pinned_rank, pin_time, access_time, updated_time, conversation_id)
 
     def _conversation_group_key(self, conversation: ChatConversation) -> str:
+        """中文说明：_conversation_group_key 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         if conversation.pinned_at is not None:
             return "pinned"
 
@@ -506,6 +529,7 @@ class ConversationService:
         return "older"
 
     def _conversation_group_label(self, conversation: ChatConversation) -> str:
+        """中文说明：_conversation_group_label 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         labels = {
             "pinned": "Pinned",
             "today": "Today",
@@ -515,6 +539,7 @@ class ConversationService:
         return labels[self._conversation_group_key(conversation)]
 
     def _build_title(self, content: str) -> str:
+        """中文说明：_build_title 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         compact = " ".join((content or "").replace("\n", " ").split())
         if not compact:
             return "Dr. AI Session"
@@ -549,6 +574,7 @@ class ConversationService:
         self,
         conversation_ids: List[int],
     ) -> tuple[List[int], List[int], List[int]]:
+        """中文说明：_normalize_batch_conversation_ids 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         requested_conversation_ids = list(conversation_ids)
         unique_conversation_ids: List[int] = []
         duplicate_conversation_ids: List[int] = []

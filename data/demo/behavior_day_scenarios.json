@@ -1,0 +1,952 @@
+{
+  "schema_version": "behavior_day_scenarios.v1",
+  "generated_at": "2026-05-06",
+  "data_mode": "simulated_demo",
+  "source_provenance": {
+    "source_type": "demo_scenario_collection",
+    "artifact_schema": "behavior_day_scenarios.v1",
+    "generated_from": [
+      "platform_demo_profiles.v1",
+      "nhanes_lifestyle_supplement.v1",
+      "demo_patients_task2_selection.v1",
+      "demo_profile_validation_report.v1"
+    ],
+    "generator": "ai-data",
+    "generated_at": "2026-05-06"
+  },
+  "scenarios": [
+    {
+      "schema_version": "behavior_day_scenario.v1",
+      "scenario_id": "metabolic_day_001",
+      "demo_patient_id": "synthea_8505e011",
+      "title": "Metabolic and diabetes high-risk demo day",
+      "data_mode": "simulated_demo",
+      "summary": {
+        "date_label": "Demo day",
+        "event_count": 9,
+        "headline": "Short sleep, low activity, high-carbohydrate and high-sodium meals, and long sedentary blocks for a metabolic-risk story."
+      },
+      "timeline": [
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "metabolic_day_001_evt_0630_sleep",
+          "time": "06:30",
+          "event_type": "sleep",
+          "label": "Short sleep window ended",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "sleep_hours": 5.7,
+            "sleep_quality": "fragmented",
+            "night_awakenings": 3,
+            "baseline_profile_sleep_hours": 6.0,
+            "interpretation": "Below the profile baseline and consistent with the demo patient's metabolic-risk narrative."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1",
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "metabolic_day_001_evt_0745_breakfast",
+          "time": "07:45",
+          "event_type": "diet_vision",
+          "label": "High-carbohydrate breakfast recognition",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "schema_version": "diet_vision_event.v1",
+            "meal_type": "breakfast",
+            "food_items": [
+              "white rice porridge",
+              "steamed bun",
+              "pickled vegetables",
+              "sweetened soy milk"
+            ],
+            "nutrition": {
+              "calories": 620,
+              "carbs": 105,
+              "protein": 18,
+              "fat": 13,
+              "sodium_mg": 1350
+            },
+            "vision_provenance": {
+              "source_type": "simulated_demo",
+              "image_ref": null,
+              "model_name": null,
+              "confidence": null
+            }
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "metabolic_day_001_evt_0900_vitals",
+          "time": "09:00",
+          "event_type": "vitals",
+          "label": "Morning vitals replay",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "heart_rate_bpm": 86,
+            "systolic_bp": 188,
+            "diastolic_bp": 116,
+            "fasting_glucose_mmol_l": 4.46,
+            "hba1c_percent": 5.9,
+            "interpretation": "Uses existing profile vitals and metabolic labs as simulated demo context."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "metabolic_day_001_evt_1030_sedentary",
+          "time": "10:30",
+          "event_type": "sedentary",
+          "label": "Long desk-sitting block",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "duration_minutes": 150,
+            "posture": "seated",
+            "breaks": 1,
+            "interpretation": "Low movement block aligned with low physical activity supplement."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "metabolic_day_001_evt_1215_lunch",
+          "time": "12:15",
+          "event_type": "diet_vision",
+          "label": "High-sodium lunch recognition",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "schema_version": "diet_vision_event.v1",
+            "meal_type": "lunch",
+            "food_items": [
+              "white rice",
+              "braised pork",
+              "salted soup",
+              "stir-fried greens"
+            ],
+            "nutrition": {
+              "calories": 820,
+              "carbs": 98,
+              "protein": 31,
+              "fat": 32,
+              "sodium_mg": 2050
+            },
+            "vision_provenance": {
+              "source_type": "simulated_demo",
+              "image_ref": null,
+              "model_name": null,
+              "confidence": null
+            }
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "metabolic_day_001_evt_1530_activity",
+          "time": "15:30",
+          "event_type": "activity",
+          "label": "Brief low-intensity walk",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "activity_type": "walking",
+            "duration_minutes": 12,
+            "steps": 1300,
+            "intensity": "light",
+            "estimated_met_minutes": 28
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "metabolic_day_001_evt_1800_sedentary",
+          "time": "18:00",
+          "event_type": "sedentary",
+          "label": "Evening screen time",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "duration_minutes": 135,
+            "posture": "seated",
+            "breaks": 0,
+            "interpretation": "Adds to total sedentary minutes for the metabolic-risk demo day."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "metabolic_day_001_evt_1930_dinner",
+          "time": "19:30",
+          "event_type": "diet_vision",
+          "label": "High-carbohydrate dinner recognition",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "schema_version": "diet_vision_event.v1",
+            "meal_type": "dinner",
+            "food_items": [
+              "noodles",
+              "fried egg",
+              "processed sausage",
+              "sweet tea"
+            ],
+            "nutrition": {
+              "calories": 760,
+              "carbs": 112,
+              "protein": 24,
+              "fat": 24,
+              "sodium_mg": 1650
+            },
+            "vision_provenance": {
+              "source_type": "simulated_demo",
+              "image_ref": null,
+              "model_name": null,
+              "confidence": null
+            }
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "metabolic_day_001_evt_2200_summary",
+          "time": "22:00",
+          "event_type": "daily_summary",
+          "label": "Daily behavior summary",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "steps": 4100,
+            "active_minutes": 18,
+            "sedentary_minutes": 610,
+            "sleep_hours": 5.7,
+            "estimated_calories": 2200,
+            "estimated_sodium_mg": 5050,
+            "diet_pattern": "high_sodium_high_carbohydrate",
+            "demo_takeaway": "A behavior-heavy replay day that can explain why lifestyle context may worsen a metabolic-risk interpretation."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1",
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        }
+      ],
+      "lifestyle_context": {
+        "schema_version": "lifestyle_context.v1",
+        "data_mode": "simulated_demo",
+        "scenario_id": "metabolic_day_001",
+        "summary": {
+          "steps": 4100,
+          "active_minutes": 18,
+          "sedentary_minutes": 610,
+          "sleep_hours": 5.7,
+          "diet_pattern": "high_sodium_high_carbohydrate",
+          "estimated_calories": 2200,
+          "estimated_sodium_mg": 5050
+        },
+        "modifier_inputs": {
+          "physical_activity": "low",
+          "sedentary_exposure": "high",
+          "sleep_quality": "short_fragmented",
+          "diet_quality": "high_sodium_high_carbohydrate",
+          "demo_risk_emphasis": [
+            "diabetes",
+            "metabolic_syndrome",
+            "hypertension"
+          ]
+        },
+        "source_provenance": {
+          "source_type": "demo_scenario",
+          "artifact_schema": "behavior_day_scenario.v1",
+          "generated_from": [
+            "platform_demo_profiles.v1",
+            "nhanes_lifestyle_supplement.v1"
+          ]
+        }
+      },
+      "source_provenance": {
+        "source_type": "demo_scenario",
+        "artifact_schema": "behavior_day_scenario.v1",
+        "generated_from": [
+          "platform_demo_profiles.v1",
+          "nhanes_lifestyle_supplement.v1",
+          "demo_patients_task2_selection.v1"
+        ],
+        "generator": "ai-data",
+        "generated_at": "2026-05-06"
+      }
+    },
+    {
+      "schema_version": "behavior_day_scenario.v1",
+      "scenario_id": "cardio_hf_day_001",
+      "demo_patient_id": "synthea_066c0f3d",
+      "title": "Cardiovascular and heart-failure monitoring demo day",
+      "data_mode": "simulated_demo",
+      "summary": {
+        "date_label": "Demo day",
+        "event_count": 9,
+        "headline": "Heart-rate fluctuation, low activity tolerance, sodium-sensitive meals, and rest recovery for a heart-failure monitoring story."
+      },
+      "timeline": [
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "cardio_hf_day_001_evt_0645_sleep",
+          "time": "06:45",
+          "event_type": "sleep",
+          "label": "Moderately short sleep ended",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "sleep_hours": 6.2,
+            "sleep_quality": "restless",
+            "night_awakenings": 2,
+            "baseline_profile_sleep_hours": 6.5,
+            "interpretation": "A slightly short night for a cardiovascular monitoring demo day."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1",
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "cardio_hf_day_001_evt_0730_vitals",
+          "time": "07:30",
+          "event_type": "vitals",
+          "label": "Morning vitals replay",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "heart_rate_bpm": 72,
+            "systolic_bp": 133,
+            "diastolic_bp": 82,
+            "oxygen_saturation_percent": 95,
+            "weight_kg": 84,
+            "interpretation": "Uses profile blood pressure and a simulated wearable-style heart-rate point without claiming real device provenance."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "cardio_hf_day_001_evt_0810_breakfast",
+          "time": "08:10",
+          "event_type": "diet_vision",
+          "label": "Moderate breakfast recognition",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "schema_version": "diet_vision_event.v1",
+            "meal_type": "breakfast",
+            "food_items": [
+              "oatmeal",
+              "boiled egg",
+              "salted side dish"
+            ],
+            "nutrition": {
+              "calories": 480,
+              "carbs": 58,
+              "protein": 22,
+              "fat": 16,
+              "sodium_mg": 980
+            },
+            "vision_provenance": {
+              "source_type": "simulated_demo",
+              "image_ref": null,
+              "model_name": null,
+              "confidence": null
+            }
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "cardio_hf_day_001_evt_1010_activity",
+          "time": "10:10",
+          "event_type": "activity",
+          "label": "Slow walk with limited tolerance",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "activity_type": "walking",
+            "duration_minutes": 16,
+            "steps": 1500,
+            "intensity": "light",
+            "peak_heart_rate_bpm": 108,
+            "recovery_heart_rate_bpm_after_5_min": 86,
+            "interpretation": "Shows activity tolerance pressure in a heart-failure monitoring demo."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1",
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "cardio_hf_day_001_evt_1130_sedentary",
+          "time": "11:30",
+          "event_type": "sedentary",
+          "label": "Rest after exertion",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "duration_minutes": 80,
+            "posture": "seated",
+            "recovery_context": "post_walk_rest",
+            "interpretation": "Rest period added after low-tolerance activity."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "cardio_hf_day_001_evt_1245_lunch",
+          "time": "12:45",
+          "event_type": "diet_vision",
+          "label": "Sodium-risk lunch recognition",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "schema_version": "diet_vision_event.v1",
+            "meal_type": "lunch",
+            "food_items": [
+              "noodle soup",
+              "roast chicken",
+              "pickled radish"
+            ],
+            "nutrition": {
+              "calories": 760,
+              "carbs": 82,
+              "protein": 36,
+              "fat": 28,
+              "sodium_mg": 2380
+            },
+            "vision_provenance": {
+              "source_type": "simulated_demo",
+              "image_ref": null,
+              "model_name": null,
+              "confidence": null
+            }
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "cardio_hf_day_001_evt_1600_vitals",
+          "time": "16:00",
+          "event_type": "vitals",
+          "label": "Afternoon heart-rate fluctuation",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "heart_rate_bpm": 96,
+            "heart_rate_variability_ms": 24,
+            "oxygen_saturation_percent": 94,
+            "symptom_note": "mild fatigue after errands",
+            "interpretation": "Simulated monitoring point for demo replay; not real device evidence."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1",
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "cardio_hf_day_001_evt_1900_dinner",
+          "time": "19:00",
+          "event_type": "diet_vision",
+          "label": "Lower-sodium dinner recovery choice",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "schema_version": "diet_vision_event.v1",
+            "meal_type": "dinner",
+            "food_items": [
+              "steamed fish",
+              "brown rice",
+              "steamed vegetables",
+              "clear soup"
+            ],
+            "nutrition": {
+              "calories": 610,
+              "carbs": 66,
+              "protein": 38,
+              "fat": 18,
+              "sodium_mg": 920
+            },
+            "vision_provenance": {
+              "source_type": "simulated_demo",
+              "image_ref": null,
+              "model_name": null,
+              "confidence": null
+            }
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "cardio_hf_day_001_evt_2130_summary",
+          "time": "21:30",
+          "event_type": "daily_summary",
+          "label": "Daily behavior summary",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "steps": 5200,
+            "active_minutes": 26,
+            "sedentary_minutes": 540,
+            "sleep_hours": 6.2,
+            "estimated_calories": 1850,
+            "estimated_sodium_mg": 4280,
+            "diet_pattern": "high_sodium_moderate_carbohydrate",
+            "demo_takeaway": "The day highlights sodium exposure and limited activity tolerance with visible rest recovery."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1",
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        }
+      ],
+      "lifestyle_context": {
+        "schema_version": "lifestyle_context.v1",
+        "data_mode": "simulated_demo",
+        "scenario_id": "cardio_hf_day_001",
+        "summary": {
+          "steps": 5200,
+          "active_minutes": 26,
+          "sedentary_minutes": 540,
+          "sleep_hours": 6.2,
+          "diet_pattern": "high_sodium_moderate_carbohydrate",
+          "estimated_calories": 1850,
+          "estimated_sodium_mg": 4280
+        },
+        "modifier_inputs": {
+          "physical_activity": "low",
+          "sedentary_exposure": "high",
+          "sleep_quality": "slightly_short_restless",
+          "diet_quality": "high_sodium",
+          "activity_tolerance": "limited",
+          "demo_risk_emphasis": [
+            "heart_failure_monitoring",
+            "hypertension",
+            "hyperlipidemia"
+          ]
+        },
+        "source_provenance": {
+          "source_type": "demo_scenario",
+          "artifact_schema": "behavior_day_scenario.v1",
+          "generated_from": [
+            "platform_demo_profiles.v1",
+            "nhanes_lifestyle_supplement.v1"
+          ]
+        }
+      },
+      "source_provenance": {
+        "source_type": "demo_scenario",
+        "artifact_schema": "behavior_day_scenario.v1",
+        "generated_from": [
+          "platform_demo_profiles.v1",
+          "nhanes_lifestyle_supplement.v1",
+          "demo_patients_task2_selection.v1"
+        ],
+        "generator": "ai-data",
+        "generated_at": "2026-05-06"
+      }
+    },
+    {
+      "schema_version": "behavior_day_scenario.v1",
+      "scenario_id": "younger_improvement_day_001",
+      "demo_patient_id": "synthea_4a52ea9c",
+      "title": "Younger cardiometabolic and respiratory improvement demo day",
+      "data_mode": "simulated_demo",
+      "summary": {
+        "date_label": "Demo day",
+        "event_count": 9,
+        "headline": "A healthier contrast day with better meals, more movement, less sodium, and respiratory-aware pacing."
+      },
+      "timeline": [
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "younger_improvement_day_001_evt_0630_sleep",
+          "time": "06:30",
+          "event_type": "sleep",
+          "label": "Improved sleep window ended",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "sleep_hours": 7.3,
+            "sleep_quality": "restorative",
+            "night_awakenings": 1,
+            "baseline_profile_sleep_hours": 6.0,
+            "interpretation": "Healthier contrast day extends sleep beyond the baseline supplement."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1",
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "younger_improvement_day_001_evt_0740_breakfast",
+          "time": "07:40",
+          "event_type": "diet_vision",
+          "label": "Balanced breakfast recognition",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "schema_version": "diet_vision_event.v1",
+            "meal_type": "breakfast",
+            "food_items": [
+              "plain yogurt",
+              "berries",
+              "whole-grain toast",
+              "unsalted nuts"
+            ],
+            "nutrition": {
+              "calories": 420,
+              "carbs": 48,
+              "protein": 24,
+              "fat": 15,
+              "sodium_mg": 360
+            },
+            "vision_provenance": {
+              "source_type": "simulated_demo",
+              "image_ref": null,
+              "model_name": null,
+              "confidence": null
+            }
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "younger_improvement_day_001_evt_0830_vitals",
+          "time": "08:30",
+          "event_type": "vitals",
+          "label": "Morning vitals replay",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "heart_rate_bpm": 78,
+            "systolic_bp": 148,
+            "diastolic_bp": 110,
+            "oxygen_saturation_percent": 96,
+            "hba1c_percent": 6.1,
+            "interpretation": "Uses profile cardiometabolic and respiratory context while preserving simulated-demo provenance."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "younger_improvement_day_001_evt_1030_activity",
+          "time": "10:30",
+          "event_type": "activity",
+          "label": "Respiratory-aware brisk walk",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "activity_type": "brisk_walking",
+            "duration_minutes": 28,
+            "steps": 3200,
+            "intensity": "moderate",
+            "peak_heart_rate_bpm": 122,
+            "pacing_note": "short pauses used to avoid breathlessness"
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1",
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "younger_improvement_day_001_evt_1200_sedentary",
+          "time": "12:00",
+          "event_type": "sedentary",
+          "label": "Short work block with movement breaks",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "duration_minutes": 95,
+            "posture": "seated",
+            "breaks": 3,
+            "interpretation": "Healthier contrast day avoids prolonged uninterrupted sitting."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "younger_improvement_day_001_evt_1240_lunch",
+          "time": "12:40",
+          "event_type": "diet_vision",
+          "label": "Lower-sodium lunch recognition",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "schema_version": "diet_vision_event.v1",
+            "meal_type": "lunch",
+            "food_items": [
+              "grilled chicken salad",
+              "brown rice",
+              "olive oil vinaigrette",
+              "fresh fruit"
+            ],
+            "nutrition": {
+              "calories": 640,
+              "carbs": 66,
+              "protein": 42,
+              "fat": 23,
+              "sodium_mg": 720
+            },
+            "vision_provenance": {
+              "source_type": "simulated_demo",
+              "image_ref": null,
+              "model_name": null,
+              "confidence": null
+            }
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "younger_improvement_day_001_evt_1630_activity",
+          "time": "16:30",
+          "event_type": "activity",
+          "label": "Light mobility session",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "activity_type": "mobility_and_stretching",
+            "duration_minutes": 18,
+            "steps": 900,
+            "intensity": "light",
+            "breathing_note": "paced breathing and low-impact movement"
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1",
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "younger_improvement_day_001_evt_1845_dinner",
+          "time": "18:45",
+          "event_type": "diet_vision",
+          "label": "Heart-healthy dinner recognition",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "schema_version": "diet_vision_event.v1",
+            "meal_type": "dinner",
+            "food_items": [
+              "steamed salmon",
+              "quinoa",
+              "leafy greens",
+              "tomato soup"
+            ],
+            "nutrition": {
+              "calories": 680,
+              "carbs": 58,
+              "protein": 44,
+              "fat": 29,
+              "sodium_mg": 760
+            },
+            "vision_provenance": {
+              "source_type": "simulated_demo",
+              "image_ref": null,
+              "model_name": null,
+              "confidence": null
+            }
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        },
+        {
+          "schema_version": "behavior_timeline_event.v1",
+          "event_id": "younger_improvement_day_001_evt_2130_summary",
+          "time": "21:30",
+          "event_type": "daily_summary",
+          "label": "Daily behavior summary",
+          "data_mode": "simulated_demo",
+          "payload": {
+            "steps": 9200,
+            "active_minutes": 58,
+            "sedentary_minutes": 360,
+            "sleep_hours": 7.3,
+            "estimated_calories": 1740,
+            "estimated_sodium_mg": 1840,
+            "diet_pattern": "lower_sodium_high_fiber_balanced",
+            "demo_takeaway": "A healthier contrast day showing how better sleep, lower sodium, and more movement can be replayed without claiming real-device evidence."
+          },
+          "source_provenance": {
+            "source_type": "demo_scenario",
+            "artifact_schema": "behavior_timeline_event.v1",
+            "generated_from": [
+              "platform_demo_profiles.v1",
+              "nhanes_lifestyle_supplement.v1"
+            ]
+          }
+        }
+      ],
+      "lifestyle_context": {
+        "schema_version": "lifestyle_context.v1",
+        "data_mode": "simulated_demo",
+        "scenario_id": "younger_improvement_day_001",
+        "summary": {
+          "steps": 9200,
+          "active_minutes": 58,
+          "sedentary_minutes": 360,
+          "sleep_hours": 7.3,
+          "diet_pattern": "lower_sodium_high_fiber_balanced",
+          "estimated_calories": 1740,
+          "estimated_sodium_mg": 1840
+        },
+        "modifier_inputs": {
+          "physical_activity": "moderate",
+          "sedentary_exposure": "moderate",
+          "sleep_quality": "improved_restorative",
+          "diet_quality": "lower_sodium_balanced",
+          "activity_tolerance": "paced_respiratory_aware",
+          "demo_risk_emphasis": [
+            "hypertension",
+            "prediabetes",
+            "respiratory_risk_improvement"
+          ]
+        },
+        "source_provenance": {
+          "source_type": "demo_scenario",
+          "artifact_schema": "behavior_day_scenario.v1",
+          "generated_from": [
+            "platform_demo_profiles.v1",
+            "nhanes_lifestyle_supplement.v1"
+          ]
+        }
+      },
+      "source_provenance": {
+        "source_type": "demo_scenario",
+        "artifact_schema": "behavior_day_scenario.v1",
+        "generated_from": [
+          "platform_demo_profiles.v1",
+          "nhanes_lifestyle_supplement.v1",
+          "demo_patients_task2_selection.v1"
+        ],
+        "generator": "ai-data",
+        "generated_at": "2026-05-06"
+      }
+    }
+  ]
+}

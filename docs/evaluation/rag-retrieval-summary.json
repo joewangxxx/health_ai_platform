@@ -1,0 +1,115 @@
+{
+  "metadata": {
+    "generated_at": "2026-04-28T05:52:22+00:00",
+    "evaluation_mode": "runtime_probe_plus_chroma_sqlite_lexical_baseline",
+    "vector_db": "E:\\health_ai_platform_2.0\\backend\\rag\\vector_store\\chroma.sqlite3",
+    "top_k": 10
+  },
+  "runtime_rag_service": {
+    "dependencies_available": true,
+    "retrieval_status": "ok",
+    "hit_count": 3,
+    "chunk_quality": "mixed",
+    "context_chars": 1963
+  },
+  "summary": {
+    "question_count": 100,
+    "chunk_count": 841,
+    "expected_source_count": 9,
+    "unique_source_count": 9,
+    "missing_expected_sources": [],
+    "source_hit_at_1": 0.74,
+    "source_hit_at_3": 0.82,
+    "source_hit_at_5": 0.84,
+    "source_hit_at_10": 0.87,
+    "mrr": 0.7851944444444444,
+    "mean_keyword_coverage_top5": 0.5171428571428573,
+    "top5_keyword_pass_rate": 0.55,
+    "indexed_subset_question_count": 100,
+    "indexed_subset_source_hit_at_5": 0.84,
+    "indexed_subset_mrr": 0.7851944444444444,
+    "topic_metrics": [
+      {
+        "topic": "ckd",
+        "question_count": 11,
+        "hit_at_1": 0.7272727272727273,
+        "hit_at_3": 0.9090909090909091,
+        "hit_at_5": 0.9090909090909091,
+        "mrr": 0.8030303030303029,
+        "mean_keyword_coverage_top5": 0.7142857142857143
+      },
+      {
+        "topic": "diabetes",
+        "question_count": 11,
+        "hit_at_1": 0.9090909090909091,
+        "hit_at_3": 1.0,
+        "hit_at_5": 1.0,
+        "mrr": 0.9545454545454546,
+        "mean_keyword_coverage_top5": 0.40259740259740256
+      },
+      {
+        "topic": "dietary_guideline",
+        "question_count": 11,
+        "hit_at_1": 0.5454545454545454,
+        "hit_at_3": 0.5454545454545454,
+        "hit_at_5": 0.5454545454545454,
+        "mrr": 0.5454545454545454,
+        "mean_keyword_coverage_top5": 0.46753246753246747
+      },
+      {
+        "topic": "fatty_liver",
+        "question_count": 11,
+        "hit_at_1": 0.9090909090909091,
+        "hit_at_3": 0.9090909090909091,
+        "hit_at_5": 0.9090909090909091,
+        "mrr": 0.9242424242424243,
+        "mean_keyword_coverage_top5": 0.5064935064935064
+      },
+      {
+        "topic": "gout",
+        "question_count": 12,
+        "hit_at_1": 0.8333333333333334,
+        "hit_at_3": 0.9166666666666666,
+        "hit_at_5": 0.9166666666666666,
+        "mrr": 0.875,
+        "mean_keyword_coverage_top5": 0.5714285714285713
+      },
+      {
+        "topic": "hypertension",
+        "question_count": 11,
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "hit_at_5": 1.0,
+        "mrr": 1.0,
+        "mean_keyword_coverage_top5": 0.5324675324675325
+      },
+      {
+        "topic": "lipid",
+        "question_count": 11,
+        "hit_at_1": 0.5454545454545454,
+        "hit_at_3": 0.6363636363636364,
+        "hit_at_5": 0.8181818181818182,
+        "mrr": 0.6381313131313132,
+        "mean_keyword_coverage_top5": 0.5974025974025975
+      },
+      {
+        "topic": "obesity",
+        "question_count": 11,
+        "hit_at_1": 0.7272727272727273,
+        "hit_at_3": 1.0,
+        "hit_at_5": 1.0,
+        "mrr": 0.8636363636363636,
+        "mean_keyword_coverage_top5": 0.4545454545454545
+      },
+      {
+        "topic": "physical_activity",
+        "question_count": 11,
+        "hit_at_1": 0.45454545454545453,
+        "hit_at_3": 0.45454545454545453,
+        "hit_at_5": 0.45454545454545453,
+        "mrr": 0.45454545454545453,
+        "mean_keyword_coverage_top5": 0.40259740259740256
+      }
+    ]
+  }
+}

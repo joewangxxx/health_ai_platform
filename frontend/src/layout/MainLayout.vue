@@ -3,7 +3,7 @@
         <div class="common-layout w-full min-h-screen">
             <el-container class="min-h-screen">
 
-                <!-- Header -->
+                <!-- 顶部栏 -->
                 <el-header
                     class="backdrop-blur-md bg-white/30 border-b border-gray-200/20 flex items-center justify-between px-6 z-50">
                     <div class="flex items-center gap-3">
@@ -13,14 +13,14 @@
                     </div>
 
                     <div class="flex items-center gap-6">
-                        <!-- Device Status -->
+                        <!-- 设备状态 -->
                         <div class="flex items-center gap-2">
                             <el-tag :type="store.deviceStatus === '设备在线' ? 'success' : 'danger'" effect="dark" round>
                                 {{ store.deviceStatus }}
                             </el-tag>
                         </div>
 
-                        <!-- User Popover Menu -->
+                        <!-- 用户弹出菜单 -->
                         <Popover
                             align="end"
                             ref="userPopover"
@@ -31,9 +31,9 @@
                                 <Avatar :fallback="authStore.user?.username?.charAt(0).toUpperCase()" size="sm" />
                             </template>
 
-                            <!-- Popover Content -->
+                            <!-- 弹出层内容 -->
                             <div class="grid gap-4">
-                                <!-- Header -->
+                                <!-- 用户信息头部 -->
                                 <div class="flex items-center gap-3">
                                     <Avatar :fallback="authStore.user?.username?.charAt(0).toUpperCase()"
                                         size="default" />
@@ -49,7 +49,7 @@
 
                                 <Separator />
 
-                                <!-- Menu Items -->
+                                <!-- 菜单项 -->
                                 <div class="grid gap-1">
                                     <ShadcnButton variant="ghost" class="w-full justify-start gap-2 h-9"
                                         @click="navigateTo('/profile')">
@@ -69,7 +69,7 @@
 
                                 <Separator />
 
-                                <!-- Logout -->
+                                <!-- 退出登录 -->
                                 <ShadcnButton variant="ghost"
                                     class="w-full justify-start gap-2 h-9 text-red-500 hover:text-red-600 hover:bg-red-50"
                                     @click="handleLogout">
@@ -85,8 +85,8 @@
 
                 <el-container style="height: calc(100vh - 60px);">
 
-                    <!-- Aside (Sidebar) -->
-                    <el-aside width="220px" class="backdrop-blur-sm bg-white/40 border-r border-gray-200/20">
+                    <!-- 侧边导航栏 -->
+                    <el-aside width="220px" class="app-sidebar backdrop-blur-sm bg-white/40 border-r border-gray-200/20">
                         <el-scrollbar>
                             <el-menu :default-active="$route.path" router class="bg-transparent border-none"
                                 background-color="transparent">
@@ -172,11 +172,11 @@
                         </el-scrollbar>
                     </el-aside>
 
-                    <!-- Main Content -->
-                    <el-main class="p-0 relative overflow-auto flex flex-col min-h-0">
+                    <!-- 主内容区 -->
+                    <el-main class="app-main p-0 relative overflow-auto flex flex-col min-h-0">
                         <router-view v-slot="{ Component }">
-                            <transition name="fade" mode="out-in">
-                                <component :is="Component" />
+                            <transition name="fade">
+                                <component :is="Component" :key="$route.fullPath" />
                             </transition>
                         </router-view>
                     </el-main>
@@ -198,6 +198,7 @@ import AuroraBackground from '../components/ui/AuroraBackground.vue'
 import Popover from '../components/ui/Popover.vue'
 import Avatar from '../components/ui/Avatar.vue'
 import Separator from '../components/ui/Separator.vue'
+import ShadcnButton from '../components/ui/ShadcnButton.vue'
 import { useHealthStore } from '../stores/healthStore'
 import { useAuthStore } from '../stores/authStore'
 import { useToast } from '../composables/useToast'
@@ -209,28 +210,27 @@ const { showToast } = useToast()
 
 let pollInterval = null
 
-// 1. 实现全局 IoT 轮询
+// 1. 实现全局设备轮询
 onMounted(async () => {
-    // Initial fetch
+    // 首次拉取
     store.fetchIoTData()
 
-    // Poll every 2 seconds
+    // 每 2 秒轮询一次
     pollInterval = setInterval(() => {
         store.fetchIoTData()
     }, 2000)
 
-    // Strengthen: fetch profile if missing but token exists
+    // 强化逻辑：若存在登录凭证但缺少用户信息，则补拉一次用户信息
     if (!authStore.user && authStore.token) {
         try {
             await authStore.fetchProfile()
         } catch (e) {
-            // Token invalid, logout and redirect
+            // 登录凭证无效时执行登出并重定向
             authStore.logout()
             router.push('/login')
         }
     }
 })
-
 onUnmounted(() => {
     if (pollInterval) {
         clearInterval(pollInterval)
@@ -257,17 +257,27 @@ const navigateTo = (path) => {
 :deep(.el-menu-item) {
     font-weight: 500;
     color: #334155;
-    /* slate-700 */
+    /* slate-700 色值 */
 }
 
 :deep(.el-menu-item.is-active) {
     color: #2563eb;
-    /* blue-600 */
+    /* blue-600 色值 */
 }
 
 :deep(.el-menu-item:hover) {
     background-color: rgba(255, 255, 255, 0.2) !important;
     color: #2563eb;
+}
+
+@media (max-width: 768px) {
+    .app-sidebar {
+        display: none;
+    }
+
+    .app-main {
+        width: 100%;
+    }
 }
 
 .fade-enter-active,

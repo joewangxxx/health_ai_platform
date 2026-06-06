@@ -1,0 +1,26 @@
+HealthAI Platform Synthetic Physical Examination Report
+Sample ID: sample_027
+姓名: 测试用户027
+年龄: 54
+性别: 男
+身高: 168 cm
+体重: 79.6 kg
+血压: 136/74 mmHg
+---- 检验项目 ----
+BMI    28.2
+WBC    5.94
+HGB    144
+PLT 143 10^9/L
+ALT 25 U/L
+GGT    35
+GLU 8.24 mmol/L
+TC 6.89 mmol/L
+UA 499 umol/L
+HbA1c 4.9 %
+肌酐 91 umol/L
+eGFR 104 ml/min/1.73m2
+HDL-C 1.42 mmol/L
+LDL-C 1.62 mmol/L
+---- 医生提示 ----
+本报告为阶段3自动生成的合成样本，仅用于结构化抽取评估。
+No real patient information is included.

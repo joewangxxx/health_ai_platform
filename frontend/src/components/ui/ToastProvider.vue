@@ -3,14 +3,14 @@
         <div class="sr-only" :role="liveRole" :aria-live="livePoliteness" aria-atomic="true">
             {{ liveMessage }}
         </div>
-        <!-- We render a container for each of the 5 positions -->
+        <!-- 中文注释：界面结构说明 -->
         <div v-for="pos in positions" :key="pos"
             aria-hidden="true"
             :class="['fixed z-9999 w-full max-w-sm px-4 sm:px-0 space-y-2 pointer-events-none', getPositionClasses(pos)]">
             <TransitionGroup name="toast-slide" tag="div" class="flex flex-col gap-2 pointer-events-auto">
                 <div v-for="toast in getToastsByPosition(pos)" :key="toast.id"
                     class="transform transition-all duration-300 ease-in-out">
-                    <!-- Toast Component Inline -->
+                    <!-- 中文注释：界面结构说明 -->
                     <div
                         :class="['border rounded-lg shadow-lg p-4 flex items-center justify-between backdrop-blur-sm', getTypeClasses(toast.type)]">
                         <div class="flex items-center space-x-3">
@@ -43,8 +43,8 @@ const liveRole = computed(() => latestToast.value?.type === 'error' ? 'alert' : 
 const livePoliteness = computed(() => latestToast.value?.type === 'error' ? 'assertive' : 'polite')
 
 const getToastsByPosition = (position) => {
-    // Mobile Adjustment: On small screens, force everything to bottom-center or top-center
-    // But for now keeping exact logic requested
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     return toasts.value.filter(t => t.position === position)
 }
 
@@ -86,7 +86,7 @@ const getIcon = (type) => {
 </script>
 
 <style scoped>
-/* Slide & Fade Animation mimicking Framer Motion */
+/* 滑入 + 淡入动效（接近 Framer Motion 观感） */
 .toast-slide-enter-active,
 .toast-slide-leave-active {
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);

@@ -1,0 +1,1507 @@
+{
+  "schema_version": "rag_question_set.v1",
+  "generated_at": "2026-04-28T05:52:22+00:00",
+  "question_count": 100,
+  "questions": [
+    {
+      "question_id": "rag_q_001",
+      "question": "高尿酸血症患者为什么要限制高嘌呤食物？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_002",
+      "question": "痛风急性发作期饮食上应该注意什么？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_003",
+      "question": "高尿酸血症人群每天饮水有什么建议？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_004",
+      "question": "痛风患者为什么需要限制含糖饮料和果糖摄入？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_005",
+      "question": "无症状高尿酸血症和痛风间歇期怎么安排饮食？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_006",
+      "question": "痛风患者可以喝酒吗，指南里如何解释？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_007",
+      "question": "高尿酸血症患者选择肉类和海鲜时有什么原则？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_008",
+      "question": "痛风人群食养方和食物选择应关注哪些方面？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_009",
+      "question": "尿酸偏高但没有症状时是否还需要饮食干预？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_010",
+      "question": "痛风慢性期如何做到吃动平衡和体重管理？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_011",
+      "question": "高尿酸血症患者为什么要控制动物内脏和浓肉汤？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_012",
+      "question": "痛风患者摄入奶类和蔬菜有什么建议？",
+      "topic": "gout",
+      "expected_source": "成人高尿酸血症与痛风食养指南_2024.pdf",
+      "expected_keywords": [
+        "高尿酸",
+        "痛风",
+        "嘌呤",
+        "饮水",
+        "果糖",
+        "酒",
+        "食养"
+      ]
+    },
+    {
+      "question_id": "rag_q_013",
+      "question": "成人肥胖症通常如何根据 BMI 和腰围判断？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_014",
+      "question": "肥胖症诊疗中生活方式干预包括哪些重点？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_015",
+      "question": "减重治疗为什么要强调长期体重管理？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_016",
+      "question": "肥胖相关代谢风险评估需要关注哪些指标？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_017",
+      "question": "肥胖患者饮食控制应如何考虑能量摄入？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_018",
+      "question": "肥胖症管理中运动干预有什么作用？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_019",
+      "question": "中心性肥胖为什么需要关注腰围？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_020",
+      "question": "肥胖症诊疗指南如何看待多学科综合管理？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_021",
+      "question": "减重过程中为什么不建议极端节食？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_022",
+      "question": "肥胖伴高血压或糖代谢异常时应如何综合评估？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_023",
+      "question": "肥胖患者随访时需要记录哪些变化？",
+      "topic": "obesity",
+      "expected_source": "肥胖症诊疗指南_2024.pdf",
+      "expected_keywords": [
+        "肥胖",
+        "BMI",
+        "腰围",
+        "减重",
+        "能量",
+        "生活方式",
+        "诊疗"
+      ]
+    },
+    {
+      "question_id": "rag_q_024",
+      "question": "慢性肾脏病早期筛查为什么要同时看 eGFR 和尿白蛋白？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_025",
+      "question": "CKD 高风险人群包括哪些人？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_026",
+      "question": "糖尿病患者为什么需要定期筛查肾功能？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_027",
+      "question": "尿白蛋白肌酐比异常提示什么风险？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_028",
+      "question": "慢性肾脏病防治中血压控制有什么意义？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_029",
+      "question": "eGFR 下降时为什么要评估肾脏损伤证据？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_030",
+      "question": "CKD 早期管理应关注哪些生活方式因素？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_031",
+      "question": "慢性肾脏病患者何时需要进一步转诊？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_032",
+      "question": "肾功能筛查结果异常时为什么要复查确认？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_033",
+      "question": "CKD 患者用药安全为什么需要关注肾功能？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_034",
+      "question": "慢性肾脏病防治指南对高危人群筛查频率有什么启示？",
+      "topic": "ckd",
+      "expected_source": "慢性肾脏病早期筛查_诊断及防治指南_2022.pdf",
+      "expected_keywords": [
+        "慢性肾脏病",
+        "CKD",
+        "eGFR",
+        "尿白蛋白",
+        "筛查",
+        "诊断",
+        "防治"
+      ]
+    },
+    {
+      "question_id": "rag_q_035",
+      "question": "脂肪性肝病为什么常和肥胖及代谢异常相关？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_036",
+      "question": "脂肪肝患者为什么需要关注 ALT 和肝酶变化？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_037",
+      "question": "脂肪性肝病管理中体重控制有什么作用？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_038",
+      "question": "脂肪肝诊疗为什么强调生活方式干预？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_039",
+      "question": "脂肪性肝病患者饮食上应注意哪些原则？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_040",
+      "question": "代谢综合征人群为什么要筛查脂肪肝？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_041",
+      "question": "脂肪肝患者运动干预的目标是什么？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_042",
+      "question": "肝酶异常但症状不明显时为什么仍需随访？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_043",
+      "question": "脂肪性肝病规范化诊疗需要评估哪些风险？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_044",
+      "question": "脂肪肝和饮酒因素应如何区分评估？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_045",
+      "question": "脂肪性肝病患者为什么要管理血脂和血糖？",
+      "topic": "fatty_liver",
+      "expected_source": "脂肪性肝病诊疗规范化的专家建_2019.pdf",
+      "expected_keywords": [
+        "脂肪性肝病",
+        "脂肪肝",
+        "肝酶",
+        "ALT",
+        "生活方式",
+        "体重",
+        "代谢"
+      ]
+    },
+    {
+      "question_id": "rag_q_046",
+      "question": "2型糖尿病诊断为什么要关注空腹血糖和 HbA1c？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_047",
+      "question": "糖尿病前期人群如何进行生活方式干预？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_048",
+      "question": "2型糖尿病患者为什么需要监测并发症风险？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_049",
+      "question": "血糖控制目标制定时应考虑哪些个体因素？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_050",
+      "question": "糖尿病患者饮食管理的核心原则是什么？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_051",
+      "question": "2型糖尿病患者运动治疗有哪些注意点？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_052",
+      "question": "HbA1c 在糖尿病长期管理中有什么意义？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_053",
+      "question": "糖尿病高危人群筛查应关注哪些线索？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_054",
+      "question": "2型糖尿病患者为什么要同时管理血压和血脂？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_055",
+      "question": "糖尿病患者低血糖风险评估为什么重要？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_056",
+      "question": "糖尿病慢病管理中随访和教育有什么价值？",
+      "topic": "diabetes",
+      "expected_source": "中国2型糖尿病防治指_2020.pdf",
+      "expected_keywords": [
+        "2型糖尿病",
+        "HbA1c",
+        "血糖",
+        "诊断",
+        "生活方式",
+        "并发症",
+        "筛查"
+      ]
+    },
+    {
+      "question_id": "rag_q_057",
+      "question": "高血压诊断为什么需要规范测量血压？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_058",
+      "question": "收缩压和舒张压升高分别提示什么风险？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_059",
+      "question": "高血压患者为什么要限制盐摄入？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_060",
+      "question": "家庭血压监测在高血压管理中有什么作用？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_061",
+      "question": "高血压患者生活方式干预包括哪些内容？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_062",
+      "question": "降压目标为什么需要结合心血管风险分层？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_063",
+      "question": "高血压合并糖尿病时管理上要注意什么？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_064",
+      "question": "高血压患者为什么要控制体重和增加运动？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_065",
+      "question": "血压波动较大时为什么需要持续随访？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_066",
+      "question": "高血压防治中戒烟限酒有什么意义？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_067",
+      "question": "老年高血压患者制定目标时为什么要个体化？",
+      "topic": "hypertension",
+      "expected_source": "中国高血压防治指南_2024.pdf",
+      "expected_keywords": [
+        "高血压",
+        "血压",
+        "收缩压",
+        "舒张压",
+        "限盐",
+        "降压",
+        "心血管"
+      ]
+    },
+    {
+      "question_id": "rag_q_068",
+      "question": "中国居民膳食指南为什么强调食物多样？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_069",
+      "question": "平衡膳食宝塔对日常饮食有什么参考价值？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_070",
+      "question": "成年人每天摄入蔬菜水果有什么建议？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_071",
+      "question": "为什么建议适量摄入奶类和大豆制品？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_072",
+      "question": "膳食指南如何看待全谷物和杂豆摄入？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_073",
+      "question": "控制油盐糖摄入对慢病预防有什么意义？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_074",
+      "question": "普通成年人如何理解吃动平衡？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_075",
+      "question": "为什么要培养清淡饮食和规律进餐习惯？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_076",
+      "question": "膳食指南对水和饮料选择有什么提示？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_077",
+      "question": "家庭健康饮食为什么要关注合理烹调？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_078",
+      "question": "居民膳食指南如何支持慢病风险管理？",
+      "topic": "dietary_guideline",
+      "expected_source": "中国居民膳食指南_2022.pdf",
+      "expected_keywords": [
+        "膳食指南",
+        "食物多样",
+        "谷类",
+        "蔬菜",
+        "水果",
+        "奶类",
+        "平衡膳食"
+      ]
+    },
+    {
+      "question_id": "rag_q_079",
+      "question": "成年人每周身体活动量应该如何安排？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_080",
+      "question": "久坐行为为什么会增加健康风险？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_081",
+      "question": "有氧运动和肌肉力量训练各有什么作用？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_082",
+      "question": "慢病风险人群开始运动前应注意什么？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_083",
+      "question": "身体活动指南为什么强调循序渐进？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_084",
+      "question": "老年人进行身体活动时应关注哪些安全问题？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_085",
+      "question": "儿童青少年身体活动建议与成年人有什么不同？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_086",
+      "question": "办公室人群如何减少久坐带来的风险？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_087",
+      "question": "运动干预为什么有助于体重和血糖管理？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_088",
+      "question": "身体活动不足和心血管风险有什么关系？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_089",
+      "question": "如何把日常生活活动纳入健康管理计划？",
+      "topic": "physical_activity",
+      "expected_source": "中国人群身体活动指南_2021.pdf",
+      "expected_keywords": [
+        "身体活动",
+        "运动",
+        "久坐",
+        "有氧",
+        "肌肉力量",
+        "活动指南",
+        "健康"
+      ]
+    },
+    {
+      "question_id": "rag_q_090",
+      "question": "血脂管理为什么特别关注 LDL-C 水平？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    },
+    {
+      "question_id": "rag_q_091",
+      "question": "甘油三酯升高时需要评估哪些生活方式因素？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    },
+    {
+      "question_id": "rag_q_092",
+      "question": "HDL-C 偏低对心血管风险有什么提示？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    },
+    {
+      "question_id": "rag_q_093",
+      "question": "血脂异常患者为什么要进行 ASCVD 风险评估？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    },
+    {
+      "question_id": "rag_q_094",
+      "question": "总胆固醇和低密度脂蛋白有什么区别？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    },
+    {
+      "question_id": "rag_q_095",
+      "question": "血脂管理中饮食干预应关注哪些方面？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    },
+    {
+      "question_id": "rag_q_096",
+      "question": "血脂异常合并糖尿病时为什么风险更高？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    },
+    {
+      "question_id": "rag_q_097",
+      "question": "动脉粥样硬化性心血管病预防与血脂有什么关系？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    },
+    {
+      "question_id": "rag_q_098",
+      "question": "血脂复查和随访为什么重要？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    },
+    {
+      "question_id": "rag_q_099",
+      "question": "高危人群血脂控制目标为什么更严格？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    },
+    {
+      "question_id": "rag_q_100",
+      "question": "血脂管理指南如何看待综合生活方式干预？",
+      "topic": "lipid",
+      "expected_source": "中国血脂管理指南_2023.pdf",
+      "expected_keywords": [
+        "血脂",
+        "LDL",
+        "HDL",
+        "甘油三酯",
+        "胆固醇",
+        "动脉粥样硬化",
+        "ASCVD"
+      ]
+    }
+  ]
+}

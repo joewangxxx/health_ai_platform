@@ -798,7 +798,17 @@ def test_risk_engine_degrades_cleanly_on_model_version_mismatch_without_runtime_
     ]
 
 
-def test_inference_service_imports_and_degrades_cleanly_without_torch(caplog):
+def test_inference_service_imports_and_degrades_cleanly_without_torch(monkeypatch, caplog):
+    import builtins
+
+    original_import = builtins.__import__
+
+    def _import_without_torch(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "torch" or name.startswith("torch."):
+            raise ImportError("simulated missing torch for degradation-path validation")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", _import_without_torch)
     inference_module = _fresh_import(
         "backend.services.inference_service",
         ["backend.services.inference_service"],

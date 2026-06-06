@@ -4,12 +4,12 @@
             :proximity="glowProximity" :inactiveZone="0.01" :borderWidth="2">
             <div
                 class="glass-content relative z-10 h-full w-full rounded-3xl bg-white/60 dark:bg-zinc-900/60 p-5 shadow-lg backdrop-blur-md border border-white/40 dark:border-white/10 transition-all duration-300 flex flex-col">
-                <!-- Header Slot -->
+                <!-- 中文注释：界面结构说明 -->
                 <div v-if="$slots.header" class="mb-4">
                     <slot name="header" />
                 </div>
 
-                <!-- Default Content Slot -->
+                <!-- 中文注释：界面结构说明 -->
                 <slot />
             </div>
         </GlowingEffect>
@@ -33,7 +33,7 @@ function cn(...inputs) {
 </script>
 
 <style scoped>
-/* Ensure content flex column works for extending height */
+/* 确保内容区纵向拉伸时可正确铺满高度 */
 .glass-content {
     flex: 1;
 }

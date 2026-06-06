@@ -1,6 +1,6 @@
 <template>
     <AuroraBackground>
-        <div class="h-full flex items-center justify-center px-4">
+        <div class="min-h-screen flex items-start justify-center px-4 pt-12 pb-8 sm:pt-14">
             <GlassCard :glowProximity="100" class="w-full max-w-md p-8" :glow="true">
                 <template #header>
                     <div class="flex flex-col items-center mb-6">
@@ -28,7 +28,7 @@
                         <el-input
                             v-model.trim="form.confirmPassword"
                             type="password"
-                            placeholder="鍐嶆杈撳叆瀵嗙爜"
+                            placeholder="再次输入密码"
                             :prefix-icon="Lock"
                             show-password
                         />

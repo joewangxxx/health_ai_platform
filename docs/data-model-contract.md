@@ -223,6 +223,475 @@ Rules:
 - `provisional_reasons` and `blocking_fields` must use stable backend-authored field names only.
 - `analysis_mode` must not be inferred from frontend heuristics once the backend emits it.
 
+### 2.1.3 Platform Standard Profile CSV Import Shape
+
+This slice freezes the data contract for a platform-standard CSV profile import row. It is a structured profile import shape, not a raw Synthea CSV schema.
+
+Canonical selected-row projection:
+
+```json
+{
+  "schema_version": "platform_profile_import.v1",
+  "demo_patient_id": "synthea_8505e011",
+  "profile": {
+    "Age": 60,
+    "Gender": 2,
+    "Height": 162.5,
+    "Weight": 77.9,
+    "BMI": 29.5,
+    "WaistCircum": 99.0,
+    "SBP": 188,
+    "DBP": 116,
+    "Glucose_Fasting": 4.46,
+    "HbA1c": 5.9,
+    "Cholesterol_Total": 4.39,
+    "Triglycerides": 1.62,
+    "Cholesterol_HDL": 1.62,
+    "Cholesterol_LDL": 2.03,
+    "eGFR": 148.5,
+    "ALT": 59,
+    "WBC": 7.9,
+    "Platelet": 412.2,
+    "GGT": null,
+    "ALP": 139.5,
+    "Creatinine": 61.9,
+    "Sleep_Hours": 6.0,
+    "extra_data": {
+      "synthea_patient_id": "8505e011-20cb-4bc5-8a66-5900111fb04b",
+      "data_source_summary": "Synthea clinical/EHR + NHANES-style lifestyle supplement"
+    }
+  },
+  "source_tags": [
+    "platform_profile_csv",
+    "platform_demo_profiles.v1",
+    "demo_patient:synthea_8505e011"
+  ]
+}
+```
+
+CSV row rules:
+
+- One CSV row represents one platform profile candidate.
+- CSV columns may include canonical writable `UserProfile` field names from `data/demo/platform_profile_schema.json`.
+- CSV columns may include `demo_patient_id`, `synthea_patient_id`, `demo_role`, and other provenance columns that are copied only into `source_tags`, `metadata`, or `profile.extra_data`.
+- `extra_data` may be supplied either as one JSON object cell named `extra_data` or as flat `extra_data.<key>` columns.
+- Multi-row CSV files require row selection by `demo_patient_id` unless the file contains exactly one row.
+
+Type and unit rules:
+
+- `Gender` uses the existing platform encoding: `1` for male and `2` for female.
+- Numeric profile fields must parse as numbers or remain missing/null.
+- The CSV is assumed to already use platform units: height in cm, weight in kg, lipids/glucose in mmol/L where applicable, creatinine in the repository's current profile unit, and sleep in hours.
+- The import endpoint must not perform unit conversion, raw Synthea code mapping, condition summarization, or model feature engineering.
+
+Compatibility with generated demo artifacts:
+
+- `data/demo/platform_demo_profiles.json` and `data/demo/platform_demo_profiles_with_sources.json` remain the JSON source shape for the current generated demo profiles.
+- A future `data/demo/platform_demo_profiles.csv` should be a row-wise export of `profiles[].profile` plus stable provenance columns such as `demo_patient_id`.
+- `data/demo/synthea_to_platform_mapping.json` and `data/demo/unit_conversion_rules.json` are upstream generation artifacts. The runtime CSV import route may use their outputs, but it must not become a replacement ETL pipeline for raw Synthea datasets.
+
+What must not be silently inferred:
+
+- missing clinical values
+- units from column names or source files
+- profile fields not present in the approved platform schema
+- diagnoses, conditions, medication plans, risk snapshots, or analysis results from demo provenance columns
+- persistence intent from uploading the CSV
+
+### 2.1.4 Lifestyle Digital Twin Demo Shapes
+
+This slice freezes additive demo artifacts for the top-tier behavior-day replay. These shapes are not persistence tables and do not redefine `IoTHealthData`, `HealthRecord`, `MedicalDocument`, `UserProfile`, or the platform CSV import shape.
+
+#### `behavior_day_scenario.v1`
+
+Canonical scenario artifact:
+
+```json
+{
+  "schema_version": "behavior_day_scenario.v1",
+  "scenario_id": "metabolic_day_001",
+  "demo_patient_id": "synthea_8505e011",
+  "title": "Metabolic syndrome demo day",
+  "data_mode": "simulated_demo",
+  "timeline": [],
+  "lifestyle_context": {},
+  "source_provenance": {
+    "source_type": "demo_scenario",
+    "artifact_schema": "behavior_day_scenario.v1",
+    "generated_from": [
+      "platform_demo_profiles.v1",
+      "nhanes_lifestyle_supplement.v1"
+    ],
+    "generator": "ai-data",
+    "generated_at": null
+  }
+}
+```
+
+Required fields:
+
+- `schema_version`
+- `scenario_id`
+- `demo_patient_id`
+- `data_mode`
+- `timeline`
+- `source_provenance`
+
+Rules:
+
+- `data_mode` must be `simulated_demo` for this slice.
+- `demo_patient_id` should reference an existing generated demo profile when available.
+- `timeline` contains `behavior_timeline_event.v1` objects only.
+- Scenario artifacts may live under `data/demo` or another AI-data-owned demo artifact path approved by the orchestrator; BE reads them as static artifacts.
+- Scenario artifacts are not imported as user health records and are not device evidence.
+
+#### `behavior_timeline_event.v1`
+
+Canonical event shape:
+
+```json
+{
+  "schema_version": "behavior_timeline_event.v1",
+  "event_id": "evt_1210_lunch",
+  "time": "12:10",
+  "event_type": "diet_vision",
+  "label": "Lunch recognition",
+  "data_mode": "simulated_demo",
+  "payload": {},
+  "source_provenance": {
+    "source_type": "demo_scenario",
+    "generated_from": ["nhanes_lifestyle_supplement.v1"]
+  }
+}
+```
+
+Frozen event-type enum:
+
+- `sleep`
+- `activity`
+- `sedentary`
+- `diet_vision`
+- `vitals`
+- `hydration`
+- `medication_context`
+- `symptom_note`
+- `analysis_marker`
+- `daily_summary`
+
+Rules:
+
+- `time` is a local demo-day display time in `HH:MM` form unless a later contract adds date-time support.
+- `payload` shape depends on `event_type`; `diet_vision` must use `diet_vision_event.v1`.
+- `vitals` is an event-level simulated measurement or profile-derived monitoring point; it may carry bounded vital signs, labs, or wearable-style values, but must keep `data_mode` and provenance visible and must not be treated as real device evidence.
+- `daily_summary` is a replay event for day-level aggregate behavior totals and demo takeaways; it does not replace `lifestyle_context.v1` and must not be persisted as a risk snapshot, profile state, IoT row, or health-history row.
+- Events may be replayed in the FE timeline but must not be written to IoT, document, profile, or health-record tables.
+
+#### `diet_vision_event.v1`
+
+Canonical simulated food-vision event:
+
+```json
+{
+  "schema_version": "diet_vision_event.v1",
+  "meal_type": "lunch",
+  "food_items": ["rice", "braised pork", "salty soup"],
+  "nutrition": {
+    "calories": 780,
+    "carbs": 92,
+    "protein": 28,
+    "fat": 32,
+    "sodium_mg": 1800
+  },
+  "vision_provenance": {
+    "source_type": "simulated_demo",
+    "image_ref": null,
+    "model_name": null,
+    "confidence": null
+  }
+}
+```
+
+Rules:
+
+- `nutrition.calories`, `carbs`, `protein`, and `fat` reuse the current frontend nutrition keys.
+- `sodium_mg` is optional but preferred for high-sodium demo explanations.
+- `vision_provenance.source_type="simulated_demo"` means no real image model inference occurred for this event.
+- If future artifacts reference a real demo image, `image_ref` may point to a demo asset, but this still does not create a `MedicalDocument` or real food-upload event.
+
+#### `lifestyle_context.v1`
+
+Canonical analysis-context input:
+
+```json
+{
+  "schema_version": "lifestyle_context.v1",
+  "data_mode": "simulated_demo",
+  "scenario_id": "metabolic_day_001",
+  "summary": {
+    "steps": 7600,
+    "active_minutes": 42,
+    "sedentary_minutes": 520,
+    "sleep_hours": 6.0,
+    "diet_pattern": "high_sodium_high_carbohydrate",
+    "estimated_calories": 2100,
+    "estimated_sodium_mg": 4200
+  },
+  "modifier_inputs": {
+    "activity_level": "moderate",
+    "sleep_quality": "short",
+    "diet_quality": "high_sodium"
+  },
+  "source_provenance": {
+    "source_type": "demo_scenario",
+    "artifact_schema": "behavior_day_scenario.v1",
+    "generated_from": [
+      "platform_demo_profiles.v1",
+      "nhanes_lifestyle_supplement.v1"
+    ]
+  }
+}
+```
+
+Rules:
+
+- `lifestyle_context.v1` may be accepted by `/analyze/comprehensive` as optional context.
+- It is an explanation and heuristic-modifier context, not a clinical diagnosis input floor and not proof of real device behavior.
+- `data_mode` is required. `simulated_demo` must remain visible through API and FE presentation.
+- `source_provenance` is required and must not be replaced by free-form copy.
+- Missing lifestyle fields must remain missing; BE/FE may not fabricate steps, sleep, calories, sodium, or modifier labels from the scenario title alone.
+
+#### `data_mode` and source provenance rules
+
+Frozen `data_mode` enum for this slice:
+
+- `simulated_demo`
+- `user_uploaded`
+- `manual_entry`
+- `ocr_document`
+- `platform_csv_import`
+- `real_device`
+- `derived`
+
+Rules:
+
+- Behavior-day scenarios in this slice must use `simulated_demo`.
+- Behavior-day CSV/JSON uploads in this slice must use `user_uploaded`.
+- Existing profile CSV import uses `platform_csv_import`.
+- Existing OCR document extraction uses `ocr_document`.
+- Existing real IoT sync uses `real_device` only when data actually comes through the IoT sync path.
+- `derived` is reserved for deterministic backend derivations already approved elsewhere in this document.
+- `source_provenance` must identify source type, artifact schema where applicable, and generated/source artifacts. It must not be used to smuggle raw clinical rows, raw Synthea tables, raw OCR payloads, or model debug output.
+
+### 2.1.5 Platform Standard Behavior Day Upload Shapes
+
+This slice freezes a platform-standard one-patient, one-local-day behavior upload shape for the Lifestyle page. The upload shape is an API parsing contract, not a persistence model and not an IoT ingestion contract.
+
+#### File-level scope
+
+Accepted source formats:
+
+- `platform_behavior_day_csv.v1`
+- `platform_behavior_day_json.v1`
+
+Required file-level semantics:
+
+- exactly one `patient_id`
+- exactly one `local_date` in `YYYY-MM-DD`
+- local display times in `HH:MM`
+- timeline events using the frozen `behavior_timeline_event.v1` event-type enum
+- no more than 200 events
+- UTF-8 text
+- no binary image payloads, raw wearable dumps, provider payloads, or background-sync envelopes
+
+#### CSV input shape
+
+One CSV row represents one timeline event for the same patient day.
+
+Required columns:
+
+- `patient_id`
+- `local_date`
+- `time`
+- `event_type`
+
+Optional common columns:
+
+- `event_id`
+- `label`
+- `source_note`
+- `payload_json`
+- `meal_type`
+- `food_items`
+- `calories`
+- `carbs`
+- `protein`
+- `fat`
+- `sodium_mg`
+- `steps`
+- `active_minutes`
+- `sedentary_minutes`
+- `sleep_hours`
+- `systolic_bp`
+- `diastolic_bp`
+- `heart_rate`
+- `symptom_text`
+- `medication_name`
+- `summary_key`
+- `summary_value`
+
+CSV rules:
+
+- `payload_json`, when present, must be a JSON object and is merged only into that row's event payload.
+- Flat optional columns may be used by BE to construct bounded payloads for known event types.
+- `food_items` may be a JSON array string or a semicolon-delimited string.
+- Empty optional cells remain missing; BE must not fabricate values from labels or neighboring rows.
+- All rows must share the same `patient_id` and `local_date`.
+
+Minimal CSV example:
+
+```csv
+patient_id,local_date,time,event_type,label,meal_type,food_items,calories,carbs,protein,fat,sodium_mg
+patient_a,2026-05-13,07:00,diet_vision,Breakfast,breakfast,"oatmeal;egg",420,48,18,14,480
+patient_a,2026-05-13,22:30,sleep,Sleep start,,,,,,,
+```
+
+#### JSON input shape
+
+Canonical JSON input:
+
+```json
+{
+  "schema_version": "platform_behavior_day_json.v1",
+  "patient_id": "patient_a",
+  "local_date": "2026-05-13",
+  "timezone": "Asia/Shanghai",
+  "timeline": [
+    {
+      "time": "07:00",
+      "event_type": "diet_vision",
+      "label": "Breakfast",
+      "payload": {
+        "meal_type": "breakfast",
+        "food_items": ["oatmeal", "egg"],
+        "nutrition": {
+          "calories": 420,
+          "carbs": 48,
+          "protein": 18,
+          "fat": 14,
+          "sodium_mg": 480
+        }
+      }
+    }
+  ],
+  "summary": {
+    "steps": 7600,
+    "active_minutes": 42,
+    "sedentary_minutes": 520,
+    "sleep_hours": 6.0,
+    "estimated_calories": 2100,
+    "estimated_sodium_mg": 4200
+  }
+}
+```
+
+JSON rules:
+
+- `schema_version`, `patient_id`, `local_date`, and `timeline` are required.
+- `timezone` is optional display metadata and does not convert event times in this slice.
+- `timeline[]` entries may omit `schema_version`, `event_id`, `data_mode`, and `source_provenance`; BE generates those fields in the response.
+- `summary` is optional. BE may use explicit summary values when present and may derive bounded day totals from timeline payloads when deterministic. Missing totals remain missing.
+- JSON input must not carry `data_mode="real_device"` or device/vendor sync claims.
+
+#### Generated upload response shape
+
+BE returns a non-persisted behavior-day object that reuses the demo replay shapes with user-upload provenance:
+
+```json
+{
+  "schema_version": "behavior_day_scenario.v1",
+  "scenario_id": "uploaded_2026-05-13_patient_a",
+  "patient_id": "patient_a",
+  "local_date": "2026-05-13",
+  "title": "Uploaded behavior day",
+  "data_mode": "user_uploaded",
+  "timeline": [
+    {
+      "schema_version": "behavior_timeline_event.v1",
+      "event_id": "evt_0700_breakfast",
+      "time": "07:00",
+      "event_type": "diet_vision",
+      "label": "Breakfast",
+      "data_mode": "user_uploaded",
+      "payload": {
+        "schema_version": "diet_vision_event.v1",
+        "meal_type": "breakfast",
+        "food_items": ["oatmeal", "egg"],
+        "nutrition": {
+          "calories": 420,
+          "carbs": 48,
+          "protein": 18,
+          "fat": 14,
+          "sodium_mg": 480
+        },
+        "vision_provenance": {
+          "source_type": "user_uploaded",
+          "image_ref": null,
+          "model_name": null,
+          "confidence": null
+        }
+      },
+      "source_provenance": {
+        "source_type": "user_uploaded",
+        "source_label": "uploaded_csv",
+        "source_format": "csv",
+        "artifact_schema": "platform_behavior_day_csv.v1"
+      }
+    }
+  ],
+  "lifestyle_context": {
+    "schema_version": "lifestyle_context.v1",
+    "data_mode": "user_uploaded",
+    "scenario_id": "uploaded_2026-05-13_patient_a",
+    "summary": {
+      "steps": 7600,
+      "active_minutes": 42,
+      "sedentary_minutes": 520,
+      "sleep_hours": 6.0,
+      "estimated_calories": 2100,
+      "estimated_sodium_mg": 4200
+    },
+    "modifier_inputs": {
+      "activity_level": "moderate",
+      "sleep_quality": "short",
+      "diet_quality": "high_sodium"
+    },
+    "source_provenance": {
+      "source_type": "user_uploaded",
+      "source_label": "uploaded_csv",
+      "source_format": "csv",
+      "artifact_schema": "platform_behavior_day_csv.v1"
+    }
+  },
+  "source_provenance": {
+    "source_type": "user_uploaded",
+    "source_label": "uploaded_csv",
+    "source_format": "csv",
+    "artifact_schema": "platform_behavior_day_csv.v1",
+    "filename": "patient-day.csv"
+  }
+}
+```
+
+Generated response rules:
+
+- `data_mode` must be `user_uploaded` on the behavior day, every generated timeline event, and `lifestyle_context`.
+- `source_provenance.source_type` must be `user_uploaded`.
+- `source_provenance.source_label` must be `uploaded_csv` for CSV input and `uploaded_json` for JSON input.
+- `source_provenance.source_format` must be `csv` or `json`.
+- Uploaded behavior-day objects are preview/runtime payloads only; they do not create new scenario artifacts under `data/demo`.
+- Uploaded `diet_vision` events use `diet_vision_event.v1` for nutrition display, but `vision_provenance.source_type="user_uploaded"` means no model inference happened unless a future contract adds it.
+- `lifestyle_context.v1` produced from uploads may be passed to `/analyze/comprehensive` as optional heuristic context, not as a required clinical input floor and not as real device evidence.
+
 ### 2.2 `MedicalDocument.ocr_summary` Canonical Shape
 
 Canonical persisted target shape for new normalized writes:
@@ -275,11 +744,25 @@ Canonical metric-object rules:
 - `value` may be numeric, string, or `null`
 - `extra_findings` reuses the same metric-object shape for non-core extracted findings
 
+Approved canonical `ocr_summary.v1.metrics` keys:
+
+- Body/vitals: `BMI`, `SBP`, `DBP`
+- Blood count: `WBC`, `HGB`, `Platelet`
+- Liver function: `ALT`, `AST`, `GGT`, `ALP`
+- Glucose/lipids/renal metabolism: `Glucose_Fasting`, `HbA1c`, `Cholesterol_Total`, `Triglycerides`, `Cholesterol_HDL`, `Cholesterol_LDL`, `Creatinine`, `eGFR`, `UA`
+
+Canonical metric-scope rules:
+
+- `AST`, `HGB`, and `UA` are now approved as additive report-level canonical OCR metrics.
+- Adding these keys does not create new public route fields and does not require clients to receive them on every report.
+- Adding these keys does not authorize automatic promotion into `UserProfile` columns where the current profile model has no matching field; BE must keep unsupported profile fields inside report summaries or future architect-approved profile extensions.
+- FE may render these keys when present, but must not infer missing values, normal ranges, diagnoses, or profile state from their absence.
+
 Legacy compatibility rules:
 
 - legacy rows may still store flat extraction dicts where demographic fields live at top level
 - legacy rows may still store metric values as scalars instead of metric objects
-- legacy rows may still use approved OCR aliases such as `Glu`, `TC`, `TG`, `HDL`, `LDL`, and `PLT`
+- legacy rows may still use approved OCR aliases such as `Glu`, `GLU`, `FPG`, `TC`, `TG`, `HDL`, `HDL-C`, `LDL`, `LDL-C`, `PLT`, `Cr`, `CREA`, `Scr`, `GFR`, and `HbA1C`
 - legacy rows may still be JSON strings that decode into one of the above forms
 
 Allowed read-time normalization:
@@ -293,6 +776,11 @@ Allowed read-time normalization:
   - `HDL` -> `Cholesterol_HDL`
   - `LDL` -> `Cholesterol_LDL`
   - `PLT` -> `Platelet`
+  - `HbA1C` / `A1c` -> `HbA1c`
+  - `HDL-C` / `HDL_C` / `HDLC` -> `Cholesterol_HDL`
+  - `LDL-C` / `LDL_C` / `LDLC` -> `Cholesterol_LDL`
+  - `Cr` / `CREA` / `Scr` -> `Creatinine`
+  - `GFR` -> `eGFR`
 - wrap scalar metric values into metric objects with only `value` populated
 - normalize `extra_findings` entries into the same metric-object shape
 
@@ -857,6 +1345,55 @@ These are runtime dependencies behind backend-owned APIs, not direct frontend co
 
 `fe` consumes only the backend contract and must not infer direct model-file semantics.
 
+### 3.3 Model Governance Coverage Boundary
+
+This slice freezes the minimum governance documentation coverage expected for major model assets without changing existing API payload shapes.
+
+Required model-governance artifacts (model card or equivalent model note) must cover:
+
+- LightGBM disease risk model bundle
+- XGBoost lifestyle risk model
+- EfficientNet/ResNet nutrition-vision model assets
+- LSTM glucose prediction model and scaler
+- GWAS/PRS-related genomic scoring assets
+- RAG/LLM/OCR boundary models and services
+
+Minimum documentation fields per asset:
+
+- Selection rationale and target use case
+- Training data source and preprocessing assumptions
+- Input/output schema at runtime boundary
+- Intended population/scope and out-of-scope usage
+- Known limitations, uncertainty, and failure modes
+- Risk controls, compliance notes, and monitoring/refresh trigger
+
+Contract rule:
+
+- Adding or improving model cards is implementation-safe documentation work as long as model I/O semantics and API-visible shapes are unchanged.
+
+### 3.4 Model Dependency Compatibility Boundary
+
+Dependency compatibility is part of model-governance readiness in this slice.
+
+Frozen policy:
+
+- `xgboost`, `torch`/`torchvision`, and `scikit-learn`/`joblib` compatibility must be managed against the runtime baseline used for release validation.
+- The canonical long-term fix for incompatibility warnings is model artifact re-export on the target dependency baseline.
+- Temporary runtime pinning may be used only as a short-lived containment action and must be documented in release/deployment evidence.
+- Compatibility cleanup that does not change API-visible model outputs is implementation-safe and does not require a contract refresh.
+
+### 3.5 Fusion Score Semantics Boundary
+
+This data-model slice freezes the interpretation of current fusion outputs:
+
+- `risk_report[*].final_risk` is a backend-owned composite score under current engine conventions.
+- Current fusion math (`base × gene_modifier × lifestyle_modifier`) is heuristic multiplicative scaling, not strict Bayesian posterior inference.
+- Existing `breakdown.base_clinical`, `gene_modifier`, and `lifestyle_modifier` fields remain compatibility fields in this slice.
+
+Escalation rule:
+
+- Any API-visible re-interpretation of `final_risk`, `breakdown` fields, or fusion-calibration semantics requires architect review before implementation.
+
 ## 4. Inference Inputs And Outputs
 
 ### 4.1 Comprehensive Risk Analysis Input
@@ -865,6 +1402,7 @@ Input sources:
 
 - Request body `clinical`
 - Request body `user_snps`
+- Optional request body `lifestyle_context`
 - Stored `UserProfile`
 - Default device state from backend config
 
@@ -872,6 +1410,8 @@ Merge rule:
 
 - Stored profile data may be used as base context
 - Request-supplied clinical fields override missing or stale values
+- `lifestyle_context.v1` does not override clinical fields or stored profile values; it is passed as labeled context for explanation and bounded heuristic modifiers only
+- `data_mode="simulated_demo"` context must not be converted into `real_device` evidence or persisted records
 
 ### 4.2 Chat Input
 
@@ -1401,6 +1941,11 @@ They are P1-supporting in product priority, but still part of the current data l
 - Genomic payloads must remain encrypted at rest through the current property-backed mechanism
 - Research export features remain outside the current contract freeze, but `allow_research` is already a persisted consent field
 - Backfill is not required in this slice; legacy persisted payloads may remain until BE repair scripts are introduced under the frozen normalization rules
+- Raw Baidu OCR provider payloads, raw LLM provider payloads, and raw RAG passages must not be persisted into `ChatMessage`, `AgentAuditEvent`, or `AgentAnswerReplay`.
+- Provider-facing processing must remain backend-mediated; FE-visible surfaces are limited to frozen bounded metadata and route payloads.
+- `behavior_day_scenario.v1`, `behavior_timeline_event.v1`, `diet_vision_event.v1`, and `lifestyle_context.v1` are demo/read-time artifacts in this slice, not new persistence entities.
+- `data_mode="simulated_demo"` payloads must not be persisted as real `IoTHealthData`, `HealthRecord`, `MedicalDocument`, profile state, or risk snapshots.
+- Demo scenario provenance must survive FE replay and optional analysis submission; FE and BE may not strip or relabel simulated provenance to make the scenario look device-derived.
 
 ## 6. Lifecycle Rules
 
@@ -1430,6 +1975,58 @@ They are P1-supporting in product priority, but still part of the current data l
 4. Analysis uses the field-state metadata to decide whether the result is `final`, `provisional`, or `blocked`
 5. Missing required non-derivable fields remain missing until a real source or user action supplies them
 
+### 6.4 CSV Profile Import Lifecycle
+
+1. User selects a platform-standard profile CSV from the clinical view.
+2. Backend parses the uploaded file and selects exactly one row, using `demo_patient_id` when needed.
+3. Backend projects the row into profile JSON, `source_tags`, and import `metadata`.
+4. Frontend fills the clinical profile form from the returned JSON.
+5. User reviews or edits the form.
+6. Existing `POST /user/profile` save flow persists the profile and creates any history snapshot.
+
+Lifecycle rules:
+
+- The import endpoint has no durable side effects.
+- CSV upload does not create a `MedicalDocument`; document storage remains OCR/report-upload owned.
+- CSV import does not create `HealthRecord`; history remains profile-save owned.
+- CSV import does not create `risk_snapshot.v1` or `analysis_context.v1`; analysis remains the existing analysis flow.
+- If field-state metadata is implemented, CSV-imported fields may be marked `recognized` with a source such as `platform_csv_import`, but the enum and derivation rules remain unchanged.
+
+### 6.5 Lifestyle Digital Twin Demo Scenario Lifecycle
+
+1. AI-data may generate a `behavior_day_scenario.v1` artifact from approved demo profile and lifestyle supplement sources.
+2. BE reads and validates the artifact through authenticated read-only scenario APIs.
+3. FE fetches the scenario and replays `behavior_timeline_event.v1` events in a local timeline UI.
+4. FE may submit the scenario's `lifestyle_context.v1` to `/analyze/comprehensive` only when the user explicitly runs demo analysis.
+5. BE validates the context and may return demo-aware explanation metadata, but does not persist the scenario or derived context.
+6. QA validates that replay labels, API calls, and database side effects respect demo-only provenance.
+
+Lifecycle rules:
+
+- Scenario list/detail reads have no durable side effects.
+- Timeline replay does not create IoT sync rows or health history.
+- Demo food-vision events do not upload image bytes and do not create document records.
+- Comprehensive analysis with `simulated_demo` lifestyle context does not save profile state, risk snapshots, or health records unless a separate existing user save flow is explicitly invoked outside the demo scenario contract.
+
+### 6.6 Lifestyle Behavior Day Upload Lifecycle
+
+1. User selects a platform-standard behavior CSV or JSON file in the Lifestyle page.
+2. FE submits the file to the backend parse-only upload route.
+3. BE validates file type, size, encoding, one-patient/one-day scope, event taxonomy, event times, and payload structure.
+4. BE generates a non-persisted user-uploaded behavior day, timeline, validation summary, and `lifestyle_context.v1`.
+5. FE previews/replays the returned timeline and labels it as uploaded user data.
+6. FE keeps the existing demo/example fallback available if no file is selected or validation fails.
+7. FE may send the returned `lifestyle_context.v1` to `/analyze/comprehensive` only through the approved optional context field.
+
+Lifecycle rules:
+
+- The upload endpoint has no durable side effects.
+- The raw uploaded file is not stored.
+- Parsed events are not inserted into `IoTHealthData`, `HealthRecord`, `MedicalDocument`, `UserProfile`, `risk_history`, or any demo artifact.
+- Upload validation reports are returned to the caller only and are not persisted in this slice.
+- `/analyze/comprehensive` with `data_mode="user_uploaded"` lifestyle context does not save profile state, risk snapshots, or health records.
+- Real-device placeholder display does not create `real_device` data and does not authorize any background sync or vendor connector.
+
 ## 7. ETL And Training Boundaries
 
 Current ETL/training assets are repository-local and important, but not part of the P0 public contract freeze.
@@ -1439,6 +2036,8 @@ This document freezes only these expectations:
 - ETL and training outputs may influence runtime model behavior
 - Runtime APIs should not depend on frontend knowing training-pipeline internals
 - Changes to model input/output semantics that alter API-visible meaning require escalation back through `architect`
+- Training scripts must resolve file paths from project-root/config-owned paths rather than machine-local absolute paths such as `F:\health_ai_platform_2.0`.
+- Path de-hardcoding is implementation-safe when it preserves model input/output semantics and API-visible behavior.
 
 ## 8. Open Issues And Risks
 
@@ -1458,14 +2057,23 @@ This document freezes only these expectations:
 - RAG chunk metadata is still build-time only in the current code path; BE must enrich internal chunk provenance with `source`, `page`, and `chunk_index` while keeping the chat API unchanged
 - current prompt-building code still truncates raw `risk_history` strings and some OCR consumers still expect a `summary` field that legacy payloads do not guarantee; BE needs to move those reads onto the shared normalizer
 - current product behavior still needs one backend-owned answer to incomplete-data semantics: provisional analysis is not yet surfaced as a frozen contract, and default-estimate behavior must remain prohibited
+- current repository demo artifacts include platform demo profiles and NHANES-style lifestyle supplements, but no committed `behavior_day_scenario.v1` artifact exists yet; AI-data may need to generate one before FE/BE can finish the top-tier demo.
+- current `LifestyleView` mixes live Bluetooth, mock step increments, food upload, and analysis launch in one screen; FE must add demo/live labeling and avoid treating demo replay as connected-device state.
+- current `/analyze/comprehensive` request model has no `lifestyle_context` field; BE must add it as optional validated context without changing the existing `clinical` and `user_snps` behavior.
+- current `BehaviorScenarioRepository.validate_lifestyle_context` accepts only `simulated_demo`; BE must extend or add validation for `user_uploaded` lifestyle context without weakening the existing demo validation path.
+- current repository has no `POST /api/v1/lifestyle/import-behavior-day` parser route; BE must add it as parse-only and keep it separate from IoT sync and demo scenario reads.
+- current `LifestyleView` has no platform behavior CSV/JSON upload control or real-device placeholder boundary; FE must add these without removing the demo fallback or implying live device sync.
 - current chat routing code still centers on open-ended `intent` strings plus urgent-vs-normal safety checks; BE must align persisted and live `decision_summary` metadata to the frozen `lane` / `verdict` enums without introducing a frontend-owned classifier
 - current chat response code still has no frozen `takeover` field on `ChatMessage`, so BE must add the new object across send, stream final, and history replay if it implements the contract
 - lane-level tool eligibility is not yet persisted or enforced as its own backend-owned matrix, so BE must keep the tool whitelist behind the runtime boundary rather than letting FE or prompt wording redefine it
+- `ai_core/train_nutri_net.py` and `ai_core/train_diet_model.py` still contain machine-local absolute paths and need project-root/config-based path normalization.
+- Core model assets still need repository-owned model cards/model notes for the frozen major model list in section 3.3.
 
 ## 9. Contract Escalation Rules
 
 - `fe` may not redefine profile, OCR, or risk result semantics
 - `be` may not silently rewrite data-model meaning or the `evidence_panel` section schema without updating this contract
+- `fe` and `be` may not silently redefine platform CSV profile import as raw Synthea ingestion, unit conversion, document upload, risk analysis, or direct persistence
 - `fe` and `be` may not silently redefine the canonical envelopes for `MedicalDocument.ocr_summary`, `HealthRecord.risk_snapshot`, or `UserProfile.risk_history`
 - `be` may not silently replace the normalized result shapes for `medication_summary_lookup`, `recent_metric_anomaly_lookup`, or `report_comparison_lookup` with raw persistence payloads or write-capable behavior
 - `fe` may consume only backend-emitted `decision_summary.lane` and `decision_summary.verdict` as chat-routing semantics; it may not reinterpret `intent` or derive its own medical lane model
@@ -1481,6 +2089,16 @@ This document freezes only these expectations:
 - `be` may not silently emit new lane names, verdict codes, or lane / verdict combinations outside the frozen six-lane matrix
 - `be` may not silently introduce a batch-delete, hard-delete, purge, or archived-folder mutation conversation model in this freeze; batch archive/restore stays row-wise and continues to use `ChatConversation.archived_at`
 - `ai-data` may not change model-visible output semantics that affect API consumers without routing the change through `architect`
+- `be` and `ai-data` may not silently relabel heuristic fusion outputs as strict Bayesian posterior semantics in API-visible docs, metadata, or responses.
+- `be` and `ai-data` may not silently change `risk_report` meaning, `analysis_context` interpretation, or chat metadata/risk payload shapes without architect review.
+- `fe` and `be` may not silently convert `simulated_demo` scenario data into real device, profile, document, health-record, or risk-snapshot persistence.
+- `fe` and `be` may not silently change the existing IoT sync contract to accommodate demo replay.
+- `be` may not accept `lifestyle_context.v1` without `data_mode` and source provenance, and may not use it as a required clinical input floor.
+- `ai-data` may generate demo scenario artifacts, but may not redefine frontend UX, public API routes, or model-output semantics through artifact shape changes.
+- `fe` and `be` may not silently convert `user_uploaded` behavior-day CSV/JSON data into real device, profile, document, health-record, or risk-snapshot persistence.
+- `be` may not accept uploaded behavior-day files that span multiple patients or multiple local dates in this slice.
+- `be` may not relabel `user_uploaded` lifestyle context as `real_device`, and FE may not hide uploaded provenance from the timeline or analysis handoff UI.
+- Real-device placeholder semantics are presentation-only until a future architect-owned device import contract exists.
 
 ## 10. Decision Log
 
@@ -1513,3 +2131,14 @@ This document freezes only these expectations:
 | Freeze the evidence sufficiency gate to `sufficient`, `limited`, and `insufficient`, and add `conflicting_evidence` as an explicit degrade reason | Removes doc/runtime drift and prevents BE from inventing new insufficiency semantics later |
 | Upgrade `AgentAuditEvent` to `agent_audit_responsibility.v2` with explicit governance fields | Captures why the runtime answered, degraded, or escalated without storing prompts, transcripts, large RAG text, or unsanitized medical payloads |
 | Freeze `AgentAnswerReplay` as a separate bounded per-answer structure | Preserves postmortem reconstruction needs without widening `ChatMessage`, overloading `AgentAuditEvent`, or turning replay into raw-context archiving |
+| Freeze model-governance coverage for major model assets | Ensures model selection, data assumptions, I/O boundaries, and risks are documented without changing API shape |
+| Freeze dependency-compatibility policy for `xgboost`, `torch`/`torchvision`, and `scikit-learn`/`joblib` | Aligns runtime reproducibility expectations and sets re-export as the canonical fix for warning drift |
+| Freeze fusion output interpretation as heuristic multiplicative scoring | Prevents Bayesian over-claim while preserving compatibility fields in `risk_report` |
+| Freeze provider payload minimization across OCR/LLM/RAG persistence surfaces | Keeps sensitive provider data out of public and replay/audit storage paths |
+| Freeze platform-standard CSV profile import as `platform_profile_import.v1` | Reuses the existing profile field contract for demo-ready CSV import without introducing raw Synthea ingestion, unit conversion, or direct persistence |
+| Freeze `behavior_day_scenario.v1`, `behavior_timeline_event.v1`, `diet_vision_event.v1`, and `lifestyle_context.v1` | Gives the Lifestyle Digital Twin demo a stable artifact and replay contract without creating new persisted health evidence |
+| Require `data_mode` and source provenance on demo lifestyle data | Prevents simulated demo behavior from being confused with real device, OCR, manual-entry, or CSV-import sources |
+| Keep demo lifestyle context optional and explanatory for comprehensive analysis | Allows demo-aware interpretation while preserving existing clinical/profile analysis ownership and avoiding calibrated-posterior over-claims |
+| Freeze platform-standard behavior day CSV/JSON upload shapes | Lets BE validate one-patient/one-day user files and return a replayable timeline without inventing persistence or device-ingestion semantics |
+| Add `user_uploaded` data mode for behavior-day previews | Keeps uploaded files distinct from simulated demos, profile CSV imports, OCR documents, manual entry, and real device data |
+| Keep real-device placeholder out of data persistence and model I/O | Preserves a clear future integration boundary without allowing uploaded files to masquerade as live device evidence |

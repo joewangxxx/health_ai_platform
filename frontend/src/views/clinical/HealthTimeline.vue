@@ -124,7 +124,7 @@
                                 </el-tag>
                             </div>
                             <span class="text-sm font-mono text-slate-500">{{ timeTravelYears }} Years Later / Age {{
-                                simulationResult.simulated_profile_summary.Age }}</span>
+                                displayedProfileSummary.Age }}</span>
                         </div>
 
                         <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 flex-1">
@@ -137,7 +137,7 @@
                                         <span class="text-sm text-slate-600 dark:text-slate-400">BMI 指数</span>
                                         <div class="flex items-center gap-2">
                                             <span class="font-bold text-lg">{{
-                                                simulationResult.simulated_profile_summary.BMI
+                                                displayedProfileSummary.BMI
                                                 }}</span>
                                             <!-- Mock Delta logic for UI demo -->
                                             <span v-if="enableIntervention"
@@ -157,7 +157,7 @@
                                         <span class="text-sm text-slate-600 dark:text-slate-400">收缩压 (SBP)</span>
                                         <div class="flex items-center gap-2">
                                             <span class="font-bold text-lg">{{
-                                                simulationResult.simulated_profile_summary.SBP
+                                                displayedProfileSummary.SBP
                                                 }}</span>
                                             <span class="text-xs text-slate-400">mmHg</span>
                                         </div>
@@ -169,7 +169,9 @@
                                         <span class="text-sm text-slate-600 dark:text-slate-400">空腹血糖 (Glucose)</span>
                                         <!-- Using mock data if not in summary, or just standard fields -->
                                         <div class="flex items-center gap-2">
-                                            <span class="font-bold text-lg">5.6</span>
+                                            <span class="font-bold text-lg">{{
+                                                displayedProfileSummary.Glucose_Fasting || '--'
+                                                }}</span>
                                             <span class="text-xs text-slate-400">mmol/L</span>
                                         </div>
                                     </div>
@@ -180,26 +182,34 @@
                             <div class="space-y-4">
                                 <h4 class="text-xs font-bold uppercase text-slate-500 mb-2">疾病风险预测 (Risk Forecast)</h4>
                                 <div class="space-y-3">
-                                    <template v-for="(val, key) in simulationResult.risk_result" :key="key">
+                                    <div v-if="riskReportError"
+                                        class="p-4 rounded-xl border border-amber-200 bg-amber-50/70 text-sm text-amber-700">
+                                        风险模型暂不可用：{{ riskReportError }}
+                                    </div>
+                                    <div v-else-if="!riskEntries.length"
+                                        class="p-4 rounded-xl border border-slate-200 bg-white/60 text-sm text-slate-500">
+                                        暂无可展示的风险预测。
+                                    </div>
+                                    <template v-for="val in riskEntries" :key="val.key">
                                         <!-- Only show High/Medium risks -->
-                                        <div v-if="val.level !== 'Low'"
+                                        <div v-if="Number.isFinite(val.risk)"
                                             class="relative overflow-hidden p-4 rounded-xl border transition-all duration-300 hover:shadow-lg"
                                             :class="enableIntervention ? 'bg-green-50/50 border-green-200 dark:bg-green-900/10 dark:border-green-800' : 'bg-red-50/50 border-red-200 dark:bg-red-900/10 dark:border-red-800'">
 
                                             <div class="flex justify-between items-center relative z-10">
                                                 <div class="flex flex-col">
-                                                    <span class="font-bold text-slate-700 dark:text-slate-200">{{ key
+                                                    <span class="font-bold text-slate-700 dark:text-slate-200">{{ val.key
                                                         }}</span>
                                                     <span class="text-xs opacity-75">{{ val.level }} Risk</span>
                                                 </div>
                                                 <div class="text-right">
                                                     <div class="text-2xl font-black tabular-nums"
                                                         :class="enableIntervention ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'">
-                                                        {{ val.probability }}%
+                                                        {{ formatRisk(val.risk) }}%
                                                     </div>
                                                     <div v-if="enableIntervention"
                                                         class="text-xs font-bold text-green-600 flex items-center justify-end gap-1">
-                                                        <span>↓ {{ (val.probability * 0.2).toFixed(1) }}%</span>
+                                                        <span>↓ {{ val.delta !== null ? formatRisk(val.delta) : '--' }}%</span>
                                                         <el-icon>
                                                             <bottom />
                                                         </el-icon>
@@ -247,9 +257,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { computed, ref, onMounted, watch } from 'vue'
 import { LineChart } from 'echarts/charts'
-import { GridComponent, TooltipComponent } from 'echarts/components'
+import { GridComponent, LegendComponent, TooltipComponent } from 'echarts/components'
 import { CanvasRenderer } from 'echarts/renderers'
 import { echarts, ensureEChartsModules } from '../../utils/echarts'
 import axios from 'axios'
@@ -260,7 +270,7 @@ import { Trophy, Back, InfoFilled, DataAnalysis, Bottom } from '@element-plus/ic
 import { Wand2, Play } from 'lucide-vue-next'
 import { useToast } from '../../composables/useToast'
 
-ensureEChartsModules([LineChart, GridComponent, TooltipComponent, CanvasRenderer])
+ensureEChartsModules([LineChart, GridComponent, LegendComponent, TooltipComponent, CanvasRenderer])
 
 const authStore = useAuthStore()
 const { showToast } = useToast()
@@ -282,6 +292,62 @@ const isSmoker = ref(false)
 const simulating = ref(false)
 const simulationResult = ref(null)
 const interventionResult = ref(null)
+
+const isFiniteNumber = (value) => Number.isFinite(Number(value))
+
+const displayedProfileSummary = computed(() => {
+    if (enableIntervention.value && interventionResult.value?.simulated_profile_summary) {
+        return interventionResult.value.simulated_profile_summary
+    }
+    return simulationResult.value?.simulated_profile_summary || {}
+})
+
+const activeRiskReport = computed(() => {
+    if (enableIntervention.value && interventionResult.value?.new_risk_report) {
+        return interventionResult.value.new_risk_report
+    }
+    return simulationResult.value?.risk_result || null
+})
+
+const riskReportError = computed(() => {
+    const report = activeRiskReport.value
+    return typeof report?.error === 'string' ? report.error : ''
+})
+
+const riskEntries = computed(() => {
+    const report = activeRiskReport.value
+    if (!report || report.error) return []
+    return Object.entries(report)
+        .map(([key, val]) => {
+            const risk = Number(val?.final_risk ?? val?.probability)
+            const baseVal = interventionResult.value?.base_risk_report?.[key]
+            const baseRisk = Number(baseVal?.final_risk ?? baseVal?.probability)
+            return {
+                key,
+                level: val?.level || 'Unknown',
+                risk,
+                delta: Number.isFinite(baseRisk) && Number.isFinite(risk) ? baseRisk - risk : null,
+            }
+        })
+        .filter((item) => Number.isFinite(item.risk))
+})
+
+const metricFromSummary = (summary, metric) => {
+    if (!summary) return null
+    return summary[metric] ?? null
+}
+
+const futureAxisDate = (dates, years) => {
+    const last = dates[dates.length - 1]
+    const parsed = new Date(last)
+    if (!Number.isNaN(parsed.getTime())) {
+        parsed.setFullYear(parsed.getFullYear() + Number(years || 0))
+        return parsed.toISOString()
+    }
+    return `+${years}y`
+}
+
+const formatRisk = (value) => Number(value).toFixed(1)
 
 // 1. Fetch History & Trends
 const fetchHistory = async () => {
@@ -316,27 +382,92 @@ const renderChart = () => {
     if (!trendData.value || !trendData.value.dates) return
 
     const dates = trendData.value.dates
-    const data = trendData.value.metrics[selectedMetric.value] || []
-
-    // 判断数据是否充足 (少于2条时调整显示策略)
+    const historyData = trendData.value.metrics[selectedMetric.value] || []
+    const hasForecast = !!simulationResult.value
+    const chartDates = hasForecast ? [...dates, futureAxisDate(dates, timeTravelYears.value)] : dates
     const hasEnoughData = dates.length >= 2
+    const lastHistoryValue = historyData[historyData.length - 1]
+
+    const series = [
+        {
+            name: '历史轨迹',
+            type: 'line',
+            smooth: hasEnoughData,
+            symbol: 'circle',
+            symbolSize: hasEnoughData ? 8 : 12,
+            showSymbol: true,
+            data: hasForecast ? [...historyData, null] : historyData,
+            lineStyle: { width: 3, color: '#3b82f6' },
+            areaStyle: hasEnoughData ? {
+                color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+                    { offset: 0, color: 'rgba(59, 130, 246, 0.4)' },
+                    { offset: 1, color: 'rgba(59, 130, 246, 0.0)' }
+                ])
+            } : null,
+            itemStyle: { color: '#3b82f6', borderColor: '#fff', borderWidth: 2 },
+            label: {
+                show: !hasEnoughData,
+                position: 'top',
+                formatter: '{c}',
+                color: '#3b82f6',
+                fontWeight: 'bold'
+            }
+        }
+    ]
+
+    if (hasForecast && isFiniteNumber(lastHistoryValue)) {
+        const naturalValue = metricFromSummary(simulationResult.value?.simulated_profile_summary, selectedMetric.value)
+
+        if (isFiniteNumber(naturalValue)) {
+            series.push({
+                name: '自然推演',
+                type: 'line',
+                smooth: false,
+                symbol: 'circle',
+                symbolSize: 10,
+                showSymbol: true,
+                data: [...Array(Math.max(historyData.length - 1, 0)).fill(null), lastHistoryValue, Number(naturalValue)],
+                lineStyle: { width: 3, type: 'dashed', color: '#f97316' },
+                itemStyle: { color: '#f97316', borderColor: '#fff', borderWidth: 2 }
+            })
+        }
+
+        const interventionValue = metricFromSummary(interventionResult.value?.simulated_profile_summary, selectedMetric.value)
+        if (enableIntervention.value && isFiniteNumber(interventionValue)) {
+            series.push({
+                name: '干预后推演',
+                type: 'line',
+                smooth: false,
+                symbol: 'diamond',
+                symbolSize: 12,
+                showSymbol: true,
+                data: [...Array(Math.max(historyData.length - 1, 0)).fill(null), lastHistoryValue, Number(interventionValue)],
+                lineStyle: { width: 3, color: '#22c55e' },
+                itemStyle: { color: '#22c55e', borderColor: '#fff', borderWidth: 2 }
+            })
+        }
+    }
 
     const option = {
+        legend: {
+            top: 0,
+            textStyle: { color: '#64748b' }
+        },
         tooltip: {
             trigger: 'axis',
             backgroundColor: 'rgba(255, 255, 255, 0.95)',
             borderColor: '#e2e8f0',
             textStyle: { color: '#1e293b' },
-            // 优化 Tooltip：显示完整时间戳 YYYY-MM-DD HH:mm:ss
             formatter: (params) => {
                 if (!params || params.length === 0) return ''
-                const item = params[0]
-                // 尝试解析完整时间
+                const visibleItems = params.filter((item) => item.value !== null && item.value !== undefined)
+                if (!visibleItems.length) return ''
+                const item = visibleItems[0]
                 const dateStr = item.axisValue || ''
                 let displayTime = dateStr
                 try {
                     const d = new Date(dateStr)
-                    if (!isNaN(d.getTime())) {
+                    if (!Number.isNaN(d.getTime())) {
                         displayTime = d.toLocaleString('zh-CN', {
                             year: 'numeric',
                             month: '2-digit',
@@ -347,30 +478,32 @@ const renderChart = () => {
                         })
                     }
                 } catch (e) {
-                    // 使用原始值
+                    // Keep the original axis label.
                 }
-                return `<div style="padding: 8px;">
-                    <div style="font-weight: bold; margin-bottom: 6px; color: #64748b;">📅 ${displayTime}</div>
-                    <div style="display: flex; justify-content: space-between; gap: 20px;">
-                        <span>${item.seriesName}</span>
-                        <span style="font-weight: bold; color: #3b82f6;">${item.value ?? 'N/A'}</span>
+                const rows = visibleItems.map((entry) => `
+                    <div style="display: flex; justify-content: space-between; gap: 20px; margin-top: 4px;">
+                        <span>${entry.seriesName}</span>
+                        <span style="font-weight: bold; color: ${entry.color};">${entry.value ?? 'N/A'}</span>
                     </div>
+                `).join('')
+                return `<div style="padding: 8px;">
+                    <div style="font-weight: bold; margin-bottom: 6px; color: #64748b;">${displayTime}</div>
+                    ${rows}
                 </div>`
             }
         },
-        grid: { left: '3%', right: '4%', bottom: '3%', top: '15%', containLabel: true },
+        grid: { left: '3%', right: '4%', bottom: '3%', top: '18%', containLabel: true },
         xAxis: {
             type: 'category',
             boundaryGap: false,
-            data: dates,
+            data: chartDates,
             axisLine: { lineStyle: { color: '#94a3b8' } },
             axisLabel: {
                 color: '#64748b',
-                // 优化 X 轴：Smart Formatter，显示 MM-DD HH:mm 格式
                 formatter: (value) => {
                     try {
                         const d = new Date(value)
-                        if (!isNaN(d.getTime())) {
+                        if (!Number.isNaN(d.getTime())) {
                             const month = String(d.getMonth() + 1).padStart(2, '0')
                             const day = String(d.getDate()).padStart(2, '0')
                             const hour = String(d.getHours()).padStart(2, '0')
@@ -382,8 +515,7 @@ const renderChart = () => {
                     }
                     return value
                 },
-                // 防止标签重叠
-                rotate: dates.length > 5 ? 30 : 0,
+                rotate: chartDates.length > 5 ? 30 : 0,
                 interval: 0
             }
         },
@@ -392,35 +524,9 @@ const renderChart = () => {
             splitLine: { lineStyle: { type: 'dashed', color: '#e2e8f0' } },
             axisLabel: { color: '#64748b' }
         },
-        series: [
-            {
-                name: selectedMetric.value,
-                type: 'line',
-                smooth: hasEnoughData, // 数据少时不平滑
-                symbol: 'circle',
-                symbolSize: hasEnoughData ? 8 : 12, // 数据少时放大数据点
-                showSymbol: true, // 始终显示数据点
-                data: data,
-                lineStyle: { width: 3, color: '#3b82f6' },
-                areaStyle: hasEnoughData ? {
-                    color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-                        { offset: 0, color: 'rgba(59, 130, 246, 0.4)' },
-                        { offset: 1, color: 'rgba(59, 130, 246, 0.0)' }
-                    ])
-                } : null, // 数据少时不显示面积
-                itemStyle: { color: '#3b82f6', borderColor: '#fff', borderWidth: 2 },
-                // 数据点标签 (数据少时显示)
-                label: {
-                    show: !hasEnoughData,
-                    position: 'top',
-                    formatter: '{c}',
-                    color: '#3b82f6',
-                    fontWeight: 'bold'
-                }
-            }
-        ]
+        series
     }
-    myChart.setOption(option)
+    myChart.setOption(option, true)
 }
 
 watch(selectedMetric, () => {
@@ -449,8 +555,10 @@ const runSimulation = async () => {
 
         if (enableIntervention.value) {
             // Step 2: Intervention
-        const resIntervention = await axios.post('/analysis/simulate/intervention', {
-                weight_loss_percent: 0.05
+            const resIntervention = await axios.post('/analysis/simulate/intervention', {
+                years: timeTravelYears.value,
+                weight_change_kg: Number(weightIntervention.value || 0),
+                exercise_days_per_week: Number(exerciseFreq.value || 0)
             }, { headers })
 
             interventionResult.value = resIntervention.data.data
@@ -470,6 +578,8 @@ const runSimulation = async () => {
 
             // Let's just assume intervention benefit applies to the risk reduction % shown.
         }
+
+        setTimeout(renderChart, 50)
 
     } catch (e) {
         showToast("模拟推演失败: " + e.message, "error")

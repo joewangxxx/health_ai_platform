@@ -1,0 +1,33 @@
+{
+  "schema_version": "platform_profile_schema.v1",
+  "fields": [
+    "Age",
+    "Gender",
+    "Height",
+    "Weight",
+    "BMI",
+    "WaistCircum",
+    "SBP",
+    "DBP",
+    "Glucose_Fasting",
+    "HbA1c",
+    "Cholesterol_Total",
+    "Triglycerides",
+    "Cholesterol_HDL",
+    "Cholesterol_LDL",
+    "eGFR",
+    "ALT",
+    "WBC",
+    "Platelet",
+    "GGT",
+    "ALP",
+    "Creatinine",
+    "Sleep_Hours",
+    "extra_data"
+  ],
+  "gender_encoding": {
+    "1": "male",
+    "2": "female"
+  },
+  "reference_date_for_age": "2020-04-30"
+}

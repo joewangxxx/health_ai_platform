@@ -1,10 +1,10 @@
-﻿"""
+"""
 User Data Endpoints
 ===================
 
-鎻愪緵鐢ㄦ埛鏁版嵁绠＄悊鐩稿叧鐨?API 绔偣锛屽寘鎷細
-- 浣撴鏂囨。绠＄悊 (Task 57, 69)
-- 浜叉儏璐︽埛鍏宠仈浣撶郴 (Task 132)
+提供用户数据管理相关的 API 端点，包括：
+- 体检文档管理 (Task 57, 69)
+- 亲情账户关联体系 (Task 132)
 
 Author: Health AI Platform Team
 """
@@ -27,7 +27,7 @@ async def get_user_documents(
     current_user: User = Depends(get_current_user)
 ):
     """
-    鑾峰彇褰撳墠鐢ㄦ埛涓婁紶鐨勬墍鏈変綋妫€鏂囨。鍒楄〃 (Task 57)
+    获取当前用户上传的所有体检文档列表 (Task 57)
     """
     statement = select(MedicalDocument).where(
         MedicalDocument.user_id == current_user.id
@@ -37,7 +37,7 @@ async def get_user_documents(
     
     result = []
     for doc in docs:
-        # Parse ocr_summary if exists
+        # 若存在 ocr_summary，则做规范化解析
         ocr_data = None
         if doc.ocr_summary:
             try:
@@ -74,10 +74,10 @@ async def delete_user_document(
     current_user: User = Depends(get_current_user)
 ):
     """
-    鍒犻櫎鎸囧畾鐨勪綋妫€鏂囨。 (Task 69)
-    - 楠岃瘉鏂囨。褰掑睘
-    - 鍒犻櫎鐗╃悊鏂囦欢
-    - 鍒犻櫎鏁版嵁搴撹褰?
+    删除指定的体检文档 (Task 69)
+    - 验证文档归属
+    - 删除物理文件
+    - 删除数据库记录
     """
     # 1. Query document
     statement = select(MedicalDocument).where(
@@ -85,15 +85,15 @@ async def delete_user_document(
     )
     doc = session.exec(statement).first()
     
-    # 2. Check existence
+    # 2. 检查是否存在
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     
-    # 3. Check ownership
+    # 3. 检查归属权限
     if doc.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized to delete this document")
     
-    # 4. Delete physical file
+    # 4. 删除物理文件
     file_deleted = False
     if doc.file_path and os.path.exists(doc.file_path):
         try:
@@ -103,7 +103,7 @@ async def delete_user_document(
         except Exception as e:
             logger.warning("Failed to delete file %s: %s", doc.file_path, e)
     
-    # 5. Delete database record
+    # 5. 删除数据库记录
     session.delete(doc)
     session.commit()
     
@@ -115,7 +115,7 @@ async def delete_user_document(
 
 
 # ============================================
-# Task 132: 浜叉儏璐︽埛鍏宠仈浣撶郴 (Family Account Linking)
+# 任务 132：亲情账户关联体系
 # ============================================
 from backend.models import FamilyLink, FamilyInvite
 from pydantic import BaseModel
@@ -123,13 +123,13 @@ import secrets
 from datetime import timedelta
 
 class FamilyBindRequest(BaseModel):
-    """缁戝畾瀹朵汉璇锋眰"""
-    invite_code: str  # 閭€璇风爜
-    relation_name: str = "瀹朵汉"  # 鍏崇郴鍚嶇О
+    """绑定家人请求"""
+    invite_code: str  # 邀请码
+    relation_name: str = "家人"  # 关系名称
 
 
 class FamilyMemberResponse(BaseModel):
-    """瀹朵汉淇℃伅鍝嶅簲"""
+    """家人信息响应"""
     id: int
     member_id: int
     username: str
@@ -144,9 +144,9 @@ async def generate_invite_code(
     current_user: User = Depends(get_current_user)
 ):
     """
-    鐢熸垚褰撳墠鐢ㄦ埛鐨勯個璇风爜 (渚涘浜烘壂鎻?杈撳叆)
+    生成当前用户的邀请码（供家人扫描/输入）
     """
-    # 妫€鏌ユ槸鍚﹀凡鏈夐個璇风爜
+    # 检查是否已有邀请码
     existing = session.exec(
         select(FamilyInvite).where(FamilyInvite.user_id == current_user.id)
     ).first()
@@ -155,11 +155,11 @@ async def generate_invite_code(
         return {
             "status": "success",
             "invite_code": existing.invite_code,
-            "message": "杩斿洖宸叉湁閭€璇风爜"
+            "message": "返回已有邀请码"
         }
     
-    # 鐢熸垚6浣嶅ぇ鍐欏瓧姣嶆暟瀛楅個璇风爜
-    invite_code = secrets.token_hex(3).upper()  # 渚嬪: A1B2C3
+    # 生成 6 位大写字母数字邀请码
+    invite_code = secrets.token_hex(3).upper()  # 例如: A1B2C3
     
     invite = FamilyInvite(
         user_id=current_user.id,
@@ -182,23 +182,23 @@ async def bind_family_member(
     current_user: User = Depends(get_current_user)
 ):
     """
-    閫氳繃閭€璇风爜缁戝畾瀹朵汉璐︽埛
-    - 褰撳墠鐢ㄦ埛鎴愪负绠＄悊鑰?(manager)
-    - 閭€璇风爜鎵€灞炵敤鎴锋垚涓鸿绠＄悊鑰?(member)
+    通过邀请码绑定家人账户
+    - 当前用户成为管理者 (manager)
+    - 邀请码所属用户成为被管理者 (member)
     """
-    # 1. 楠岃瘉閭€璇风爜
+    # 1. 验证邀请码
     invite = session.exec(
         select(FamilyInvite).where(FamilyInvite.invite_code == request.invite_code.upper())
     ).first()
     
     if not invite:
-        raise HTTPException(status_code=404, detail="閭€璇风爜鏃犳晥鎴栧凡杩囨湡")
+        raise HTTPException(status_code=404, detail="邀请码无效或已过期")
     
-    # 2. 涓嶈兘缁戝畾鑷繁
+    # 2. 不能绑定自己
     if invite.user_id == current_user.id:
         raise HTTPException(status_code=400, detail="Cannot bind your own account")
     
-    # 3. 妫€鏌ユ槸鍚﹀凡缁戝畾
+    # 3. 检查是否已绑定
     existing_link = session.exec(
         select(FamilyLink).where(
             FamilyLink.manager_id == current_user.id,
@@ -208,14 +208,14 @@ async def bind_family_member(
     ).first()
     
     if existing_link:
-        raise HTTPException(status_code=400, detail="璇ュ浜鸿处鎴峰凡缁戝畾")
+        raise HTTPException(status_code=400, detail="该家人账户已绑定")
     
-    # 4. 鑾峰彇琚粦瀹氱敤鎴蜂俊鎭?
+    # 4. 获取被绑定用户信息
     member_user = session.exec(select(User).where(User.id == invite.user_id)).first()
     if not member_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # 5. 鍒涘缓鍏宠仈
+    # 5. 创建关联
     link = FamilyLink(
         manager_id=current_user.id,
         member_id=invite.user_id,
@@ -226,7 +226,7 @@ async def bind_family_member(
     
     return {
         "status": "success",
-        "message": f"鎴愬姛缁戝畾瀹朵汉: {request.relation_name}",
+        "message": f"成功绑定家人: {request.relation_name}",
         "member": {
             "id": member_user.id,
             "username": member_user.username,
@@ -241,9 +241,9 @@ async def get_family_members(
     current_user: User = Depends(get_current_user)
 ):
     """
-    鑾峰彇褰撳墠鐢ㄦ埛绠＄悊鐨勬墍鏈夊浜哄垪琛?
+    获取当前用户管理的所有家人列表
     """
-    # 鏌ヨ鎵€鏈夋縺娲荤殑鍏宠仈
+    # 查询所有激活的关联
     links = session.exec(
         select(FamilyLink).where(
             FamilyLink.manager_id == current_user.id,
@@ -253,7 +253,7 @@ async def get_family_members(
     
     members = []
     for link in links:
-        # 鑾峰彇瀹朵汉鐢ㄦ埛淇℃伅
+        # 获取家人用户信息
         member_user = session.exec(select(User).where(User.id == link.member_id)).first()
         if member_user:
             members.append({
@@ -279,13 +279,13 @@ async def switch_to_family_member(
     current_user: User = Depends(get_current_user)
 ):
     """
-    鍒囨崲鍒板浜鸿处鎴疯鍥?(鑾峰彇涓存椂璁块棶 Token)
-    - 楠岃瘉褰撳墠鐢ㄦ埛鏄惁鏈夋潈绠＄悊璇ュ浜?
-    - 杩斿洖璇ュ浜虹殑涓存椂璁块棶鍑瘉
+    切换到家人账户视图（获取临时访问 Token）
+    - 验证当前用户是否有权管理该家人
+    - 返回该家人的临时访问凭证
     """
     from backend.auth import create_access_token
     
-    # 1. 楠岃瘉鍏宠仈鍏崇郴
+    # 1. 验证关联关系
     link = session.exec(
         select(FamilyLink).where(
             FamilyLink.manager_id == current_user.id,
@@ -297,13 +297,13 @@ async def switch_to_family_member(
     if not link:
         raise HTTPException(status_code=403, detail="Not authorized to access this family account")
     
-    # 2. 鑾峰彇瀹朵汉鐢ㄦ埛淇℃伅
+    # 2. 获取家人用户信息
     member_user = session.exec(select(User).where(User.id == member_id)).first()
     if not member_user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    # 3. 鐢熸垚涓存椂 Token (鏈夋晥鏈?灏忔椂)
-    # 娉ㄦ剰: 杩欓噷鐢熸垚鐨勬槸鐪熷疄鐨勮闂?Token锛屽墠绔彲浠ョ敤瀹冭闂瀹朵汉鐨勬暟鎹?
+    # 3. 生成临时 Token（有效期 2 小时）
+    # 注意：这里生成的是真实访问 Token，前端可直接访问该家人的数据
     access_token = create_access_token(
         data={"sub": member_user.username, "acting_as": current_user.id},
         expires_delta=timedelta(hours=2)
@@ -319,7 +319,7 @@ async def switch_to_family_member(
             "username": member_user.username,
             "relation_name": link.relation_name
         },
-        "expires_in": 7200  # 绉?
+        "expires_in": 7200  # 秒
     }
 
 
@@ -330,7 +330,7 @@ async def unbind_family_member(
     current_user: User = Depends(get_current_user)
 ):
     """
-    瑙ｉ櫎瀹朵汉缁戝畾
+    解除家人绑定
     """
     link = session.exec(
         select(FamilyLink).where(
@@ -340,9 +340,9 @@ async def unbind_family_member(
     ).first()
     
     if not link:
-        raise HTTPException(status_code=404, detail="鍏宠仈涓嶅瓨鍦ㄦ垨鏃犳潈鎿嶄綔")
+        raise HTTPException(status_code=404, detail="关联不存在或无权操作")
     
-    # 杞垹闄?
+    # 软删除
     link.is_active = False
     session.add(link)
     session.commit()

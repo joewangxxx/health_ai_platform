@@ -1,0 +1,119 @@
+{
+  "schema_version": "demo_gene_files.v1",
+  "generated_at": "2026-05-07T14:03:10.432Z",
+  "data_mode": "synthetic_demo",
+  "target_snp_count_per_patient": 50000,
+  "generation_method": "Local GWAS weight files provide plausible variant identifiers/effect alleles; per-patient genotypes are synthetic and tuned for defense-demo narratives.",
+  "source_provenance": {
+    "local_gwas_dir": "E:\\health_ai_platform_2.0\\data_warehouse\\processed_data\\knowledge_base",
+    "public_context": [
+      "GWAS Catalog/PGS Catalog style association data, not real personal genomes",
+      "23andMe-style four-column raw genotype text format"
+    ]
+  },
+  "files": [
+    {
+      "demo_patient_id": "synthea_8505e011",
+      "role": "primary_metabolic_syndrome_diabetes_management",
+      "title": "Metabolic and diabetes high-risk demo patient",
+      "file": "data/demo/demo_gene_synthea_8505e011.txt",
+      "snp_count": 50000,
+      "gwas_weighted_variant_count": 36000,
+      "background_variant_count": 14000,
+      "emphasized_models": {
+        "T2D": "high",
+        "Obesity": "high",
+        "Glucose": "high",
+        "SystolicBP": "high",
+        "HighCholesterol": "high",
+        "InsulinResist": "high",
+        "Coronary": "medium",
+        "CKD": "medium",
+        "ALT": "medium"
+      },
+      "gwas_model_variant_counts": {
+        "T2D": 5260,
+        "Obesity": 2750,
+        "Glucose": 2750,
+        "SystolicBP": 2750,
+        "HighCholesterol": 11632,
+        "InsulinResist": 618,
+        "Coronary": 2062,
+        "HeartFailure": 1122,
+        "Stroke": 666,
+        "CKD": 1971,
+        "Asthma": 825,
+        "C-ReactiveProtein": 3183,
+        "ALT": 411
+      }
+    },
+    {
+      "demo_patient_id": "synthea_066c0f3d",
+      "role": "cardiovascular_heart_failure_multimodal_risk",
+      "title": "Cardiovascular and heart-failure demo patient",
+      "file": "data/demo/demo_gene_synthea_066c0f3d.txt",
+      "snp_count": 50000,
+      "gwas_weighted_variant_count": 36000,
+      "background_variant_count": 14000,
+      "emphasized_models": {
+        "SystolicBP": "high",
+        "Coronary": "high",
+        "HeartFailure": "high",
+        "HighCholesterol": "high",
+        "Stroke": "medium",
+        "CKD": "medium",
+        "T2D": "medium",
+        "Obesity": "medium"
+      },
+      "gwas_model_variant_counts": {
+        "T2D": 5181,
+        "Obesity": 2062,
+        "Glucose": 1380,
+        "SystolicBP": 2750,
+        "HighCholesterol": 11466,
+        "InsulinResist": 618,
+        "Coronary": 2750,
+        "HeartFailure": 2750,
+        "Stroke": 666,
+        "CKD": 1971,
+        "Asthma": 825,
+        "C-ReactiveProtein": 3170,
+        "ALT": 411
+      }
+    },
+    {
+      "demo_patient_id": "synthea_4a52ea9c",
+      "role": "younger_cardiometabolic_respiratory_risk",
+      "title": "Younger cardiometabolic and respiratory demo patient",
+      "file": "data/demo/demo_gene_synthea_4a52ea9c.txt",
+      "snp_count": 50000,
+      "gwas_weighted_variant_count": 36000,
+      "background_variant_count": 14000,
+      "emphasized_models": {
+        "Asthma": "medium",
+        "C-ReactiveProtein": "medium",
+        "Obesity": "medium",
+        "Glucose": "medium",
+        "T2D": "low",
+        "SystolicBP": "low",
+        "HighCholesterol": "low",
+        "Coronary": "low"
+      },
+      "gwas_model_variant_counts": {
+        "T2D": 6456,
+        "Obesity": 2062,
+        "Glucose": 2062,
+        "SystolicBP": 1281,
+        "HighCholesterol": 13293,
+        "InsulinResist": 618,
+        "Coronary": 1685,
+        "HeartFailure": 1158,
+        "Stroke": 666,
+        "CKD": 825,
+        "Asthma": 2062,
+        "C-ReactiveProtein": 3421,
+        "ALT": 411
+      }
+    }
+  ]
+}

@@ -1,4 +1,5 @@
-﻿<template>
+<template>
+    <!-- 中文注释：界面结构说明 -->
     <div class="p-6 h-full flex flex-col items-center overflow-auto">
         <div class="w-full max-w-5xl">
             <h1 class="text-2xl font-bold text-slate-800 dark:text-white mb-6 flex items-center gap-2">
@@ -145,6 +146,7 @@
 </template>
 
 <script setup>
+// 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { storeToRefs } from 'pinia'
@@ -171,6 +173,7 @@ const docsLoading = ref(false)
 const showSummaryDialog = ref(false)
 const currentOcrSummary = ref(null)
 
+// 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
 const hasProfile = computed(() => {
     if (!profile.value) return false
     return profile.value.Age || profile.value.BMI || profile.value.Height || profile.value.Weight
@@ -196,6 +199,7 @@ const getDocumentStatusMeta = (status) => {
     return statusMap[status] || { label: '状态未知', type: 'info' }
 }
 
+// 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
 const canImportDocument = (doc) => Boolean(doc?.ocr_summary && ['success', 'partial_success'].includes(doc?.ocr_processing_status?.status))
 
 const getDocumentActionLabel = (doc) => {
@@ -237,6 +241,7 @@ const viewDocument = (doc) => {
     window.open(apiUrl(doc.file_url), '_blank')
 }
 
+// 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
 const loadToAnalysis = (doc) => {
     healthStore.setImportData({
         ocr_summary: doc.ocr_summary || null,
@@ -292,6 +297,7 @@ const handleBack = () => {
 }
 
 onMounted(async () => {
+    // 中文注释：该步骤用于衔接当前状态流，需与接口返回结构保持一致。
     loading.value = true
     await healthStore.fetchRemoteProfile()
     await fetchDocuments()

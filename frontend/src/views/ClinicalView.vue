@@ -16,18 +16,30 @@
                                 </el-icon> 清空数据
                             </GlassButton>
                         </div>
-                        <el-upload data-testid="ocr-upload" class="upload-demo inline-block" action="#" :auto-upload="false"
-                            :on-change="handleOcrUpload" :show-file-list="false" accept=".jpg,.jpeg,.png,.pdf">
-                            <GlassButton size="sm" :loading="ocrLoading">
-                                <el-icon class="mr-2">
-                                    <Camera />
-                                </el-icon> 智能识别体检单
-                            </GlassButton>
-                        </el-upload>
+                        <div class="flex items-center gap-2">
+                            <div data-testid="ocr-upload" class="upload-demo inline-block">
+                                <input ref="ocrFileInput" data-testid="ocr-file-input" class="sr-only" type="file"
+                                    accept=".jpg,.jpeg,.png,.pdf" @change="handleOcrFileSelection" />
+                                <GlassButton size="sm" :loading="ocrLoading" @click="triggerOcrFileInput">
+                                    <el-icon class="mr-2">
+                                        <Camera />
+                                    </el-icon> 智能识别体检单
+                                </GlassButton>
+                            </div>
+                            <div data-testid="csv-upload" class="upload-demo inline-block">
+                                <input ref="csvFileInput" data-testid="csv-file-input" class="sr-only" type="file"
+                                    accept=".csv" @change="handleCsvFileSelection" />
+                                <GlassButton size="sm" :loading="csvImportLoading" @click="triggerCsvFileInput">
+                                    <el-icon class="mr-2">
+                                        <Upload />
+                                    </el-icon> 导入CSV健康数据
+                                </GlassButton>
+                            </div>
+                        </div>
                     </div>
                 </template>
 
-                <!-- Task 89: Anomaly Alert Summary -->
+                <!-- 任务 89：异常指标摘要 -->
                 <div v-if="anomalySummary && anomalySummary.count > 0" class="mb-4 p-4 rounded-xl border-2"
                     :class="anomalySummary.status === 'alert' ? 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-700' : 'bg-amber-50 dark:bg-amber-900/20 border-amber-300 dark:border-amber-700'">
                     <div class="flex items-start gap-3">
@@ -84,7 +96,7 @@
 
                 <el-form label-position="left" label-width="110px" size="default" class="clinical-form grid gap-6">
 
-                    <!-- Basic Info -->
+                    <!-- 基础信息 -->
                     <div class="p-4 rounded-xl bg-white/30 dark:bg-black/20 border border-gray-100 dark:border-white/5">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">基本信息 (Basic)</h3>
                         <div class="grid grid-cols-2 gap-6">
@@ -101,7 +113,7 @@
                         </div>
                     </div>
 
-                    <!-- Body Metrics -->
+                    <!-- 身体指标 -->
                     <div class="p-4 rounded-xl bg-white/30 dark:bg-black/20 border border-gray-100 dark:border-white/5">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">身体指标 (Metrics)</h3>
                         <div class="grid grid-cols-2 gap-6">
@@ -138,7 +150,7 @@
                         </div>
                     </div>
 
-                    <!-- Biochemistry -->
+                    <!-- 生化指标 -->
                     <div class="p-4 rounded-xl bg-white/30 dark:bg-black/20 border border-gray-100 dark:border-white/5">
                         <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4">生化指标 (Bio-Markers)
                         </h3>
@@ -189,7 +201,7 @@
                             </el-form-item>
                         </div>
 
-                        <!-- New V10 Indicators -->
+                        <!-- V10 新增指标 -->
                         <div class="grid grid-cols-2 gap-6 mt-6 border-t border-gray-100 dark:border-white/5 pt-6">
                             <el-form-item label="白细胞 (WBC)" :class="{ 'ocr-updated': isOcrUpdated('WBC') }">
                                 <el-input-number v-model="profile.WBC" :min="0" :precision="1" :step="0.1"
@@ -217,7 +229,7 @@
                         </div>
                     </div>
 
-                    <!-- Task 74: Extra Data (Unstructured) -->
+                    <!-- 任务 74：补充数据（非结构化） -->
                     <el-collapse v-if="profile.extra_data"
                         class="rounded-xl border border-gray-100 dark:border-white/5 overflow-hidden">
                         <el-collapse-item name="1">
@@ -249,7 +261,7 @@
                                         </el-button>
                                     </div>
                                 </div>
-                                <!-- Manual Add (Optional, future enhancement) -->
+                                <!-- 手动添加（可选，后续增强） -->
                             </div>
                         </el-collapse-item>
                     </el-collapse>
@@ -282,7 +294,7 @@ import { storeToRefs } from 'pinia'
 import { useHealthStore } from '../stores/healthStore'
 import GlassCard from '../components/ui/GlassCard.vue'
 import GlassButton from '../components/ui/GlassButton.vue'
-import { ArrowRight, Check, Camera, Delete } from '@element-plus/icons-vue'
+import { ArrowRight, Check, Camera, Delete, Upload } from '@element-plus/icons-vue'
 import axios from 'axios'
 import { useToast } from '../composables/useToast'
 import { ElNotification, ElMessageBox } from 'element-plus'
@@ -291,6 +303,9 @@ const store = useHealthStore()
 const { userProfile: profile, importData, analysisContext } = storeToRefs(store)
 const saving = ref(false)
 const ocrLoading = ref(false)
+const csvImportLoading = ref(false)
+const ocrFileInput = ref(null)
+const csvFileInput = ref(null)
 const { showToast } = useToast()
 
 const fieldStateSummary = computed(() => analysisContext.value?.field_state_summary || null)
@@ -356,14 +371,14 @@ const analysisContextDisplay = computed(() => {
     }
 })
 
-// Task 126: OCR Updated Fields Highlight
+// 任务 126：OCR 更新字段高亮
 const ocrUpdatedFields = ref(new Set())
 const isOcrUpdated = (fieldName) => ocrUpdatedFields.value.has(fieldName)
 
-// Task 131: OCR 鎾ら攢蹇収 - 淇濆瓨 OCR 鍓嶇殑琛ㄥ崟鐘舵€?
+// 任务 131：OCR 撤销快照（保存 OCR 前的表单状态）
 const lastProfileSnapshot = ref(null)
 
-// OCR placeholders now prefer explicit guided-completion language.
+// OCR 占位文案优先采用“引导补全”语义，减少歧义。
 const getPlaceholder = () => '待补充'
 
 const isGuidedMissing = (fieldName) => {
@@ -378,31 +393,31 @@ const refreshBackendAnalysisContext = async () => {
 }
 
 // ============================================
-// Task 128: eGFR 鏅鸿兘濉厖绛栫暐 (CKD-EPI 2021)
+// 任务 128：eGFR 智能填充策略（CKD-EPI 2021）
 // ============================================
 
 /**
- * CKD-EPI 2021 鍏紡璁＄畻 eGFR (鏃犵鏃忔牎姝ｇ増)
- * @param {number} creatinine - 琛€娓呰倢閰?(umol/L)
- * @param {number} age - 骞撮緞 (宀?
- * @param {number} gender - 鎬у埆 (1=鐢? 2=濂?
- * @returns {number|null} eGFR (mL/min/1.73m虏) 鎴?null 鑻ヨ緭鍏ユ棤鏁?
+ * CKD-EPI 2021 公式计算 eGFR（无种族校正版本）
+ * @param {number} creatinine - 血清肌酐 (umol/L)
+ * @param {number} age - 年龄 (岁)
+ * @param {number} gender - 性别 (1=男, 2=女)
+ * @returns {number|null} eGFR (mL/min/1.73m²) 或 null（若输入无效）
  */
 const calculateCKDEPI2021 = (creatinine, age, gender) => {
-    // 鍙傛暟楠岃瘉
+    // 参数校验
     if (!creatinine || !age || !gender) return null
     if (creatinine <= 0 || age <= 0) return null
 
-    // 灏?umol/L 杞崲涓?mg/dL (鍏紡瑕佹眰)
+    // 将 umol/L 转换为 mg/dL（公式要求）
     const Scr = creatinine / 88.4
 
-    // 鎬у埆鍙傛暟
+    // 性别参数
     const isFemale = gender === 2
     const kappa = isFemale ? 0.7 : 0.9
     const alpha = isFemale ? -0.241 : -0.302
     const sexMultiplier = isFemale ? 1.012 : 1.0
 
-    // CKD-EPI 2021 鍏紡
+    // CKD-EPI 2021 计算公式
     const ratio = Scr / kappa
     const minRatio = Math.min(ratio, 1)
     const maxRatio = Math.max(ratio, 1)
@@ -413,35 +428,35 @@ const calculateCKDEPI2021 = (creatinine, age, gender) => {
 }
 
 /**
- * Task 128: 鏅鸿兘璁＄畻 eGFR - 浠呭綋 eGFR 涓虹┖涓旀湁鑲岄厫鏃惰嚜鍔ㄨ绠?
- * OCR 浼樺厛: 濡傛灉 OCR 宸插～鍏?eGFR锛屼笉瑕嗙洊
+ * Task 128: 智能计算 eGFR - 仅当 eGFR 为空且有肌酐时自动计算
+ * OCR 优先: 如果 OCR 已填入 eGFR，不覆盖
  */
 const tryAutoCalculateEGFR = () => {
-    // 妫€鏌ュ綋鍓?eGFR 鏄惁涓虹┖ - 涓嶈鐩栧凡鏈夊€?
+    // 检查当前 eGFR 是否为空，避免覆盖已有值
     const currentEGFR = profile.value.eGFR
     if (currentEGFR !== null && currentEGFR !== undefined && currentEGFR !== '') {
-        console.log('鈴笍 eGFR 宸叉湁鍊硷紝璺宠繃鑷姩璁＄畻')
+        console.log('eGFR 已有值，跳过自动计算')
         return
     }
 
-    // 妫€鏌ュ繀瑕佸弬鏁?
+    // 检查必要参数
     const age = profile.value.Age
     const gender = profile.value.Gender
     const creatinine = profile.value.Creatinine
 
     if (!age || !gender || !creatinine) {
-        return // 鍙傛暟涓嶅叏锛屾棤娉曡绠?
+        return // 参数不全，无法计算
     }
 
-    // 鎵ц璁＄畻
+    // 执行计算
     const calculatedEGFR = calculateCKDEPI2021(creatinine, age, gender)
     if (calculatedEGFR !== null) {
         profile.value.eGFR = calculatedEGFR
-        console.log(`馃М eGFR 鑷姩璁＄畻: Cr=${creatinine} 鈫?eGFR=${calculatedEGFR}`)
+        console.log(`eGFR 自动计算: Cr=${creatinine} -> eGFR=${calculatedEGFR}`)
     }
 }
 
-// Task 128: 鐩戝惉骞撮緞銆佹€у埆銆佽倢閰愬彉鍖栵紝鑷姩瑙﹀彂 eGFR 璁＄畻
+// 任务 128：监听年龄、性别、肌酐变化并自动触发 eGFR 计算
 watch(
     [() => profile.value.Age, () => profile.value.Gender, () => profile.value.Creatinine],
     () => {
@@ -450,13 +465,13 @@ watch(
     { immediate: false }
 )
 
-// Task 89: Anomaly Detection State
+// 任务 89：异常检测状态
 const anomalyLoading = ref(false)
 const anomalies = ref([])
 const anomalySummary = ref(null)
 const anomalyMap = ref({}) // key -> anomaly object for quick lookup
 
-// Task 89: Helper functions for anomaly display
+// 任务 89：异常展示辅助函数
 const getAnomalyTagType = (item) => {
     const a = anomalyMap.value[item]
     if (!a) return 'info'
@@ -480,7 +495,7 @@ const getFieldAnomaly = (fieldName) => {
     return anomalyMap.value[fieldName]
 }
 
-// Task 89: Run anomaly detection
+// 任务 89：执行异常检测
 const runAnomalyDetection = async () => {
     anomalyLoading.value = true
     try {
@@ -492,7 +507,7 @@ const runAnomalyDetection = async () => {
             anomalies.value = response.data.anomalies || []
             anomalySummary.value = response.data.summary
 
-            // Build lookup map
+            // 构建指标查找映射
             const map = {}
             anomalies.value.forEach(a => { map[a.item] = a })
             anomalyMap.value = map
@@ -518,11 +533,11 @@ const runAnomalyDetection = async () => {
     }
 }
 
-// 馃敟 Task 59: Check for imported data on mount
+// 🔥 任务 59：页面挂载时检查是否存在导入数据
 onMounted(async () => {
     const importedContext = importData.value
     if (importedContext && typeof importedContext === 'object') {
-        console.log("馃摜 Detected importData, auto-filling form...")
+        console.log("检测到 importData，正在自动回填表单...")
         const preserveAnalysisContext = Boolean(importedContext.analysis_context)
         store.clearImportData(preserveAnalysisContext)  // Prevent re-load on refresh
 
@@ -549,8 +564,9 @@ onMounted(async () => {
     }
 })
 
-// Shared function to apply OCR/imported data to profile
-const applyOcrDataToProfile = (data) => {
+// 复用函数：将 OCR/导入数据应用到当前档案
+const applyOcrDataToProfile = (data, options = {}) => {
+    const { overwrite = false } = options
     const isValidValue = (val) => {
         if (val === null || val === undefined) return false
         if (val === 'null' || val === 'undefined') return false
@@ -581,7 +597,7 @@ const applyOcrDataToProfile = (data) => {
 
     const sourceData = flattenStructuredPayload(data)
 
-    // Task 67/68: Enhanced mapping with Age, Gender, Height, Weight
+    // 任务 67/68：增强映射（年龄、性别、身高、体重）
     const mapping = {
         'Age': 'Age',
         'Gender': 'Gender',
@@ -615,7 +631,7 @@ const applyOcrDataToProfile = (data) => {
     let skippedCount = 0
 
     if (sourceData.extra_findings && typeof sourceData.extra_findings === 'object') {
-        console.log("馃敟 Found Extra Findings:", sourceData.extra_findings)
+        console.log("发现 Extra Findings:", sourceData.extra_findings)
         if (!profile.value.extra_data) profile.value.extra_data = {}
         for (const [k, v] of Object.entries(sourceData.extra_findings)) {
             if (isValidValue(v)) {
@@ -638,12 +654,12 @@ const applyOcrDataToProfile = (data) => {
 
         const currentVal = profile.value[profileKey]
         const isEmpty = currentVal === null || currentVal === undefined || currentVal === ''
-        if (!isEmpty) continue
+        if (!overwrite && !isEmpty) continue
 
         if (profileKey === 'Gender') {
-            if (val === '男' || val === 'Male' || val === 1 || val === '鐢?') {
+            if (val === '男' || val === '男性' || val === 'Male' || val === 'M' || val === 1 || val === '1') {
                 profile.value[profileKey] = 1
-            } else if (val === '女' || val === 'Female' || val === 2 || val === '濂?') {
+            } else if (val === '女' || val === '女性' || val === 'Female' || val === 'F' || val === 2 || val === '2') {
                 profile.value[profileKey] = 2
             } else {
                 continue
@@ -664,11 +680,11 @@ const applyOcrDataToProfile = (data) => {
     }
 
     if (skippedCount > 0) {
-        console.log(`鈴笍 Smart Merge: Skipped ${skippedCount} empty/null fields (preserved existing data)`)
+        console.log(`Smart Merge: Skipped ${skippedCount} empty/null fields (preserved existing data)`)
     }
 
     if (ocrUpdatedFields.value.size > 0) {
-        console.log(`鉁?Highlighting ${ocrUpdatedFields.value.size} OCR-updated fields`)
+        console.log(`Highlighting ${ocrUpdatedFields.value.size} OCR-updated fields`)
         setTimeout(() => {
             ocrUpdatedFields.value.clear()
         }, 2500)
@@ -677,23 +693,35 @@ const applyOcrDataToProfile = (data) => {
     return filledCount
 }
 
+const formatUploadErrorMessage = (error, fallback) => {
+    const detail = error.response?.data?.detail
+    const message = error.response?.data?.message
+    if (Array.isArray(detail)) {
+        return detail.map(item => item?.msg || JSON.stringify(item)).join('；')
+    }
+    if (detail && typeof detail === 'object') {
+        return detail.message || detail.msg || JSON.stringify(detail)
+    }
+    return detail || message || error.message || fallback
+}
+
 // ============================================
-// Task 131: OCR 鎾ら攢鍔熻兘 (Undo)
+// 任务 131：OCR 撤销功能（撤销）
 // ============================================
 const handleUndoOcr = async () => {
-    // 妫€鏌ユ槸鍚︽湁蹇収鍙敤
+    // 检查是否存在可用快照
     if (!lastProfileSnapshot.value) {
         showToast('没有可撤销的操作', 'warning')
         return
     }
 
     try {
-        // 鎭㈠蹇収鏁版嵁鍒板綋鍓?profile
+        // 恢复快照数据到当前档案
         Object.keys(lastProfileSnapshot.value).forEach(key => {
             profile.value[key] = lastProfileSnapshot.value[key]
         })
 
-        // 鏇存柊 store 骞朵繚瀛樺埌浜戠
+        // 更新状态仓库并保存到云端
         store.updateProfile(profile.value)
         const saveSuccess = await store.saveProfileToCloud()
 
@@ -708,10 +736,10 @@ const handleUndoOcr = async () => {
             showToast('撤销成功但同步失败，请手动保存', 'warning')
         }
 
-        // 娓呯┖蹇収
+        // 清空快照
         lastProfileSnapshot.value = null
 
-        // 娓呴櫎 OCR 鐩稿叧鐘舵€?
+        // 清除 OCR 相关状态
         ocrUpdatedFields.value.clear()
 
     } catch (e) {
@@ -720,7 +748,31 @@ const handleUndoOcr = async () => {
     }
 }
 
-// 馃摲 OCR Upload Handler
+const makeUploadFile = (file) => file ? { name: file.name, raw: file } : null
+
+const triggerOcrFileInput = () => {
+    ocrFileInput.value?.click()
+}
+
+const triggerCsvFileInput = () => {
+    csvFileInput.value?.click()
+}
+
+const handleOcrFileSelection = async (event) => {
+    const input = event.target
+    const file = input?.files?.[0]
+    await handleOcrUpload(makeUploadFile(file))
+    if (input) input.value = ''
+}
+
+const handleCsvFileSelection = async (event) => {
+    const input = event.target
+    const file = input?.files?.[0]
+    await handleCsvImport(makeUploadFile(file))
+    if (input) input.value = ''
+}
+
+// 📷 OCR 上传处理流程
 const handleOcrUpload = async (uploadFile) => {
     if (!uploadFile || !uploadFile.raw) return
 
@@ -835,7 +887,49 @@ const handleOcrUpload = async (uploadFile) => {
     }
 }
 
-// Task 71: Clear All Data
+const handleCsvImport = async (uploadFile) => {
+    if (!uploadFile || !uploadFile.raw) return
+
+    csvImportLoading.value = true
+    const formData = new FormData()
+    formData.append('file', uploadFile.raw)
+
+    try {
+        showToast('正在导入CSV健康数据，请稍候...', 'info')
+        const response = await axios.post('/api/v1/profile/import-csv', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        })
+
+        const res = response.data || {}
+        const importedProfile = res.profile
+
+        if (!importedProfile || typeof importedProfile !== 'object' || Array.isArray(importedProfile)) {
+            showToast(res.message || 'CSV导入完成，但未返回可填充的 profile 数据', 'warning')
+            return
+        }
+
+        lastProfileSnapshot.value = JSON.parse(JSON.stringify(profile.value))
+        const filledCount = applyOcrDataToProfile(importedProfile, { overwrite: true })
+
+        if (filledCount > 0) {
+            ElNotification({
+                title: 'CSV健康数据已导入',
+                message: `已回填 ${filledCount} 项字段，请核对后再手动保存健康档案。`,
+                type: 'success',
+                duration: 6000,
+            })
+        } else {
+            showToast('CSV导入完成，但没有匹配到可填充的非空字段', 'warning')
+        }
+    } catch (e) {
+        console.error(e)
+        showToast('CSV导入失败: ' + formatUploadErrorMessage(e, '请检查文件或选择 demo_patient_id 后重试'), 'error')
+    } finally {
+        csvImportLoading.value = false
+    }
+}
+
+// 任务 71：清空全部数据
 const handleClearAll = async () => {
     try {
         await ElMessageBox.confirm(
@@ -844,7 +938,7 @@ const handleClearAll = async () => {
             { confirmButtonText: '清空', cancelButtonText: '取消', type: 'warning' }
         )
 
-        // Reset all fields to null
+        // 将所有字段重置为空值（null）
         Object.keys(profile.value).forEach(key => {
             profile.value[key] = null
         })
@@ -862,7 +956,7 @@ const removeExtraItem = (key) => {
     }
 }
 
-// Auto-calculate BMI
+// 自动计算 BMI
 watch([() => profile.value.Height, () => profile.value.Weight], ([h, w]) => {
     const bmiIsEmpty = profile.value.BMI === null || profile.value.BMI === undefined || profile.value.BMI === ''
     if (bmiIsEmpty && h && w && h > 0) {
@@ -876,7 +970,7 @@ const saveData = () => {
     showToast('临床数据已更新并暂存', 'success')
 }
 
-// 馃敟 V7: 淇濆瓨鍒颁簯绔?
+// 🔥 V7：保存到云端
 const saveToCloud = async () => {
     saving.value = true
     try {
@@ -896,29 +990,44 @@ const saveToCloud = async () => {
 </script>
 
 <style scoped>
-/* Reuse styles from App.vue for consistent look */
-.clinical-form :deep(.el-input__wrapper) {
-    background-color: rgba(255, 255, 255, 0.5);
+/* 复用 App.vue 的输入框风格，保持视觉一致性 */
+.clinical-form :deep(.el-input__wrapper),
+.clinical-form :deep(.el-select__wrapper),
+.clinical-form :deep(.el-textarea__inner) {
+    background-color: rgba(255, 255, 255, 0.92) !important;
     box-shadow: none;
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.35);
 }
 
-.clinical-form :deep(.el-input__inner) {
-    color: inherit;
+.clinical-form :deep(.el-input-number__decrease),
+.clinical-form :deep(.el-input-number__increase) {
+    background-color: rgba(248, 250, 252, 0.96) !important;
+    border-color: rgba(148, 163, 184, 0.35);
+    color: #64748b;
+}
+
+.clinical-form :deep(.el-input__inner),
+.clinical-form :deep(.el-select__selected-item),
+.clinical-form :deep(.el-textarea__inner) {
+    color: #334155;
     font-weight: 600;
+    -webkit-text-fill-color: #334155;
 }
 
-.dark .clinical-form :deep(.el-input__wrapper) {
-    background-color: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: white;
+.clinical-form :deep(.el-input.is-disabled .el-input__wrapper) {
+    background-color: rgba(248, 250, 252, 0.95) !important;
 }
 
-/* Task 126: OCR 鏁版嵁濉叆鏃剁殑"楂樹寒鍛煎惛"鐗规晥 */
+.clinical-form :deep(.el-input.is-disabled .el-input__inner) {
+    color: #64748b;
+    -webkit-text-fill-color: #64748b;
+}
+
+/* 任务 126：OCR 数据填入时的“高亮呼吸”特效 */
 @keyframes flash-green {
     0% {
         background-color: rgba(16, 185, 129, 0.25);
-        /* Emerald-500 with opacity */
+        /* Emerald-500 带透明度 */
         box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
         border-color: rgba(16, 185, 129, 0.6);
     }
@@ -929,13 +1038,13 @@ const saveToCloud = async () => {
     }
 
     100% {
-        background-color: transparent;
+        background-color: rgba(255, 255, 255, 0.92);
         box-shadow: none;
         border-color: inherit;
     }
 }
 
-/* 搴旂敤浜?Element Plus 杈撳叆妗嗗唴閮?wrapper */
+/* 应用于 Element Plus 输入组件内部 wrapper */
 .ocr-updated :deep(.el-input__wrapper),
 .ocr-updated :deep(.el-input-number__decrease),
 .ocr-updated :deep(.el-input-number__increase),
@@ -944,13 +1053,13 @@ const saveToCloud = async () => {
     animation: flash-green 2.5s ease-out forwards;
 }
 
-/* Task 127: OCR 鏈壘鍒扮殑瀛楁鏍峰紡 - 鐏拌壊铏氱嚎杈规 */
+/* 任务 127：OCR 未找到字段样式 - 灰色虚线边框 */
 .guided-missing :deep(.el-input__wrapper),
 .guided-missing :deep(.el-input-number__decrease),
 .guided-missing :deep(.el-input-number__increase),
 .guided-missing :deep(.el-select__wrapper) {
     background-color: rgba(148, 163, 184, 0.08);
-    /* Slate-400 with low opacity */
+    /* Slate-400 低透明度 */
     border: 1.5px dashed rgba(148, 163, 184, 0.4);
     transition: all 0.3s ease;
 }
@@ -961,20 +1070,20 @@ const saveToCloud = async () => {
     font-style: italic;
 }
 
-/* 鎮仠鏃舵仮澶嶆甯告牱寮忥紝鎻愮ず鍙互鎵嬪～ */
+/* 悬停时恢复正常样式，提示可以手填 */
 .guided-missing:hover :deep(.el-input__wrapper),
 .guided-missing:hover :deep(.el-input-number__decrease),
 .guided-missing:hover :deep(.el-input-number__increase) {
     background-color: rgba(255, 255, 255, 0.5);
     border-style: solid;
     border-color: rgba(59, 130, 246, 0.5);
-    /* Blue hint */
+    /* 蓝色提示边框 */
 }
 
 .dark .guided-missing :deep(.el-input__wrapper),
 .dark .guided-missing :deep(.el-input-number__decrease),
 .dark .guided-missing :deep(.el-input-number__increase) {
-    background-color: rgba(30, 41, 59, 0.3);
+    background-color: rgba(255, 255, 255, 0.92) !important;
     border-color: rgba(148, 163, 184, 0.3);
 }
 </style>

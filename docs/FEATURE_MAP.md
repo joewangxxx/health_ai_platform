@@ -344,3 +344,43 @@
 #### NHANES XPT → etl_nhanes.py → train_risk_models.py → RiskEngine.reload()
 #### GWAS TSV → process_gwas_folders.py → GeneEngine.reload()
 #### PharmGKB ZIP → etl_pharmgkb.py → PharmService.refresh()
+
+---
+
+## PM Slice Addendum: Lifestyle Behavior Import Capability (2026-05-13)
+
+### Capability Snapshot
+
+#### Lifestyle behavior CSV/JSON import (P1, planned current slice)
+
+##### User-uploaded behavior-day CSV import
+##### User-uploaded behavior-day JSON import
+##### Platform-standard behavior timeline preview
+##### Imported data replay through the Lifestyle day timeline
+##### Import validation feedback for malformed, incomplete, or unsupported files
+##### Source provenance labels for uploaded files versus built-in examples
+
+#### Existing example/demo fallback (P1, must remain available)
+
+##### Built-in example behavior-day timeline remains usable when no user file is supplied
+##### Demo fallback remains clearly labeled as example or simulated data
+##### Failed imports do not remove access to the existing demo/example state
+
+#### Real-device API placeholder (P2, not implemented in this slice)
+
+##### Disabled or clearly marked placeholder for future real-device import
+##### No live wearable, BLE, Health Connect, Apple Health, cloud device vendor, or background sync behavior is implied
+##### Future device data must be distinguishable from uploaded CSV, uploaded JSON, and simulated demo data
+
+### PM Priority Notes
+
+- Business priority: P1 because this makes the Lifestyle timeline reusable with user-provided behavior evidence and improves demonstration credibility.
+- Implementation status for the new import flow: planned current slice until architect contract, backend/frontend implementation, and QA evidence are accepted.
+- The built-in demo fallback remains a required capability, not a deprecated path.
+- The real-device entry point is a placeholder only; it should not be counted as implemented device integration.
+
+### Scope Boundaries for Downstream Owners
+
+- This feature map entry does not approve API routes, schemas, persistence, file formats, event enums, or model I/O.
+- Architect should define the standard CSV/JSON shape, validation/error handling, source labels, no-persistence rules, and optional analysis handoff.
+- FE/BE/AI-data should not infer contract details from this capability snapshot without an architect-approved contract update.

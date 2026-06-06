@@ -37,6 +37,7 @@ NUM_LAYERS = 2
 
 
 def _emit_runtime_unavailable_warning():
+    """中文说明：_emit_runtime_unavailable_warning 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
     global _runtime_warning_emitted
     if _runtime_warning_emitted:
         return
@@ -66,6 +67,8 @@ else:
 
 
 class Predictor:
+    """中文说明：Predictor 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
+
     def __init__(self):
         self.device = torch.device("cpu") if TORCH_AVAILABLE else None
         self.scaler = None
@@ -104,6 +107,7 @@ class Predictor:
             _emit_runtime_unavailable_warning()
 
     def predict_scenario(self, current_glucose, carbs, hr, prs_score):
+        """中文说明：predict_scenario 的职责与边界以当前实现为准，调用方应遵循现有输入输出约定。"""
         if self.scaler is None or self.model is None:
             return {"glucose": current_glucose, "stress_is_high": False}
 

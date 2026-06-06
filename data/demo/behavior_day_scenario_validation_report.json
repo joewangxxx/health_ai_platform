@@ -1,0 +1,90 @@
+{
+  "schema_version": "behavior_day_scenario_validation_report.v1",
+  "generated_at": "2026-05-06",
+  "artifact_checked": "data/demo/behavior_day_scenarios.json",
+  "validation_status": "passed",
+  "checks": {
+    "json_syntax_valid": true,
+    "top_level_schema_version_valid": true,
+    "scenario_count_is_3": true,
+    "scenario_required_fields_present": true,
+    "scenario_schema_version_valid": true,
+    "scenario_data_mode_simulated_demo": true,
+    "timeline_event_required_fields_present": true,
+    "timeline_event_schema_version_valid": true,
+    "timeline_event_data_mode_simulated_demo": true,
+    "required_event_types_present_per_scenario": true,
+    "diet_vision_payload_schema_valid": true,
+    "diet_vision_nutrition_present": true,
+    "diet_vision_source_type_simulated_demo": true,
+    "lifestyle_context_present_per_scenario": true,
+    "lifestyle_context_schema_version_valid": true,
+    "lifestyle_context_data_mode_simulated_demo": true,
+    "source_provenance_present": true,
+    "no_real_device_provenance": true
+  },
+  "scenario_results": [
+    {
+      "scenario_id": "metabolic_day_001",
+      "demo_patient_id": "synthea_8505e011",
+      "event_count": 9,
+      "event_types_present": [
+        "sleep",
+        "vitals",
+        "activity",
+        "sedentary",
+        "diet_vision",
+        "daily_summary"
+      ],
+      "diet_vision_event_count": 3,
+      "lifestyle_context_present": true,
+      "data_mode": "simulated_demo",
+      "validation_status": "passed"
+    },
+    {
+      "scenario_id": "cardio_hf_day_001",
+      "demo_patient_id": "synthea_066c0f3d",
+      "event_count": 9,
+      "event_types_present": [
+        "sleep",
+        "vitals",
+        "activity",
+        "sedentary",
+        "diet_vision",
+        "daily_summary"
+      ],
+      "diet_vision_event_count": 3,
+      "lifestyle_context_present": true,
+      "data_mode": "simulated_demo",
+      "validation_status": "passed"
+    },
+    {
+      "scenario_id": "younger_improvement_day_001",
+      "demo_patient_id": "synthea_4a52ea9c",
+      "event_count": 9,
+      "event_types_present": [
+        "sleep",
+        "vitals",
+        "activity",
+        "sedentary",
+        "diet_vision",
+        "daily_summary"
+      ],
+      "diet_vision_event_count": 3,
+      "lifestyle_context_present": true,
+      "data_mode": "simulated_demo",
+      "validation_status": "passed"
+    }
+  ],
+  "validation_command": "node inline validator over data/demo/behavior_day_scenarios.json",
+  "validation_output_summary": {
+    "ok": true,
+    "errors": [],
+    "scenarios": 3
+  },
+  "contract_notes": [
+    "All scenario, timeline, diet-vision, and lifestyle-context objects carry data_mode=simulated_demo.",
+    "All diet_vision payloads use vision_provenance.source_type=simulated_demo and do not reference image bytes or real model inference.",
+    "The stage request requires vitals and daily_summary event types; the current data-model-contract frozen enum should be reconciled by orchestrator/architect if BE validation is implemented strictly from that enum."
+  ]
+}

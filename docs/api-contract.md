@@ -24,13 +24,18 @@ Freeze the minimal HTTP contract used by the approved P0 product loop so `fe` an
 - Dr. AI chat
 - Health history list and trends
 - Internal provider-native read-only tool contracts used by the Dr. AI runtime
+- Read-only Lifestyle Digital Twin demo scenario routes
+- Parse-only Lifestyle behavior-day CSV/JSON upload route
+- Optional `lifestyle_context.v1` input on comprehensive analysis
 
 ### 1.2 Out Of Scope For This Freeze
 
 - Admin research and ETL management
 - Family-account switching contract freeze
 - Nutrition plan public contract freeze
-- IoT mutation contract freeze
+- IoT mutation contract freeze beyond the already existing `/api/v1/iot/sync/batch`
+- Demo scenario write, delete, publish, or persistence APIs
+- Live wearable, BLE, Health Connect, Apple Health, cloud device vendor, or background device-sync APIs for Lifestyle import
 - PDF export contract freeze
 
 ## 2. Cross-Cutting Rules
@@ -40,6 +45,30 @@ Freeze the minimal HTTP contract used by the approved P0 product loop so `fe` an
 - Base backend host is currently the FastAPI app served from `http://127.0.0.1:8000`
 - Auth scheme: `Authorization: Bearer <token>`
 - Token issue endpoint: `/auth/token`
+
+### 2.1.1 Credentialed CORS Contract
+
+Browser callers in this repository use credentialed authenticated routes. CORS behavior is therefore contract-visible.
+
+Frozen behavior:
+
+- For allowed origins, `Access-Control-Allow-Origin` must echo the request `Origin` exactly (for example `http://127.0.0.1:5173` in local Vite flows).
+- `Access-Control-Allow-Credentials` must remain `true` for authenticated browser flows.
+- `Access-Control-Allow-Headers` must include `authorization` and `content-type` when requested by preflight.
+- Wildcard origin (`*`) must not be combined with credentialed CORS on protected routes.
+
+Ownership and source of truth:
+
+- The allowed-origin list is backend-owned and must come from runtime settings (`BACKEND_CORS_ORIGINS`), not hardcoded middleware literals.
+- FE may configure its own dev/prod origins, but FE may not redefine backend CORS response semantics.
+
+### 2.1.2 Runtime Configuration Ownership Boundary
+
+To prevent split-brain behavior across `backend/config.py` and `backend/core/config.py`, this contract freezes ownership:
+
+- `backend/core/config.py` owns environment-bound runtime settings (`BACKEND_CORS_ORIGINS`, `OPENAI_*`, `BAIDU_*`, `REDIS_URL`, `DATABASE_URL`/`SQLALCHEMY_DATABASE_URI`, upload/runtime endpoints).
+- `backend/config.py` owns repository-local artifact/path constants and static simulation defaults.
+- Renaming environment keys, changing precedence order, or changing default model/provider identifiers in a way that changes runtime/API-visible behavior is contract pressure and must return through `architect`.
 
 ### 2.2 Response Envelope Conventions
 
@@ -99,6 +128,15 @@ Rules:
 - Bounded tool surfaces must normalize legacy payloads into the architect-frozen output shapes below.
 - `UserProfile.risk_history` remains a single latest-snapshot compatibility field despite its legacy name; it is not an array contract in this freeze.
 - FE and BE may not silently upgrade a passthrough field into a new implicit frontend schema without an architect-owned contract update.
+
+### 2.6.1 Provider Data Handling Boundary
+
+This contract freezes external-provider data handling boundaries:
+
+- Baidu OCR processing remains backend-mediated; raw OCR provider payloads are not public route fields.
+- Moonshot/Kimi-compatible LLM calls remain backend-mediated; FE must not call provider endpoints directly through this contract.
+- RAG retrieval remains backend-internal; only frozen bounded metadata (`sources`, `evidence_tags`, `decision_summary`, optional `evidence_panel`) may appear in public chat payloads.
+- Raw provider request/response bodies, raw RAG passages, and raw OCR text must not be exposed through `/chat/*`, replay payloads, or public route fields unless a future architect-owned contract explicitly allows it.
 
 ### 2.7 Internal Audit Responsibility Boundary
 
@@ -738,6 +776,90 @@ Contract rules:
 - `partial_success` must preserve sparse extraction semantics; FE must not assume that every clinically important field was extracted.
 - `ocr_processing_status` is additive and backend-owned. It does not replace `ocr_summary.v1`.
 
+#### `POST /api/v1/profile/import-csv`
+
+Purpose: parse one platform-standard profile CSV row into the field-oriented profile JSON shape used by the clinical form.
+
+Request:
+
+- Authenticated route: `Authorization: Bearer <token>`
+- Multipart form field: `file`
+- Optional multipart form field: `demo_patient_id`
+- Allowed content types:
+  - `text/csv`
+  - `application/csv`
+  - `application/vnd.ms-excel` when the uploaded filename ends in `.csv`
+
+Canonical success response:
+
+```json
+{
+  "status": "success",
+  "message": "Profile CSV parsed successfully.",
+  "profile": {
+    "Age": 60,
+    "Gender": 2,
+    "Height": 162.5,
+    "Weight": 77.9,
+    "BMI": 29.5,
+    "WaistCircum": 99.0,
+    "SBP": 188,
+    "DBP": 116,
+    "Glucose_Fasting": 4.46,
+    "HbA1c": 5.9,
+    "Cholesterol_Total": 4.39,
+    "Triglycerides": 1.62,
+    "Cholesterol_HDL": 1.62,
+    "Cholesterol_LDL": 2.03,
+    "eGFR": 148.5,
+    "ALT": 59,
+    "WBC": 7.9,
+    "Platelet": 412.2,
+    "GGT": null,
+    "ALP": 139.5,
+    "Creatinine": 61.9,
+    "Sleep_Hours": 6.0,
+    "extra_data": {
+      "synthea_patient_id": "8505e011-20cb-4bc5-8a66-5900111fb04b"
+    }
+  },
+  "source_tags": [
+    "platform_profile_csv",
+    "platform_demo_profiles.v1",
+    "demo_patient:synthea_8505e011"
+  ],
+  "metadata": {
+    "schema_version": "platform_profile_import.v1",
+    "row_count": 3,
+    "selected_row_index": 0,
+    "selected_demo_patient_id": "synthea_8505e011",
+    "imported_fields": ["Age", "Gender", "Height", "Weight"],
+    "skipped_fields": [],
+    "source_file_name": "platform_demo_profiles.csv",
+    "persisted": false
+  }
+}
+```
+
+HTTP and business rules:
+
+- `200` only when exactly one row was selected and parsed successfully.
+- `400` for unsupported file type, invalid CSV structure, unknown required selector, multiple rows without `demo_patient_id`, duplicate `demo_patient_id` values, non-platform columns that cannot be safely classified as metadata, or values that cannot be coerced into the target profile field type.
+- `401` for missing or invalid bearer token.
+- `500` only for unexpected parser/runtime failure.
+
+Contract rules:
+
+- This route is parse-only. It must not persist `UserProfile`, create `HealthRecord` snapshots, create `MedicalDocument` rows, invalidate caches, or run risk analysis.
+- The frontend must fill the form from `profile` and use the existing profile save flow when the user chooses to persist imported values.
+- Accepted CSV is platform-standard profile CSV compatible with the generated demo profile shape in `data/demo/platform_demo_profiles*.json`; it is not raw Synthea multi-file CSV.
+- Units must already be platform units. The endpoint must reject or skip unit-bearing variants rather than silently converting units.
+- Empty cells, missing optional fields, and JSON `null` values remain missing. BE and FE must not fabricate defaults to complete the profile.
+- `profile` may include only writable `UserProfile` fields and serializable `extra_data`; protected fields such as `id`, `user_id`, and relationship objects must not be emitted as import targets.
+- `source_tags` are backend-authored provenance labels for display/debugging only. FE must not derive clinical meaning from them.
+- `metadata.persisted` must be `false` for this endpoint.
+- Existing OCR route fields and `ocr_processing_status` semantics are unchanged by this endpoint.
+
 #### `GET /api/v1/user/documents`
 
 Purpose: list uploaded medical documents for current user
@@ -805,7 +927,28 @@ Request body:
     "Gender": 1,
     "BMI": 24.5
   },
-  "user_snps": {}
+  "user_snps": {},
+  "lifestyle_context": {
+    "schema_version": "lifestyle_context.v1",
+    "data_mode": "simulated_demo",
+    "scenario_id": "metabolic_day_001",
+    "summary": {
+      "steps": 7600,
+      "active_minutes": 42,
+      "sleep_hours": 6.0,
+      "diet_pattern": "high_sodium_high_carbohydrate"
+    },
+    "modifier_inputs": {
+      "activity_level": "moderate",
+      "sleep_quality": "short",
+      "diet_quality": "high_sodium"
+    },
+    "source_provenance": {
+      "source_type": "demo_scenario",
+      "artifact_schema": "behavior_day_scenario.v1",
+      "generated_from": ["platform_demo_profiles.v1", "nhanes_lifestyle_supplement.v1"]
+    }
+  }
 }
 ```
 
@@ -843,6 +986,312 @@ Contract rules:
 - FE may render `analysis_context`, but FE may not infer provisional/final meaning from local heuristics once backend-owned metadata is present.
 - BE must not fabricate missing required values to avoid `blocked` or `provisional` states.
 - Only the frozen derivation set approved in the architecture and data-model contracts may contribute `derived` field states.
+- The current `risk_report` fusion semantics are heuristic multiplicative scaling (`base × gene_modifier × lifestyle_modifier` in current engine terms), not strict Bayesian posterior semantics.
+- FE/BE/AI-data may keep existing `breakdown.base_clinical`, `gene_modifier`, and `lifestyle_modifier` fields for compatibility, but they may not reinterpret them as posterior-proof fields in API copy.
+- `lifestyle_context` is optional. When present, it must conform to `lifestyle_context.v1`, must include `data_mode`, and must be treated as an interpretation/explanation factor rather than proof of real device behavior.
+- `data_mode="simulated_demo"` may support demo-specific `analysis_context` explanation and compatible heuristic `lifestyle_modifier` display, but it must not create `IoTHealthData`, `HealthRecord`, profile persistence, or device-sync writes.
+- `data_mode="user_uploaded"` may support uploaded-file-specific `analysis_context` explanation and compatible heuristic `lifestyle_modifier` display, but it must not create `IoTHealthData`, `HealthRecord`, `MedicalDocument`, profile persistence, raw upload storage, or device-sync writes.
+- `data_mode="real_device"` is reserved for future contract work and must not be accepted through demo scenario routes in this slice.
+- BE may reject unlabeled or malformed `lifestyle_context` with `400`; FE must not synthesize a valid context by omitting provenance.
+- Any API-visible change to `risk_report` meaning, fusion formula interpretation, or related field naming requires architect approval before implementation.
+
+#### `GET /api/v1/demo/behavior-scenarios`
+
+Purpose: list read-only Lifestyle Digital Twin demo scenarios available to the authenticated user.
+
+Auth: required bearer token.
+
+Behavior:
+
+- Read-only.
+- Returns scenario metadata only, not full event timelines.
+- Does not write `IoTHealthData`, `HealthRecord`, `MedicalDocument`, `UserProfile`, files, or analysis snapshots.
+- Does not call `/api/v1/iot/sync/batch` or `/analyze/food_image`.
+
+Response shape:
+
+```json
+{
+  "status": "success",
+  "scenarios": [
+    {
+      "scenario_id": "metabolic_day_001",
+      "schema_version": "behavior_day_scenario.v1",
+      "title": "Metabolic syndrome demo day",
+      "demo_patient_id": "synthea_8505e011",
+      "data_mode": "simulated_demo",
+      "summary": {
+        "date_label": "Demo day",
+        "event_count": 8,
+        "headline": "Meals, activity, sleep, and glucose-risk context"
+      },
+      "source_provenance": {
+        "source_type": "demo_scenario",
+        "artifact_schema": "behavior_day_scenario.v1",
+        "generated_from": ["platform_demo_profiles.v1", "nhanes_lifestyle_supplement.v1"]
+      }
+    }
+  ]
+}
+```
+
+#### `GET /api/v1/demo/behavior-scenarios/{scenario_id}`
+
+Purpose: return one read-only behavior-day scenario with replayable timeline events and optional analysis context.
+
+Auth: required bearer token.
+
+Path parameters:
+
+- `scenario_id`: stable scenario id from the scenario list.
+
+Response shape:
+
+```json
+{
+  "status": "success",
+  "scenario": {
+    "schema_version": "behavior_day_scenario.v1",
+    "scenario_id": "metabolic_day_001",
+    "demo_patient_id": "synthea_8505e011",
+    "data_mode": "simulated_demo",
+    "timeline": [
+      {
+        "schema_version": "behavior_timeline_event.v1",
+        "event_id": "evt_0700_breakfast",
+        "time": "07:00",
+        "event_type": "diet_vision",
+        "label": "Breakfast recognition",
+        "data_mode": "simulated_demo",
+        "payload": {
+          "schema_version": "diet_vision_event.v1",
+          "meal_type": "breakfast",
+          "food_items": ["congee", "pickled vegetables"],
+          "nutrition": {
+            "calories": 430,
+            "carbs": 72,
+            "protein": 12,
+            "fat": 9,
+            "sodium_mg": 1150
+          },
+          "vision_provenance": {
+            "source_type": "simulated_demo",
+            "image_ref": null,
+            "model_name": null,
+            "confidence": null
+          }
+        },
+        "source_provenance": {
+          "source_type": "demo_scenario",
+          "generated_from": ["nhanes_lifestyle_supplement.v1"]
+        }
+      }
+    ],
+    "lifestyle_context": {
+      "schema_version": "lifestyle_context.v1",
+      "data_mode": "simulated_demo",
+      "scenario_id": "metabolic_day_001",
+      "summary": {
+        "steps": 7600,
+        "active_minutes": 42,
+        "sleep_hours": 6.0,
+        "diet_pattern": "high_sodium_high_carbohydrate"
+      },
+      "modifier_inputs": {
+        "activity_level": "moderate",
+        "sleep_quality": "short",
+        "diet_quality": "high_sodium"
+      },
+      "source_provenance": {
+        "source_type": "demo_scenario",
+        "artifact_schema": "behavior_day_scenario.v1",
+        "generated_from": ["platform_demo_profiles.v1", "nhanes_lifestyle_supplement.v1"]
+      }
+    }
+  }
+}
+```
+
+Error semantics:
+
+- `401` when unauthenticated.
+- `404` when `scenario_id` is unknown.
+- `500` only for unexpected scenario repository failures.
+
+Contract rules:
+
+- These routes are authenticated read APIs even though the content is demo content; public unauthenticated scenario browsing is out of scope.
+- These routes parse/read static or generated demo artifacts only. They must not write the database.
+- `simulated_demo` must remain visible in the response and must not be normalized to `device`, `manual`, `upload`, or any real source code.
+- Any route for creating, editing, deleting, uploading, or publishing scenarios requires a future architect contract.
+
+#### `POST /api/v1/lifestyle/import-behavior-day`
+
+Purpose: parse and validate one user-uploaded platform-standard behavior-day CSV or JSON file, then return a non-persisted timeline preview and analysis context for the Lifestyle page.
+
+Auth: required bearer token.
+
+Content type: `multipart/form-data`.
+
+Request parts:
+
+- `file`: required upload file.
+- `patient_id`: optional selector/assertion. When supplied, it must match the patient id in the file.
+- `local_date`: optional selector/assertion in `YYYY-MM-DD`. When supplied, it must match the day in the file.
+
+Accepted files:
+
+- Extensions: `.csv` and `.json`.
+- Content types: `text/csv`, `application/csv`, `application/vnd.ms-excel`, `application/json`, or `text/json`.
+- Encoding: UTF-8 or UTF-8 with BOM.
+- Maximum size: 1 MB.
+- Scope: exactly one patient and exactly one local calendar day.
+- Event count: maximum 200 timeline events.
+
+Behavior:
+
+- Parse-only and validation-only.
+- Returns a generated `behavior_day_scenario.v1`-like object with `data_mode="user_uploaded"`.
+- Returns a generated `lifestyle_context.v1` with `data_mode="user_uploaded"`.
+- Does not store the raw file, parsed rows, validation report, timeline, lifestyle context, or analysis output.
+- Does not call `/api/v1/iot/sync/batch`, `/analyze/food_image`, profile save, document upload, health history, or risk snapshot persistence.
+- Does not replace the existing demo fallback; FE keeps the current demo route available after success or failure.
+
+Response shape:
+
+```json
+{
+  "status": "success",
+  "import": {
+    "schema_version": "platform_behavior_day_import_result.v1",
+    "data_mode": "user_uploaded",
+    "source_format": "csv",
+    "filename": "patient-day.csv",
+    "validation": {
+      "event_count": 8,
+      "warnings": []
+    },
+    "source_provenance": {
+      "source_type": "user_uploaded",
+      "source_label": "uploaded_csv",
+      "source_format": "csv",
+      "artifact_schema": "platform_behavior_day_csv.v1",
+      "filename": "patient-day.csv"
+    }
+  },
+  "behavior_day": {
+    "schema_version": "behavior_day_scenario.v1",
+    "scenario_id": "uploaded_2026-05-13_patient_a",
+    "patient_id": "patient_a",
+    "local_date": "2026-05-13",
+    "title": "Uploaded behavior day",
+    "data_mode": "user_uploaded",
+    "timeline": [
+      {
+        "schema_version": "behavior_timeline_event.v1",
+        "event_id": "evt_0700_breakfast",
+        "time": "07:00",
+        "event_type": "diet_vision",
+        "label": "Breakfast",
+        "data_mode": "user_uploaded",
+        "payload": {
+          "schema_version": "diet_vision_event.v1",
+          "meal_type": "breakfast",
+          "food_items": ["oatmeal"],
+          "nutrition": {
+            "calories": 320,
+            "carbs": 45,
+            "protein": 10,
+            "fat": 8,
+            "sodium_mg": 260
+          },
+          "vision_provenance": {
+            "source_type": "user_uploaded",
+            "image_ref": null,
+            "model_name": null,
+            "confidence": null
+          }
+        },
+        "source_provenance": {
+          "source_type": "user_uploaded",
+          "source_label": "uploaded_csv",
+          "source_format": "csv",
+          "artifact_schema": "platform_behavior_day_csv.v1"
+        }
+      }
+    ],
+    "lifestyle_context": {
+      "schema_version": "lifestyle_context.v1",
+      "data_mode": "user_uploaded",
+      "scenario_id": "uploaded_2026-05-13_patient_a",
+      "summary": {
+        "steps": 7600,
+        "active_minutes": 42,
+        "sedentary_minutes": 520,
+        "sleep_hours": 6.0,
+        "diet_pattern": "high_sodium_high_carbohydrate",
+        "estimated_calories": 2100,
+        "estimated_sodium_mg": 4200
+      },
+      "modifier_inputs": {
+        "activity_level": "moderate",
+        "sleep_quality": "short",
+        "diet_quality": "high_sodium"
+      },
+      "source_provenance": {
+        "source_type": "user_uploaded",
+        "source_label": "uploaded_csv",
+        "source_format": "csv",
+        "artifact_schema": "platform_behavior_day_csv.v1"
+      }
+    },
+    "source_provenance": {
+      "source_type": "user_uploaded",
+      "source_label": "uploaded_csv",
+      "source_format": "csv",
+      "artifact_schema": "platform_behavior_day_csv.v1",
+      "filename": "patient-day.csv"
+    }
+  }
+}
+```
+
+Validation error response shape:
+
+```json
+{
+  "status": "error",
+  "error": {
+    "code": "behavior_day_validation_failed",
+    "message": "Behavior file validation failed.",
+    "details": [
+      {
+        "path": "timeline[2].time",
+        "code": "invalid_time",
+        "message": "time must use HH:MM format"
+      }
+    ]
+  }
+}
+```
+
+Error semantics:
+
+- `400`: malformed CSV/JSON, unsupported schema version, missing required one-day behavior content, multiple patients, multiple dates, invalid event taxonomy, invalid payload value, selector mismatch, or validation failure.
+- `401`: unauthenticated.
+- `413`: file exceeds 1 MB.
+- `415`: unsupported file extension or content type.
+- `500`: unexpected parser failure after the request passed file-type and validation checks.
+
+Contract rules:
+
+- BE owns CSV/JSON parsing and validation. FE may pre-check file extension for UX, but FE validation is not authoritative.
+- The route must return `data_mode="user_uploaded"` and `source_provenance.source_type="user_uploaded"` for all generated timeline events and context.
+- `source_provenance.source_format` distinguishes `csv` from `json`; FE may display this, but must not use it to infer real-device provenance.
+- `source_provenance.source_label` must be `uploaded_csv` for CSV files and `uploaded_json` for JSON files.
+- Upload success does not imply persistence. A future save/import-to-record behavior requires a separate architect contract.
+- The route must not accept or emit `data_mode="real_device"` in this slice.
+- Validation errors must be deterministic enough for FE to show row/path-level feedback without parsing exception strings.
 
 #### `GET /history/list`
 
@@ -1815,10 +2264,22 @@ The three new tools are exposed only through the existing Dr. AI runtime:
 - FE and BE may not silently change the `decision_summary.policy` field shape, policy-version compatibility rule, or answer-mode set without an architect-owned contract update.
 - FE and BE may not silently rename `response_verdict`, move it under `decision_summary`, widen its enum sets, or synthesize it for legacy replay rows without an architect-owned contract update.
 - FE and BE may not silently rename `takeover`, move it under `decision_summary`, widen its status or trigger enums, or synthesize a different human-handoff object for legacy replay rows without an architect-owned contract update.
+- FE and BE may not silently keep wildcard CORS (`*`) in credentialed browser flows; allowlisted-origin echo is required under this contract.
+- FE, BE, and AI-data may not silently relabel heuristic fusion output as strict Bayesian posterior semantics in API-visible artifacts.
+- FE and BE may not expose raw Baidu OCR payloads, raw LLM provider payloads, or raw RAG passages through public routes or replay/history payloads.
 - FE and BE may not silently expose `AgentAuditEvent` through a new route, chat response field, SSE event, export path, or tool surface, and BE may not silently change the `agent_audit_responsibility.v2` field set or governance-version semantics without an architect-owned contract update.
 - FE and BE may not silently add internal answer-replay fields onto `ChatMessage` payloads, route responses, SSE events, or cache payloads; bounded replay belongs in the separate internal `AgentAnswerReplay` structure only.
 - BE may not silently create a replay or admin route under `/chat/*`; any future replay-read surface must be reviewed as a separate internal/admin contract change.
 - FE and BE may not silently widen the conversation API into destructive batch delete, hard delete, message purge, or archived-folder mutation semantics; only single-item archive/restore plus the frozen batch archive and batch restore hooks are in scope for this freeze.
+- FE and BE may consume the additive `AST`, `HGB`, and `UA` keys inside compatible `ocr_summary.v1.metrics` payloads, but may not expose raw OCR provider payloads, create new route fields, or auto-promote those report-level metrics into unsupported `UserProfile` columns without a future architect-owned contract update.
+- FE and BE may not silently change `POST /api/v1/profile/import-csv` from a parse-only platform CSV import into persistence, risk analysis, document upload, raw Synthea ETL ingestion, or unit-conversion behavior.
+- FE and BE may not silently route Lifestyle Digital Twin demo replay through `/api/v1/iot/sync/batch`, `/analyze/food_image`, profile save, document upload, or health-history persistence.
+- BE may not persist `data_mode="simulated_demo"` timeline events as `IoTHealthData` or reinterpret them as real device evidence.
+- BE may not accept `lifestyle_context` without `data_mode` and `source_provenance`, and FE may not hide `simulated_demo` provenance from users.
+- FE/BE/AI-data may not claim a demo-derived `lifestyle_modifier` is a clinically calibrated posterior probability.
+- FE and BE may not silently change `POST /api/v1/lifestyle/import-behavior-day` from parse-only validation into upload storage, IoT sync, profile save, health-record creation, document upload, risk-snapshot persistence, or raw device ingestion.
+- FE and BE may not relabel uploaded CSV/JSON behavior context as `real_device`; uploaded behavior must remain `data_mode="user_uploaded"` with `source_provenance.source_type="user_uploaded"`.
+- FE may show a real-device API placeholder, but no live-device route, vendor connector, background sync, or `/api/v1/iot/sync/batch` call is approved by this upload slice.
 
 ## 5. Open Issues For Later Normalization
 
@@ -1827,6 +2288,8 @@ The three new tools are exposed only through the existing Dr. AI runtime:
 - Pydantic/SQLModel schemas are not fully separated from persistence models
 - `build_knowledge_base` still needs page-aware chunk metadata in the internal RAG path, but that work remains backend-only and does not justify a new public retrieval endpoint
 - Export/PDF and some simulation paths remain outside the current freeze
+- Current runtime conflict: [backend/main.py](E:\health_ai_platform_2.0\backend\main.py) still hardcodes `allow_origins=["*"]` while local CORS tests require credentialed origin echo for `http://127.0.0.1:5173`.
+- Current runtime conflict: [backend/services/fusion_service.py](E:\health_ai_platform_2.0\backend\services\fusion_service.py) still uses Bayesian wording in comments/log text while current API-frozen semantics are heuristic multiplicative scaling.
 - Current runtime conflict: `GET /user/profile` and `GET /api/v1/user/documents` still expose compatibility payloads directly, so FE must not treat those fields as already-normalized schemas.
 - Current runtime conflict: `medication_summary_lookup` and `report_comparison_lookup` in [agent_tools.py](E:\health_ai_platform_2.0\backend\services\agent_tools.py) still need bounded normalized projections over OCR-backed medication and report data; BE must not pass raw parsed OCR payloads through unchecked.
 - Current runtime conflict: [chat_service.py](E:\health_ai_platform_2.0\backend\services\chat_service.py) still assumes optional OCR `summary` text and still truncates raw `risk_history` strings for context, which is weaker than the frozen normalized boundary.
@@ -1865,3 +2328,13 @@ The three new tools are exposed only through the existing Dr. AI runtime:
 | Freeze the evidence sufficiency gate to `sufficient`, `limited`, and `insufficient`, and add `conflicting_evidence` as an explicit degrade reason | Removes `missing` vs `insufficient` drift while keeping existing chat routes and metadata fields |
 | Freeze internal audit as `agent_audit_responsibility.v2` rather than a transcript-like call record | Keeps backend accountability aligned to policy/verdict outcomes without creating any public audit API surface |
 | Freeze answer replay as a separate internal `AgentAnswerReplay` package instead of widening `GET /chat/conversations/{conversation_id}/messages` | Keeps postmortem reconstruction available for BE/ops while preserving the existing frontend-safe chat-history contract |
+| Freeze credentialed CORS to allowlisted-origin echo behavior | Aligns FastAPI runtime behavior with test/deployment expectations and avoids browser-invalid wildcard credential policy |
+| Freeze runtime configuration ownership between `backend/core/config.py` and `backend/config.py` | Reduces source-of-truth drift for env settings, model defaults, and runtime bootstrap behavior |
+| Freeze fusion semantics wording to heuristic multiplicative interpretation | Prevents API-visible over-claims that current `risk_report` is a strict Bayesian posterior |
+| Freeze external-provider data-handling boundaries for OCR/LLM/RAG payload exposure | Keeps sensitive health data and provider payloads out of public response and replay surfaces |
+| Keep `AST`, `HGB`, and `UA` as additive report-level OCR metrics rather than new public route fields | Improves structured extraction coverage without changing route envelopes or frontend profile semantics |
+| Freeze `POST /api/v1/profile/import-csv` as an authenticated parse-only platform CSV route | Supports the demo-ready clinical-form import flow while preserving existing profile persistence and OCR contracts |
+| Freeze `/api/v1/demo/behavior-scenarios` as authenticated read-only scenario APIs | Lets FE build a replayable demo timeline without changing IoT sync, food upload, profile save, or history contracts |
+| Add optional `lifestyle_context.v1` to `/analyze/comprehensive` | Supports demo-aware explanation while keeping lifestyle behavior as provenance-labeled context rather than device proof |
+| Add `POST /api/v1/lifestyle/import-behavior-day` as authenticated parse-only CSV/JSON upload | Lets users preview their own behavior-day timeline while preserving no-persistence, validation, and provenance boundaries |
+| Keep real-device API behavior out of the upload route | Prevents user-uploaded files from being mistaken for live wearable/device sync and keeps future device integration separately contract-gated |

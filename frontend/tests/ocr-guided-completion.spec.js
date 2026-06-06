@@ -2,7 +2,7 @@
 
 const authToken = 'playwright-guided-completion-token'
 
-const mockAuthenticatedBootstrap = async (page, { user, profile, documents, ocrUploadResponse, drugs, analysisResponse } = {}) => {
+const mockAuthenticatedBootstrap = async (page, { user, profile, documents, ocrUploadResponse, csvImportResponse, drugs, analysisResponse } = {}) => {
   await page.addInitScript((token) => {
     localStorage.setItem('auth_token', token)
   }, authToken)
@@ -149,6 +149,20 @@ const mockAuthenticatedBootstrap = async (page, { user, profile, documents, ocrU
       }),
     })
   })
+
+  await page.route('**/api/v1/profile/import-csv', async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(csvImportResponse || {
+        profile: {
+          Height: 168,
+          Weight: 66,
+          Glucose_Fasting: 5.8,
+        },
+      }),
+    })
+  })
 }
 
 test.describe('OCR and guided completion', () => {
@@ -222,6 +236,69 @@ test.describe('OCR and guided completion', () => {
     await expect(page.getByText('待补充')).toBeVisible()
     await expect(page.getByText('大概值')).toHaveCount(0)
     await expect(page.getByText('估算')).toHaveCount(0)
+  })
+
+  test('clinical visible upload buttons open the file chooser', async ({ page }) => {
+    await mockAuthenticatedBootstrap(page)
+
+    await page.goto('/clinical')
+    await expect(page.locator('[data-testid="ocr-upload"] button')).toBeVisible()
+    await expect(page.locator('[data-testid="csv-upload"] button')).toBeVisible()
+
+    const [ocrChooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.locator('[data-testid="ocr-upload"] button').click(),
+    ])
+    expect(ocrChooser).toBeTruthy()
+
+    const [csvChooser] = await Promise.all([
+      page.waitForEvent('filechooser'),
+      page.locator('[data-testid="csv-upload"] button').click(),
+    ])
+    expect(csvChooser).toBeTruthy()
+  })
+
+  test('clinical CSV import posts the selected file and fills returned metrics', async ({ page }) => {
+    let csvRequestCount = 0
+
+    await mockAuthenticatedBootstrap(page, {
+      csvImportResponse: {
+        profile: {
+          Height: 168,
+          Weight: 66,
+          Glucose_Fasting: 5.8,
+        },
+      },
+    })
+
+    await page.route('**/api/v1/profile/import-csv', async (route) => {
+      csvRequestCount += 1
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          profile: {
+            Height: 168,
+            Weight: 66,
+            Glucose_Fasting: 5.8,
+          },
+        }),
+      })
+    })
+
+    await page.goto('/clinical')
+    await expect(page.getByTestId('csv-upload')).toBeVisible()
+
+    await page.locator('[data-testid="csv-upload"] input[type="file"]').setInputFiles({
+      name: 'profile.csv',
+      mimeType: 'text/csv',
+      buffer: Buffer.from('Height,Weight,Glucose_Fasting\n168,66,5.8\n'),
+    })
+
+    await expect(page.locator('.clinical-form .el-input-number input').nth(1)).toHaveValue('168')
+    await expect(page.locator('.clinical-form .el-input-number input').nth(2)).toHaveValue('66.0')
+    await expect(page.locator('.clinical-form .el-input-number input').nth(7)).toHaveValue('5.8')
+    expect(csvRequestCount).toBe(1)
   })
 
   test('clinical upload refreshes backend analysis context after OCR autofill when upload response omits it', async ({ page }) => {
@@ -354,5 +431,25 @@ test.describe('OCR and guided completion', () => {
 
     await page.goto('/admin/dashboard')
     await expect(page).not.toHaveURL(/\/admin\/dashboard/)
+  })
+
+  test('profile back action returns to a rendered dashboard', async ({ page }) => {
+    await mockAuthenticatedBootstrap(page, {
+      profile: {
+        Age: null,
+        Gender: null,
+        Height: null,
+        Weight: null,
+        BMI: null,
+      },
+    })
+
+    await page.goto('/profile')
+    await expect(page.getByRole('heading', { name: /个人档案/ }).first()).toBeVisible()
+
+    await page.getByRole('button', { name: /返回仪表盘/ }).click()
+
+    await expect(page).toHaveURL('/')
+    await expect(page.getByRole('heading', { name: /欢迎来到 HealthAI Platform/ })).toBeVisible()
   })
 })

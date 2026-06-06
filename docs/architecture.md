@@ -500,6 +500,28 @@ They do not own the public HTTP contract or the user-facing UX semantics.
 6. OCR summary is stored on the document record as persisted extraction payload, with canonical `ocr_summary.v1` now frozen as the target write shape for future backend normalization work
 7. Frontend can merge extracted fields into user profile
 
+### 5.2.1 Platform CSV Profile Import Flow
+
+This slice adds a second structured intake path beside OCR. It is a platform-standard profile import, not a raw Synthea CSV ingestion pipeline.
+
+1. Frontend shows a CSV upload control next to the existing `智能识别体检单` OCR control in `ClinicalView.vue`; the CSV control must visually match the OCR button treatment.
+2. User uploads one platform-standard profile CSV.
+3. Frontend sends the file to `POST /api/v1/profile/import-csv` as multipart field `file`, with optional `demo_patient_id` when the CSV contains multiple rows.
+4. Backend validates that the CSV is already in platform profile units and shape.
+5. Backend parses the selected row into the same field-oriented profile JSON shape used by `POST /user/profile`.
+6. Backend returns the parsed profile, source tags, and import metadata only.
+7. Frontend fills the clinical profile form from the returned profile.
+8. Existing profile save behavior remains the only persistence path for the imported profile values.
+
+Architecture rules:
+
+- The import endpoint must not persist `UserProfile`, `HealthRecord`, or `MedicalDocument` rows.
+- The accepted CSV is the future `platform_demo_profiles.csv`-style export compatible with `data/demo/platform_demo_profiles*.json`; it is not arbitrary raw Synthea multi-file CSV.
+- Units must already be platform units. Unit conversion remains an upstream demo-data generation concern, not an import-route behavior.
+- Missing CSV cells remain absent or `null`; FE and BE must not fabricate defaults to complete the form.
+- CSV-imported values may be treated as `recognized` imported structured source values if field-state metadata is implemented, using a backend-owned source label such as `platform_csv_import`.
+- Existing OCR upload, document persistence, and `ocr_summary.v1` contracts are unchanged.
+
 ### 5.3 Risk Analysis Flow
 
 1. Frontend submits profile and optional SNP data
@@ -849,6 +871,67 @@ Architecture rules:
 2. Frontend reads history list and trend endpoints
 3. Timeline view renders time-series progression and comparative views
 
+### 5.7 Lifestyle Digital Twin Demo Engine Flow
+
+The next behavior/vision demo slice is frozen as a presentation and interpretation engine, not as real device ingestion. Its product role is to replay a realistic "one patient day" that combines coarse behavior events, visual food-recognition events, and optional lifestyle context so the Lifestyle view can demonstrate a behavior-aware digital twin without pretending that demo data came from a live wearable or camera stream.
+
+Approved flow:
+
+1. BE exposes read-only demo scenario routes under `/api/v1/demo/behavior-scenarios`.
+2. FE fetches a scenario list and one selected scenario, then replays the returned timeline locally.
+3. FE may render the scenario alongside existing Lifestyle/IoT and food-vision UI patterns, but it must visibly distinguish demo replay from live Bluetooth/device state.
+4. FE may submit an optional `lifestyle_context` object to `/analyze/comprehensive` when the user explicitly runs analysis from a demo scenario.
+5. BE validates `lifestyle_context` and may use it only as an explanatory or heuristic modifier context for `analysis_context` and compatible `risk_report.breakdown` fields.
+6. No demo scenario read, timeline replay, food event, or lifestyle-context analysis may create `IoTHealthData`, `HealthRecord`, `MedicalDocument`, saved profile fields, or real IoT sync records.
+
+Ownership:
+
+- `fe` owns replay controls, timeline visualization, and demo/live labeling.
+- `be` owns scenario read APIs, schema validation, authentication, and read-only source loading.
+- `ai-data` owns scenario artifact generation if new JSON/CSV demo assets are needed.
+- `qa` owns browser validation for replay, labels, route behavior, and no-persistence evidence.
+
+Relationship to existing surfaces:
+
+- The current `LifestyleView` may be reused, but demo replay must not call `/api/v1/iot/sync/batch` or mutate the existing `iotData` store in a way that looks like a connected device.
+- Existing `/analyze/food_image` remains the live/uploaded food vision endpoint. Demo food events use the frozen `diet_vision_event.v1` artifact shape and do not upload image bytes unless a future contract explicitly adds that behavior.
+- Existing generated demo profile files in `data/demo` remain valid upstream context. The behavior-day scenario artifact is additive and should reference existing `demo_patient_id` values rather than rewriting platform profile CSV semantics.
+
+### 5.8 Lifestyle Behavior Day Upload Flow
+
+This slice extends the Lifestyle Digital Twin experience from static demo replay to user-supplied, platform-standard one-day behavior files. The upload flow is backend-owned for parse and validation so CSV/JSON interpretation, provenance labeling, timeline construction, and `/analyze/comprehensive` handoff semantics stay stable across FE and later device integrations.
+
+Approved flow:
+
+1. FE presents a Lifestyle import control for platform-standard `.csv` and `.json` behavior-day files.
+2. FE submits the selected file to a new authenticated parse-only backend route under `/api/v1/lifestyle/import-behavior-day`.
+3. BE validates file type, size, encoding, one-patient/one-day scope, event taxonomy, event times, payload shape, and source provenance.
+4. BE returns a non-persisted `behavior_day_scenario.v1`-like object plus `lifestyle_context.v1`, both labeled `data_mode="user_uploaded"` and `source_provenance.source_type="user_uploaded"`.
+5. FE renders the returned timeline with a visible user-upload provenance label and keeps the existing `/api/v1/demo/behavior-scenarios` fallback available when no upload is present or validation fails.
+6. FE may submit the returned `lifestyle_context.v1` to `/analyze/comprehensive` only when the user explicitly runs analysis from the imported preview.
+7. BE may use the uploaded lifestyle context as explanatory heuristic context, but must not persist the upload, parsed events, derived context, or analysis output as IoT, profile, health-history, medical-document, or risk-snapshot state.
+
+Ownership:
+
+- `be` owns file parsing, validation, response shaping, no-persistence behavior, and analysis-context validation.
+- `fe` owns upload controls, user-readable validation display, fallback selection, provenance labels, and the real-device placeholder presentation.
+- `ai-data` does not need to retrain models or generate new training assets for this slice; it may advise on platform-standard sample files only if routed by the orchestrator.
+- `qa` owns upload success/failure, fallback, provenance, and no-persistence evidence after FE/BE implementation.
+
+Real-device placeholder boundary:
+
+- FE may show a disabled or clearly marked real-device API placeholder in the Lifestyle page.
+- This slice does not add a live wearable, BLE, Health Connect, Apple Health, cloud vendor, background sync, or real-device import route.
+- The placeholder must not call `/api/v1/iot/sync/batch`, must not emit `data_mode="real_device"`, and must not claim live sync readiness.
+- Any future real-device upload/import/sync route requires a separate architect contract and orchestrator gate.
+
+Relationship to existing surfaces:
+
+- The existing demo scenario routes remain read-only fallback and quick-start sample paths.
+- The upload route must not be implemented by reusing `/api/v1/demo/behavior-scenarios` as a write route.
+- The upload route must not be implemented by routing parsed events through `/api/v1/iot/sync/batch`, `/analyze/food_image`, profile save, document upload, health history, or risk snapshot persistence.
+- The response may reuse `behavior_timeline_event.v1`, `diet_vision_event.v1`, and `lifestyle_context.v1` shapes, but must change provenance to user-uploaded source semantics rather than simulated demo semantics.
+
 ## 6. Persistence Model At A High Level
 
 The current architecture relies on SQLModel entities persisted to the local SQLite database in the repository:
@@ -979,6 +1062,25 @@ Architecture rules:
 - The current `risk_snapshot.v1` persistence target remains valid. Provisional/final analysis semantics are additive metadata around how the report should be interpreted, not a replacement for the canonical risk snapshot envelope.
 - Later FE and BE implementation may refine which fields are blocking for a specific analysis path, but they may not widen the field-state enum, derivation set, or provisional semantics without architect review.
 
+### 6.4 Multimodal Fusion Semantics Boundary
+
+This slice freezes the meaning of current multimodal fusion outputs to avoid semantic over-claim in API and UI language.
+
+Frozen semantics:
+
+- The runtime formula `base × gene_modifier × lifestyle_modifier` is a heuristic multiplicative risk-scaling rule, not a strict Bayesian posterior update.
+- `risk_report[*].final_risk` remains a backend-owned composite risk score under current engine conventions. It must not be presented as a calibrated posterior probability unless a separate architect-approved contract update explicitly redefines it.
+- Existing `risk_report[*].breakdown.base_clinical`, `gene_modifier`, and `lifestyle_modifier` fields remain unchanged for compatibility in this slice.
+
+Architecture rules:
+
+- FE, BE, and AI/data must not label the current fusion output as "严格贝叶斯后验" or equivalent certainty claims in API docs, UX copy, release notes, or model-governance docs.
+- Any API-visible changes to fusion math semantics, `risk_report` meaning, or `breakdown` field interpretation require an architecture change request before implementation.
+
+Current runtime pressure called out explicitly:
+
+- [backend/services/fusion_service.py](E:\health_ai_platform_2.0\backend\services\fusion_service.py) still contains "贝叶斯融合公式" and related wording while the implemented formula is multiplicative heuristic scaling.
+
 ## 7. Synchronous Vs Asynchronous Behavior
 
 ### 7.1 Synchronous In Current Contract
@@ -986,6 +1088,7 @@ Architecture rules:
 - Login and profile fetch
 - Profile save
 - OCR upload request/response
+- CSV profile import request/response
 - Chat send/response
 - Comprehensive analysis
 - History retrieval
@@ -1022,6 +1125,42 @@ Warning policy:
 - Acceptable warnings are concise, once-per-condition degraded-mode warnings for explicitly optional dependencies such as Redis, approved degraded fusion fallback, or OCR-disabled environments.
 - Release-blocking warnings include repeated import-time warning spam, generic stack traces for known degraded paths, scikit-learn model-compatibility warnings, or any warning that leaves FE/BE unable to distinguish saved-but-degraded state from true failure.
 
+### 8.2 Runtime Configuration Ownership Boundary
+
+This slice freezes configuration ownership to reduce drift between `backend/config.py` and `backend/core/config.py`.
+
+Ownership split:
+
+- `backend/core/config.py` is the only architect-frozen source for environment-bound runtime settings (`BACKEND_CORS_ORIGINS`, `OPENAI_*`, `BAIDU_*`, `REDIS_URL`, `DATABASE_URL`/`SQLALCHEMY_DATABASE_URI`, and upload/runtime service endpoints).
+- `backend/config.py` is limited to repository-local path constants, model artifact locations, and static simulation defaults that are not environment contracts.
+- FE and BE may not define duplicate environment keys across both modules for the same runtime concern.
+
+Implementation guardrails:
+
+- Runtime middleware behavior (including CORS) must consume `settings` rather than hardcoded literals in app bootstrap.
+- Any renaming of environment keys, default model identifiers, or precedence rules that changes API-visible runtime behavior requires architect review.
+
+Current runtime pressure called out explicitly:
+
+- [backend/main.py](E:\health_ai_platform_2.0\backend\main.py) hardcodes `allow_origins=["*"]` instead of consuming `settings.BACKEND_CORS_ORIGINS`.
+- Multiple services import path constants from [backend/config.py](E:\health_ai_platform_2.0\backend\config.py), while runtime env settings live in [backend/core/config.py](E:\health_ai_platform_2.0\backend\core\config.py), and the ownership boundary was previously implicit.
+
+### 8.3 External Provider Compliance And Privacy Boundary
+
+This slice freezes provider-facing data boundaries for Baidu OCR, Moonshot/Kimi-compatible LLM calls, RAG retrieval, and internal logging/audit.
+
+Boundary rules:
+
+- Baidu OCR receives only the minimum document/image payload required for OCR extraction in this slice; OCR provider payloads are not a public API output.
+- Moonshot/Kimi-compatible LLM calls are backend-mediated. FE must not call provider endpoints directly, and provider request/response bodies must not be exposed in `/chat/*` responses.
+- RAG retrieval stays backend-internal; only bounded provenance and evidence metadata may flow to public chat metadata fields already frozen by contract.
+- User health data, chat text, and report payloads must not be copied into operational logs or audit/replay records beyond already-frozen bounded metadata fields.
+
+Compliance posture:
+
+- This platform provides health guidance support, not diagnosis finality; clinical diagnosis and treatment decisions remain outside automated contract guarantees.
+- If deployment policy for provider processing scope changes (for example, cross-border processing constraints or new retained payload classes), it must return through architect before implementation.
+
 ## 9. Architecture Constraints
 
 - Current public contract must preserve existing route shapes where already used by frontend.
@@ -1034,12 +1173,42 @@ Warning policy:
 - The C3 evidence panel is an additive contract extension only; until FE and BE implement it, existing assistant metadata fields remain required for backward-compatible rendering.
 - The persisted-field normalization freeze in this pass does not authorize FE, BE, or AI/data to redefine `MedicalDocument.ocr_summary`, `HealthRecord.risk_snapshot`, or `UserProfile.risk_history`; later shape changes require architect review.
 - FE and BE may not treat OCR service unavailability after durable document save as a generic 500 path; they must preserve the frozen `stored_unprocessed` business state once implementation lands.
+- FE and BE may not turn platform CSV profile import into a persistence endpoint; imported profile values are saved only through the existing profile save flow.
+- BE may not accept arbitrary raw Synthea export tables through `POST /api/v1/profile/import-csv`; accepted input is the platform-standard profile CSV already mapped into platform field names and units.
 - FE and BE may not invent numeric defaults, "rough estimate" placeholders, or silent value fabrication for incomplete clinical fields; only the frozen `derived` formulas for `BMI` and `eGFR` are allowed in this slice.
 - FE and BE may not silently widen the field-state enum, derivation set, or provisional-analysis semantics without an architect-owned contract update.
 - Optional-dependency degraded releases are allowed only for the frozen dependency classes in section 8.1 and only with explicit release-note/operator disclosure; missing credentials for a feature still advertised as fully available are release-blocking.
+- FE and BE may not keep wildcard CORS (`*`) together with credentialed browser flows for protected routes; credentialed CORS must use backend-owned allowlisted origin echo behavior.
+- FE, BE, and AI/data may not market or document `base × gene_modifier × lifestyle_modifier` outputs as strict Bayesian posterior semantics under the current contract.
+- FE and BE may not expose raw Baidu OCR responses, raw LLM provider payloads, or raw RAG passages through public API responses, replay payloads, or frontend-visible audit surfaces.
 - Answer replay is a bounded internal reconstruction package, not a transcript archive: FE and BE may not persist raw query/reply/prompt text, large RAG text, raw tool results, or unsanitized medical payloads under replay-related names.
 - `ChatMessage` remains the public/history-facing assistant record and must not absorb internal replay-only fields such as `context_budget_summary`, `tool_result_summary`, or `rag_source_refs`.
 - Any future internal/admin replay route must stay separate from `/chat/send`, `/chat/stream`, and `/chat/conversations/{conversation_id}/messages`; this slice freezes persistence only, not a new replay UI or route.
+- Lifestyle digital twin scenario reads are demo-only and read-only; FE and BE may not persist `simulated_demo` events as real `IoTHealthData`, `HealthRecord`, `MedicalDocument`, profile updates, or device-sync rows.
+- FE and BE may not silently change the existing IoT sync contract or route demo replay through `/api/v1/iot/sync/batch`.
+- FE and BE may not allow demo scenario replay, `diet_vision_event.v1`, or `lifestyle_context.v1` to auto-save health profile records or real IoT records.
+- FE, BE, and AI-data may not describe a heuristic `lifestyle_modifier` derived from demo behavior as a clinically calibrated posterior probability.
+- Demo scenario artifacts must carry `data_mode` and source provenance; unlabeled behavior/day data must be rejected or treated as non-persistable demo context.
+- Lifestyle behavior-day uploads are backend parse/validate only; FE and BE may not persist uploaded files, parsed events, generated `lifestyle_context`, or upload-derived analysis output as `IoTHealthData`, `HealthRecord`, `MedicalDocument`, profile fields, risk snapshots, or device-sync rows.
+- FE and BE may not relabel user-uploaded CSV/JSON behavior as `real_device`; `data_mode="real_device"` remains reserved for a future real-device integration contract.
+- The real-device Lifestyle placeholder is presentation-only in this slice and must not introduce a live sync route, background job, vendor connector, or hidden IoT write path.
+
+### 9.1 Stability Remediation Classification (2026-04-23)
+
+Contract-gated before FE/BE/AI-data implementation:
+
+- CORS behavior and test/deployment alignment for credentialed browser traffic
+- Config ownership unification for `backend/config.py` vs `backend/core/config.py` when it affects runtime/API-visible behavior
+- Multimodal fusion semantics wording and any interpretation of `risk_report` as Bayesian posterior output
+- Compliance/privacy wording for Baidu OCR, Moonshot/Kimi-compatible LLM, RAG, health data, logs, and audit exposure
+- Any API-visible change to `risk_report` meaning, `analysis_context` semantics, or chat metadata shapes
+
+Safe implementation-only within current frozen contract:
+
+- Dependency reproducibility cleanup and compatibility pin/re-export work (`xgboost`, `torch`, `torchvision`, `scikit-learn`/`joblib`) when no API shape or output meaning changes
+- Model-card/model-governance documentation additions for existing model assets
+- Training-script path de-hardcoding from machine-local absolute paths to project-root/config-resolved paths
+- Oversized-file split planning and low-risk internal refactors that do not change public route/payload semantics
 
 ## 10. Non-Goals For This Phase
 
@@ -1076,6 +1245,7 @@ Warning policy:
 | Reuse existing `report`, `profile`, and `trend` source types for evidence mapping in this slice | Prevents inventing a new taxonomy just for the tool boundary |
 | Freeze canonical envelopes for `ocr_summary`, `risk_snapshot`, and `risk_history` while allowing bounded legacy reads | Lets BE build one shared normalizer and later repair scripts without redefining raw persisted history in place |
 | Freeze OCR document processing into `success`, `partial_success`, `stored_unprocessed`, and `error` | Separates durable document save outcomes from OCR-service availability and prevents saved-but-unprocessed uploads from collapsing into generic 500 behavior |
+| Freeze platform CSV profile import as a parse-only route | Lets FE fill the clinical form from demo-ready platform CSV rows without changing OCR, profile persistence, or raw Synthea ETL boundaries |
 | Freeze backend-owned clinical field states plus a narrow derivation set for `BMI` and `eGFR` | Replaces informal "rough estimate" behavior with explicit provenance and keeps incomplete-data semantics out of FE guesswork |
 | Allow provisional analysis only as an explicitly labeled backend-owned mode | Preserves bounded reporting when some derived or non-blocking missing data remains without pretending the report is final |
 | Treat Redis as optional, OCR-as-advertised and sklearn model compatibility as policy-gated release concerns, and degraded fusion as a disclosed fallback mode | Gives operators and implementers one explicit release-policy boundary instead of ad hoc warning tolerance |
@@ -1093,3 +1263,13 @@ Warning policy:
 | Freeze the evidence sufficiency gate to `sufficient`, `limited`, and `insufficient`, and add `conflicting_evidence` as an explicit degrade reason | Removes doc/runtime drift and prevents BE from inventing new insufficiency semantics later |
 | Upgrade `AgentAuditEvent` from a call record to a responsibility record | Preserves accountable answer-boundary evidence without exposing transcripts, prompts, large RAG text, or unsanitized medical payloads |
 | Freeze answer replay as a new internal one-to-one `AgentAnswerReplay` package rather than widening `ChatMessage` or overloading `AgentAuditEvent` | Keeps postmortem reconstruction bounded, internal-only, and linked to one assistant turn without turning replay into raw-context archiving |
+| Freeze credentialed CORS to backend-owned allowlist echo behavior instead of wildcard origins | Aligns browser runtime behavior with tests and deployment policy while preventing silent cross-origin drift |
+| Freeze runtime configuration ownership between `backend/core/config.py` and `backend/config.py` | Reduces env/path-source drift and prevents hidden API-visible behavior changes from split config entrypoints |
+| Freeze multimodal fusion wording to heuristic multiplicative semantics | Prevents over-claiming Bayesian posterior certainty when current formula is heuristic scaling |
+| Freeze provider-facing compliance boundaries for OCR/LLM/RAG/logging | Keeps sensitive health data flow bounded and prevents silent exposure of raw provider payloads |
+| Approve `AST`, `HGB`, and `UA` as additive report-level `ocr_summary.v1.metrics` keys | Raises canonical OCR extraction coverage while keeping public routes stable and avoiding unsupported automatic `UserProfile` promotion |
+| Freeze the Lifestyle Digital Twin Demo Engine as read-only demo replay plus optional analysis context | Lets FE present a top-tier behavior-day timeline while preventing demo data from masquerading as live devices or persisted health evidence |
+| Add read-only authenticated demo scenario routes under `/api/v1/demo/behavior-scenarios` | Gives BE a bounded scenario API without changing IoT sync, food upload, profile save, or history persistence contracts |
+| Allow optional `lifestyle_context.v1` on `/analyze/comprehensive` only as explanatory heuristic context | Reuses the existing analysis route while preventing lifestyle demo modifiers from being claimed as calibrated clinical posterior probabilities |
+| Freeze Lifestyle behavior-day upload as backend-owned parse-only CSV/JSON import | Gives users a platform-standard uploaded timeline while preserving demo fallback, provenance labeling, and no-persistence boundaries |
+| Keep real-device import as a visible placeholder only | Makes the future integration path clear without claiming live wearable/device sync or widening IoT contracts in this slice |

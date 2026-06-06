@@ -8,6 +8,24 @@ from backend.services import payload_normalization
 from backend.services.payload_normalization import scan_legacy_payload_shapes
 
 
+def test_ocr_normalization_promotes_approved_report_level_biomarkers():
+    normalized = payload_normalization.normalize_ocr_summary_payload(
+        {
+            "AST": {"value": 19, "unit": "U/L"},
+            "HGB": {"value": 165, "unit": "g/L"},
+            "UA": {"value": 420, "unit": "umol/L"},
+        }
+    )
+
+    assert normalized is not None
+    assert normalized["metrics"]["AST"]["value"] == 19
+    assert normalized["metrics"]["HGB"]["value"] == 165
+    assert normalized["metrics"]["UA"]["value"] == 420
+    assert "AST" not in normalized["extra_findings"]
+    assert "HGB" not in normalized["extra_findings"]
+    assert "UA" not in normalized["extra_findings"]
+
+
 def _collect_payload_rows(session):
     return [
         {

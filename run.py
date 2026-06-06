@@ -10,6 +10,5 @@ if sys.stdout.encoding != 'utf-8':
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 if __name__ == "__main__":
-    # Use standard uvicorn run arguments
-    # reload=True is good for development
-    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=True)
+    reload_enabled = os.getenv("HEALTHAI_RELOAD", "0") == "1"
+    uvicorn.run("backend.main:app", host="127.0.0.1", port=8000, reload=reload_enabled)

@@ -1,0 +1,247 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e7]:
+      - generic [ref=e8]:
+        - generic [ref=e9]:
+          - heading "HealthAI Platform" [level=2] [ref=e10]
+          - generic [ref=e12]: Bayesian Fusion
+        - generic [ref=e13]:
+          - generic [ref=e16]: 设备在线
+          - button "Open user menu" [ref=e18]:
+            - generic [ref=e20]: A
+      - generic [ref=e21]:
+        - complementary [ref=e22]:
+          - menubar [ref=e26]:
+            - generic [ref=e27]: Administration
+            - menuitem "系统概览 Dashboard" [ref=e28] [cursor=pointer]:
+              - img [ref=e30]
+              - generic [ref=e34]: 系统概览 Dashboard
+            - menuitem "用户管理 Users" [ref=e35] [cursor=pointer]:
+              - img [ref=e37]
+              - generic [ref=e39]: 用户管理 Users
+            - menuitem "数据中心 Data Center" [ref=e40] [cursor=pointer]:
+              - img [ref=e42]
+              - generic [ref=e44]: 数据中心 Data Center
+        - main [ref=e45]:
+          - generic [ref=e47]:
+            - heading "临床体检 (Clinical Profile)" [level=1] [ref=e48]
+            - generic [ref=e52]:
+              - generic [ref=e54]:
+                - generic [ref=e55]:
+                  - generic [ref=e56]: 请录入最新的体检报告数据
+                  - button "清空数据" [ref=e58] [cursor=pointer]:
+                    - generic [ref=e59]:
+                      - img [ref=e61]
+                      - text: 清空数据
+                - generic [ref=e64]:
+                  - button "智能识别体检单" [ref=e66] [cursor=pointer]:
+                    - button "智能识别体检单" [ref=e68]:
+                      - generic [ref=e69]:
+                        - img [ref=e71]
+                        - text: 智能识别体检单
+                  - button "导入CSV健康数据" [ref=e75] [cursor=pointer]:
+                    - button "导入CSV健康数据" [active] [ref=e77]:
+                      - generic [ref=e78]:
+                        - img [ref=e80]
+                        - text: 导入CSV健康数据
+              - generic [ref=e83]:
+                - generic [ref=e84]:
+                  - heading "基本信息 (Basic)" [level=3] [ref=e85]
+                  - generic [ref=e86]:
+                    - generic [ref=e87]:
+                      - generic [ref=e88]: 年龄 (Age)
+                      - generic [ref=e90]:
+                        - button "decrease number" [ref=e91] [cursor=pointer]:
+                          - img [ref=e93]
+                        - button "increase number" [ref=e95] [cursor=pointer]:
+                          - img [ref=e97]
+                        - spinbutton "年龄 (Age)" [ref=e101]: "60"
+                    - generic [ref=e102]:
+                      - generic [ref=e103]: 性别 (Gender)
+                      - generic [ref=e106] [cursor=pointer]:
+                        - generic:
+                          - combobox "性别 (Gender)" [ref=e108]
+                          - generic [ref=e109]: 女 (Female)
+                        - img [ref=e112]
+                - generic [ref=e114]:
+                  - heading "身体指标 (Metrics)" [level=3] [ref=e115]
+                  - generic [ref=e116]:
+                    - generic [ref=e117]:
+                      - generic [ref=e118]: 身高 (cm)
+                      - generic [ref=e120]:
+                        - button "decrease number" [ref=e121] [cursor=pointer]:
+                          - img [ref=e123]
+                        - button "increase number" [ref=e125] [cursor=pointer]:
+                          - img [ref=e127]
+                        - spinbutton "身高 (cm)" [ref=e131]: "162.5"
+                    - generic [ref=e132]:
+                      - generic [ref=e133]: 体重 (kg)
+                      - generic [ref=e135]:
+                        - button "decrease number" [ref=e136] [cursor=pointer]:
+                          - img [ref=e138]
+                        - button "increase number" [ref=e140] [cursor=pointer]:
+                          - img [ref=e142]
+                        - spinbutton "体重 (kg)" [ref=e146]: "77.9"
+                  - generic [ref=e147]:
+                    - generic [ref=e148]:
+                      - generic [ref=e149]: BMI
+                      - generic [ref=e151]:
+                        - button "decrease number" [ref=e152] [cursor=pointer]:
+                          - img [ref=e154]
+                        - button "increase number" [ref=e156] [cursor=pointer]:
+                          - img [ref=e158]
+                        - spinbutton "BMI" [disabled] [ref=e162]: "29.5"
+                    - generic [ref=e163]:
+                      - generic [ref=e164]: 腰围 (cm)
+                      - generic [ref=e166]:
+                        - button "decrease number" [ref=e167] [cursor=pointer]:
+                          - img [ref=e169]
+                        - button "increase number" [ref=e171] [cursor=pointer]:
+                          - img [ref=e173]
+                        - spinbutton "腰围 (cm)" [ref=e177]
+                  - group "血压 (BP)" [ref=e179]:
+                    - generic [ref=e180]: 血压 (BP)
+                    - generic [ref=e182]:
+                      - generic [ref=e183]:
+                        - button "decrease number" [ref=e184] [cursor=pointer]:
+                          - img [ref=e186]
+                        - button "increase number" [ref=e188] [cursor=pointer]:
+                          - img [ref=e190]
+                        - spinbutton [ref=e194]: "188"
+                      - generic [ref=e195]: /
+                      - generic [ref=e196]:
+                        - button "decrease number" [ref=e197] [cursor=pointer]:
+                          - img [ref=e199]
+                        - button "increase number" [ref=e201] [cursor=pointer]:
+                          - img [ref=e203]
+                        - spinbutton [ref=e207]: "116"
+                - generic [ref=e208]:
+                  - heading "生化指标 (Bio-Markers)" [level=3] [ref=e209]
+                  - generic [ref=e210]:
+                    - generic [ref=e211]:
+                      - generic [ref=e212]: 空腹血糖
+                      - generic [ref=e214]:
+                        - button "decrease number" [ref=e215] [cursor=pointer]:
+                          - img [ref=e217]
+                        - button "increase number" [ref=e219] [cursor=pointer]:
+                          - img [ref=e221]
+                        - spinbutton "空腹血糖" [ref=e225]: "4.5"
+                    - generic [ref=e226]:
+                      - generic [ref=e227]: 糖化血红蛋白
+                      - generic [ref=e229]:
+                        - button "decrease number" [ref=e230] [cursor=pointer]:
+                          - img [ref=e232]
+                        - button "increase number" [ref=e234] [cursor=pointer]:
+                          - img [ref=e236]
+                        - spinbutton "糖化血红蛋白" [ref=e240]: "5.9"
+                    - generic [ref=e241]:
+                      - generic [ref=e242]: 总胆固醇
+                      - generic [ref=e244]:
+                        - button "decrease number" [ref=e245] [cursor=pointer]:
+                          - img [ref=e247]
+                        - button "increase number" [ref=e249] [cursor=pointer]:
+                          - img [ref=e251]
+                        - spinbutton "总胆固醇" [ref=e255]
+                    - generic [ref=e256]:
+                      - generic [ref=e257]: 甘油三酯
+                      - generic [ref=e259]:
+                        - button "decrease number" [ref=e260] [cursor=pointer]:
+                          - img [ref=e262]
+                        - button "increase number" [ref=e264] [cursor=pointer]:
+                          - img [ref=e266]
+                        - spinbutton "甘油三酯" [ref=e270]
+                    - generic [ref=e271]:
+                      - generic [ref=e272]: 高密度脂蛋白
+                      - generic [ref=e274]:
+                        - button "decrease number" [ref=e275] [cursor=pointer]:
+                          - img [ref=e277]
+                        - button "increase number" [ref=e279] [cursor=pointer]:
+                          - img [ref=e281]
+                        - spinbutton "高密度脂蛋白" [ref=e285]
+                    - generic [ref=e286]:
+                      - generic [ref=e287]: 睡眠时长(h)
+                      - generic [ref=e289]:
+                        - button "decrease number" [ref=e290] [cursor=pointer]:
+                          - img [ref=e292]
+                        - button "increase number" [ref=e294] [cursor=pointer]:
+                          - img [ref=e296]
+                        - spinbutton "睡眠时长(h)" [ref=e300]
+                    - generic [ref=e301]:
+                      - generic [ref=e302]: eGFR (肾)
+                      - generic [ref=e304]:
+                        - button "decrease number" [ref=e305] [cursor=pointer]:
+                          - img [ref=e307]
+                        - button "increase number" [ref=e309] [cursor=pointer]:
+                          - img [ref=e311]
+                        - spinbutton "eGFR (肾)" [ref=e315]: "98.9"
+                    - generic [ref=e316]:
+                      - generic [ref=e317]: ALT (肝)
+                      - generic [ref=e319]:
+                        - button "decrease number" [ref=e320] [cursor=pointer]:
+                          - img [ref=e322]
+                        - button "increase number" [ref=e324] [cursor=pointer]:
+                          - img [ref=e326]
+                        - spinbutton "ALT (肝)" [ref=e330]
+                  - generic [ref=e331]:
+                    - generic [ref=e332]:
+                      - generic [ref=e333]: 白细胞 (WBC)
+                      - generic [ref=e335]:
+                        - button "decrease number" [ref=e336] [cursor=pointer]:
+                          - img [ref=e338]
+                        - button "increase number" [ref=e340] [cursor=pointer]:
+                          - img [ref=e342]
+                        - spinbutton "白细胞 (WBC)" [ref=e346]
+                    - generic [ref=e347]:
+                      - generic [ref=e348]: 血小板 (PLT)
+                      - generic [ref=e350]:
+                        - button "decrease number" [ref=e351] [cursor=pointer]:
+                          - img [ref=e353]
+                        - button "increase number" [ref=e355] [cursor=pointer]:
+                          - img [ref=e357]
+                        - spinbutton "血小板 (PLT)" [ref=e361]
+                    - generic [ref=e362]:
+                      - generic [ref=e363]: GGT (肝)
+                      - generic [ref=e365]:
+                        - button "decrease number" [ref=e366] [cursor=pointer]:
+                          - img [ref=e368]
+                        - button "increase number" [ref=e370] [cursor=pointer]:
+                          - img [ref=e372]
+                        - spinbutton "GGT (肝)" [ref=e376]
+                    - generic [ref=e377]:
+                      - generic [ref=e378]: ALP (肝胆)
+                      - generic [ref=e380]:
+                        - button "decrease number" [ref=e381] [cursor=pointer]:
+                          - img [ref=e383]
+                        - button "increase number" [ref=e385] [cursor=pointer]:
+                          - img [ref=e387]
+                        - spinbutton "ALP (肝胆)" [ref=e391]
+                    - generic [ref=e392]:
+                      - generic [ref=e393]: 肌酐 (Cr)
+                      - generic [ref=e395]:
+                        - button "decrease number" [ref=e396] [cursor=pointer]:
+                          - img [ref=e398]
+                        - button "increase number" [ref=e400] [cursor=pointer]:
+                          - img [ref=e402]
+                        - spinbutton "肌酐 (Cr)" [ref=e406]: "61.9"
+              - generic [ref=e407]:
+                - button "暂存数据" [ref=e409] [cursor=pointer]:
+                  - generic [ref=e410]:
+                    - img [ref=e412]
+                    - text: 暂存数据
+                - button "保存健康档案" [ref=e416] [cursor=pointer]:
+                  - generic [ref=e417]: 保存健康档案
+                - button "下一步：基因组学" [ref=e420] [cursor=pointer]:
+                  - generic [ref=e421]:
+                    - text: 下一步：基因组学
+                    - img [ref=e423]
+    - generic:
+      - status [ref=e1]: 正在导入CSV健康数据，请稍候...
+      - generic [ref=e429]:
+        - img [ref=e430]
+        - paragraph [ref=e432]: 正在导入CSV健康数据，请稍候...
+  - alert [ref=e433]:
+    - img [ref=e435]
+    - generic [ref=e437]:
+      - heading "CSV健康数据已导入" [level=2] [ref=e438]
+      - paragraph [ref=e440]: 已回填 11 项字段，请核对后再手动保存健康档案。
+      - img [ref=e442] [cursor=pointer]

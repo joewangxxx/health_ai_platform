@@ -1,5 +1,6 @@
 import importlib.util
 import sys
+import tempfile
 import types
 from pathlib import Path
 
@@ -101,6 +102,8 @@ def _install_fake_runtime(monkeypatch, module, loader_docs, captured, splitter_c
             return FakeVectorstore()
 
     loaded = load_real_build_kb_module(FakeLoader, splitter_cls or FakeSplitter, FakeEmbeddings, FakeChroma)
+    monkeypatch.setattr(loaded, "VECTOR_STORE_DIR", tempfile.mkdtemp(prefix="rag-build-kb-test-vector-"))
+    monkeypatch.setattr(loaded, "VECTOR_STORE_BACKUP_DIR", tempfile.mkdtemp(prefix="rag-build-kb-test-backup-"))
     monkeypatch.setattr(loaded.os.path, "exists", lambda path: True)
     monkeypatch.setattr(loaded.os, "listdir", lambda path: ["guideline.pdf"])
     monkeypatch.setattr(loaded, "resolve_pdf_loader_factory", lambda: (lambda file_path: FakeLoader(file_path)))
